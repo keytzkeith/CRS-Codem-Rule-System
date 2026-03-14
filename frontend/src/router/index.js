@@ -81,8 +81,28 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/journal/new',
+    name: 'journal-create',
+    component: () => import('@/views/DiaryFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/journal/:id/edit',
+    name: 'journal-edit',
+    component: () => import('@/views/DiaryFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/diary',
     redirect: '/journal'
+  },
+  {
+    path: '/diary/new',
+    redirect: '/journal/new'
+  },
+  {
+    path: '/diary/:id/edit',
+    redirect: to => `/journal/${to.params.id}/edit`
   },
   {
     path: '/analytics',

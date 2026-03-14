@@ -15,7 +15,7 @@
               :to="item.to"
               class="inline-flex items-center px-3 py-2 rounded-md text-sm font-semibold transition-all duration-200"
               :class="[
-                $route.name === item.route
+                isActiveRoute(item)
                   ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'
               ]"
@@ -82,7 +82,7 @@
               @click="isMobileMenuOpen = false"
               class="block mx-3 px-4 py-3 rounded-lg text-base font-semibold transition-all duration-200"
               :class="[
-                $route.name === item.route
+                isActiveRoute(item)
                   ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'
               ]"
@@ -122,15 +122,25 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { SunIcon, MoonIcon, Bars3Icon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { CRS_NAV_ITEMS } from '@/config/navigation'
 
 const authStore = useAuthStore()
+const route = useRoute()
 const isDark = ref(false)
 const isMobileMenuOpen = ref(false)
 
 const navigation = computed(() => CRS_NAV_ITEMS)
+
+function isActiveRoute(item) {
+  if (!item.activeRoutes?.length) {
+    return route.name === item.route
+  }
+
+  return item.activeRoutes.includes(route.name)
+}
 
 function toggleDarkMode() {
   isDark.value = !isDark.value

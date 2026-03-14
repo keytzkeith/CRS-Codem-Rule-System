@@ -1,9 +1,34 @@
 export const CRS_NAV_ITEMS = [
-  { name: 'Dashboard', to: '/dashboard', route: 'dashboard' },
-  { name: 'Trades', to: '/trades', route: 'trades' },
-  { name: 'Journal', to: '/journal', route: 'journal' },
-  { name: 'Analytics', to: '/analytics', route: 'analytics' },
-  { name: 'Settings', to: '/settings', route: 'settings' }
+  {
+    name: 'Dashboard',
+    to: '/dashboard',
+    route: 'dashboard',
+    activeRoutes: ['dashboard']
+  },
+  {
+    name: 'Trades',
+    to: '/trades',
+    route: 'trades',
+    activeRoutes: ['trades', 'trade-create', 'trade-detail', 'trade-edit']
+  },
+  {
+    name: 'Journal',
+    to: '/journal',
+    route: 'journal',
+    activeRoutes: ['journal', 'journal-create', 'journal-edit']
+  },
+  {
+    name: 'Analytics',
+    to: '/analytics',
+    route: 'analytics',
+    activeRoutes: ['analytics']
+  },
+  {
+    name: 'Settings',
+    to: '/settings',
+    route: 'settings',
+    activeRoutes: ['settings']
+  }
 ]
 
 export const CRS_ROUTE_REDIRECTS = [
