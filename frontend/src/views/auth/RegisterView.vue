@@ -1,33 +1,45 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <div>
-        <div class="flex items-center justify-center mb-6 gap-2 sm:gap-3">
-          <img src="/favicon.svg?v=2" alt="TradeTally Logo" class="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0" />
-          <span class="text-xl sm:text-2xl md:text-3xl font-bold text-primary-600 dark:text-primary-400 whitespace-nowrap" style="font-family: 'Bebas Neue', Arial, sans-serif; letter-spacing: 0.05em;">DOMINATE WITH DATA</span>
-        </div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-          Create your account
-        </h2>
-        <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-          Or
-          <router-link to="/login" class="font-medium text-primary-600 hover:text-primary-500">
-            sign in to existing account
-          </router-link>
+  <div class="min-h-screen bg-[radial-gradient(circle_at_top,rgba(215,183,122,0.12),transparent_0_24%),linear-gradient(180deg,#07111f_0%,#050c17_100%)] px-4 py-10 sm:px-6 lg:px-8">
+    <div class="mx-auto grid min-h-[calc(100vh-5rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1fr_1fr]">
+      <section class="hidden rounded-[32px] border border-white/10 bg-white/[0.03] p-8 text-slate-200 shadow-[0_30px_90px_rgba(2,8,18,0.45)] lg:block">
+        <img src="/crs-main.png" alt="CRS Codem System Rule" class="h-24 w-auto max-w-[260px] object-contain" />
+        <p class="mt-8 text-[0.72rem] uppercase tracking-[0.24em] text-amber-200">CRS onboarding</p>
+        <h1 class="mt-4 text-5xl font-semibold tracking-[-0.05em] text-white">Create an account and start logging with structure.</h1>
+        <p class="mt-5 max-w-xl text-base leading-8 text-slate-300">
+          This is a personal trading workflow, not a social platform. Create the account, record the trades, and let the review process stay tight and intentional.
         </p>
-      </div>
+      </section>
+
+      <div class="mx-auto w-full max-w-md rounded-[32px] border border-white/10 bg-slate-950/70 p-6 shadow-[0_30px_90px_rgba(2,8,18,0.45)] backdrop-blur-xl sm:p-8">
+        <div>
+          <div class="flex items-center">
+            <img src="/crs-main.png" alt="CRS Codem System Rule" class="h-16 w-auto max-w-[220px] object-contain" />
+          </div>
+          <h2 class="mt-8 text-3xl font-semibold tracking-[-0.04em] text-white">
+            Create account
+          </h2>
+          <p class="mt-3 text-sm leading-7 text-slate-400">
+            Set up your CRS workspace and keep the journal centered on execution quality.
+          </p>
+          <p class="mt-3 text-sm text-slate-400">
+            Already have access?
+            <router-link to="/login" class="font-medium text-amber-200 transition hover:text-amber-100">
+              Sign in
+            </router-link>
+          </p>
+        </div>
 
       <!-- Registration disabled message -->
-      <div v-if="registrationDisabled" class="rounded-md bg-yellow-50 dark:bg-yellow-900/20 p-4">
+      <div v-if="registrationDisabled" class="mt-8 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4">
         <div class="text-center">
-          <h3 class="text-lg font-medium text-yellow-800 dark:text-yellow-400 mb-2">
+          <h3 class="mb-2 text-lg font-medium text-amber-100">
             Registration Currently Disabled
           </h3>
-          <p class="text-sm text-yellow-700 dark:text-yellow-300">
+          <p class="text-sm text-amber-50/85">
             User registration is currently disabled by the administrator. Please contact an administrator for assistance.
           </p>
           <div class="mt-4">
-            <router-link to="/login" class="btn-primary">
+            <router-link to="/login" class="crs-button-primary">
               Sign In Instead
             </router-link>
           </div>
@@ -37,28 +49,28 @@
       <form v-if="!registrationDisabled" class="mt-8 space-y-6" @submit.prevent="handleRegister">
         <div class="space-y-4">
           <div>
-            <label for="email" class="label">Email address</label>
+            <label for="email" class="mb-2 block text-sm font-medium text-slate-300">Email</label>
             <input
               id="email"
               v-model="form.email"
               name="email"
               type="email"
               required
-              class="input"
+              class="crs-input"
               placeholder="john@example.com"
               @keydown.enter="handleRegister"
             />
           </div>
 
           <div>
-            <label for="password" class="label">Password</label>
+            <label for="password" class="mb-2 block text-sm font-medium text-slate-300">Password</label>
             <input
               id="password"
               v-model="form.password"
               name="password"
               type="password"
               required
-              class="input"
+              class="crs-input"
               placeholder="Minimum 8 characters"
               @keydown.enter="handleRegister"
             />
@@ -73,25 +85,25 @@
               v-model="form.marketing_consent"
               name="marketing_consent"
               type="checkbox"
-              class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+              class="h-4 w-4 rounded border-white/10 bg-transparent text-amber-200"
             />
           </div>
           <div class="ml-3 text-sm">
-            <label for="marketing_consent" class="text-gray-700 dark:text-gray-300">
-              I agree to receive marketing and promotional emails about TradeTally features, tips, and special offers.
+            <label for="marketing_consent" class="text-slate-300">
+              I agree to receive occasional product updates and release notes about CRS improvements.
             </label>
           </div>
         </div>
 
-        <div v-if="authStore.error" class="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
-          <p class="text-sm text-red-800 dark:text-red-400">{{ authStore.error }}</p>
+        <div v-if="formError" class="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+          <p class="text-sm text-red-100">{{ formError }}</p>
         </div>
 
         <div>
           <button
             type="submit"
             :disabled="authStore.loading"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+            class="crs-button-primary w-full"
           >
             <span v-if="authStore.loading">Creating account...</span>
             <span v-else>Create account</span>
@@ -99,12 +111,13 @@
         </div>
         
       </form>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNotification } from '@/composables/useNotification'
@@ -122,8 +135,11 @@ const form = ref({
 
 const registrationDisabled = ref(false)
 const billingEnabled = ref(false)
+const formError = ref('')
 
 onMounted(async () => {
+  authStore.clearError()
+  formError.value = ''
   // Pre-fill email from query param (from home page quick signup)
   if (route.query.email) {
     form.value.email = route.query.email
@@ -146,6 +162,9 @@ onMounted(async () => {
 })
 
 async function handleRegister() {
+  authStore.clearError()
+  formError.value = ''
+
   try {
     const response = await authStore.register(form.value)
 
@@ -163,7 +182,12 @@ async function handleRegister() {
       router.push({ name: 'login', query: { message: 'You can now sign in to your account' } })
     }
   } catch (error) {
-    showError('Registration failed', authStore.error)
+    formError.value = authStore.error || 'Unable to create your account.'
+    showError('Registration failed', formError.value)
   }
 }
+
+onBeforeUnmount(() => {
+  authStore.clearError()
+})
 </script>

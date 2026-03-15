@@ -254,6 +254,7 @@ const schemas = {
     quantity: Joi.number().positive(),
     side: Joi.string().valid('long', 'short'),
     instrumentType: Joi.string().valid('stock', 'option', 'future', 'crypto', 'forex', 'index'),
+    instrument_type: Joi.string().valid('stock', 'option', 'future', 'crypto', 'forex', 'index').optional(),
     commission: Joi.number(),  // Can be negative for rebates
     entryCommission: Joi.number(),  // Can be negative for rebates
     exitCommission: Joi.number(),  // Can be negative for rebates

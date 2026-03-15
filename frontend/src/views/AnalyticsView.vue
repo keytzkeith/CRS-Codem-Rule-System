@@ -23,7 +23,7 @@
             </linearGradient>
           </defs>
           <g>
-            <line v-for="line in gridLines" :key="line.y" x1="12" x2="628" :y1="line.y" :y2="line.y" class="crs-chart-grid-line" />
+            <line v-for="(line, idx) in gridLines" :key="`grid-${idx}`" x1="12" x2="628" :y1="line.y" :y2="line.y" class="crs-chart-grid-line" />
           </g>
           <polygon :points="equityAreaPoints" class="crs-chart-area-fill" />
           <polyline
@@ -38,7 +38,7 @@
             <circle :cx="point.x" :cy="point.y" r="5" fill="#f2d7a1" class="cursor-pointer" @mouseenter="hoveredEquityPoint = point" @mouseleave="hoveredEquityPoint = null" />
             <circle :cx="point.x" :cy="point.y" r="16" fill="transparent" class="cursor-pointer" @mouseenter="hoveredEquityPoint = point" @mouseleave="hoveredEquityPoint = null" />
           </g>
-          <g v-for="line in gridLines" :key="line.value">
+          <g v-for="(line, idx) in gridLines" :key="`axis-${idx}`">
             <text x="8" :y="line.y - 4" text-anchor="start" class="crs-chart-axis-label">{{ compactCurrency(line.value) }}</text>
           </g>
         </svg>
@@ -143,7 +143,7 @@
               <p class="font-semibold text-white">{{ row.label }}</p>
               <p class="text-sm text-slate-500">{{ row.trades }} trades · {{ row.winRate }}% win rate</p>
             </div>
-            <p :class="row.pnl >= 0 ? 'text-emerald-300' : 'text-rose-300'">{{ compactCurrency(row.pnl) }}</p>
+            <p :class="row.pnl >= 0 ? 'text-emerald-300' : 'text-red-400'">{{ compactCurrency(row.pnl) }}</p>
           </div>
         </div>
         <EmptyState
@@ -161,7 +161,7 @@
               <p class="font-semibold text-white">{{ row.label }}</p>
               <p class="text-sm text-slate-500">{{ row.trades }} trades · {{ row.winRate }}% win rate</p>
             </div>
-            <p :class="row.pnl >= 0 ? 'text-emerald-300' : 'text-rose-300'">{{ compactCurrency(row.pnl) }}</p>
+            <p :class="row.pnl >= 0 ? 'text-emerald-300' : 'text-red-400'">{{ compactCurrency(row.pnl) }}</p>
           </div>
         </div>
         <EmptyState
@@ -199,7 +199,7 @@
             </div>
             <div class="crs-calendar-stat">
               <div class="text-sm text-slate-400">P&amp;L</div>
-              <div class="mt-2 text-3xl font-semibold" :class="monthlySummary.pnl >= 0 ? 'text-emerald-300' : 'text-rose-300'">{{ compactCurrency(monthlySummary.pnl) }}</div>
+              <div class="mt-2 text-3xl font-semibold" :class="monthlySummary.pnl >= 0 ? 'text-emerald-300' : 'text-red-400'">{{ compactCurrency(monthlySummary.pnl) }}</div>
             </div>
             <div class="crs-calendar-stat">
               <div class="text-sm text-slate-400">Best day</div>
@@ -230,7 +230,7 @@
                   <span class="crs-calendar-pill">{{ dayOfMonth(cell.date) }}</span>
                 </div>
                 <div v-if="cell.data" class="space-y-1">
-                  <div class="text-base font-semibold" :class="cell.data.value >= 0 ? 'text-emerald-300' : 'text-rose-300'">
+                  <div class="text-base font-semibold" :class="cell.data.value >= 0 ? 'text-emerald-300' : 'text-red-400'">
                     {{ compactCurrency(cell.data.value) }}
                   </div>
                   <div class="text-sm font-medium text-white">{{ tradeCountLabel(cell.data.trades) }}</div>

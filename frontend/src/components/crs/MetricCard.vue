@@ -51,7 +51,7 @@ const toneClass = computed(() => {
   }
 
   if (props.tone === 'negative') {
-    return 'text-rose-300'
+    return 'text-red-400'
   }
 
   if (props.tone === 'warning') {

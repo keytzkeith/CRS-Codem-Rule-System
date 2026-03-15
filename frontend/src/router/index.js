@@ -157,7 +157,7 @@ router.afterEach((to) => {
   if (authStore.isAuthenticated && authStore.user?.id) {
     identifyUser(authStore.user.id, {
       email: authStore.user.email,
-      tier: 'crs'
+      tier: authStore.user.tier || 'free'
     })
   }
 

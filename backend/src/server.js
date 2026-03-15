@@ -268,7 +268,7 @@ if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'tru
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     explorer: true,
     customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'TradeTally API Documentation',
+    customSiteTitle: 'CRS API Documentation',
   }));
   logger.info('📚 Swagger documentation available at /api-docs');
 }
@@ -379,7 +379,7 @@ app.use((req, res) => {
 // Function to start server with migration
 async function startServer() {
   try {
-    logger.info('Starting TradeTally server...');
+    logger.info('Starting CRS server...');
 
     // Initialize PostHog telemetry (optional)
     await initializePostHogTelemetry();
@@ -548,7 +548,7 @@ async function startServer() {
 
     // Start the server
     app.listen(PORT, () => {
-      logger.info(`✓ TradeTally server running on port ${PORT}`);
+      logger.info(`✓ CRS server running on port ${PORT}`);
       logger.info(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`✓ Log level: ${process.env.LOG_LEVEL || 'INFO'}`);
       

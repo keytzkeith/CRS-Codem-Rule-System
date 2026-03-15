@@ -163,7 +163,7 @@
               <circle class="crs-donut-loss" cx="110" cy="110" r="74" :stroke-dasharray="lossDash" :stroke-dashoffset="lossOffset" />
               <circle class="crs-donut-breakeven" cx="110" cy="110" r="74" :stroke-dasharray="breakevenDash" :stroke-dashoffset="breakevenOffset" />
               <text x="110" y="102" text-anchor="middle" fill="#f8fafc" font-size="34" font-weight="600">{{ metrics.totalTrades }}</text>
-              <text x="110" y="128" text-anchor="middle" fill="#7b8aa3" font-size="12" letter-spacing="1.5">TRADES</text>
+              <text x="110" y="128" text-anchor="middle" fill="#7b8aa3" font-size="12">Trades logged</text>
             </svg>
           </div>
           <div class="space-y-4">
@@ -174,9 +174,9 @@
               </div>
               <span class="text-lg font-semibold text-white">{{ outcomeCounts.win }}</span>
             </div>
-            <div class="flex items-center justify-between rounded-[16px] border border-rose-400/15 bg-rose-400/5 px-4 py-3">
+            <div class="flex items-center justify-between rounded-[16px] border border-red-500/15 bg-red-500/5 px-4 py-3">
               <div class="flex items-center gap-3 text-sm text-slate-200">
-                <span class="h-3 w-3 rounded-full bg-rose-400"></span>
+                <span class="h-3 w-3 rounded-full bg-red-500"></span>
                 Losses
               </div>
               <span class="text-lg font-semibold text-white">{{ outcomeCounts.loss }}</span>
@@ -240,12 +240,13 @@ const checklistSummary = computed(() => crsStore.checklistSummary)
 const pnlWeek = computed(() => crsStore.analytics.pnlByPeriod.week)
 const outcomeCounts = computed(() => crsStore.analytics.outcomeCounts)
 const circumference = 2 * Math.PI * 74
+const donutGap = 9
 
-const winDash = computed(() => `${segmentLength(outcomeCounts.value.win)} ${circumference}`)
-const lossDash = computed(() => `${segmentLength(outcomeCounts.value.loss)} ${circumference}`)
-const breakevenDash = computed(() => `${segmentLength(outcomeCounts.value.breakeven)} ${circumference}`)
-const lossOffset = computed(() => -segmentLength(outcomeCounts.value.win))
-const breakevenOffset = computed(() => -(segmentLength(outcomeCounts.value.win) + segmentLength(outcomeCounts.value.loss)))
+const winDash = computed(() => `${segmentVisibleLength(outcomeCounts.value.win)} ${circumference}`)
+const lossDash = computed(() => `${segmentVisibleLength(outcomeCounts.value.loss)} ${circumference}`)
+const breakevenDash = computed(() => `${segmentVisibleLength(outcomeCounts.value.breakeven)} ${circumference}`)
+const lossOffset = computed(() => -segmentSpan(outcomeCounts.value.win))
+const breakevenOffset = computed(() => -(segmentSpan(outcomeCounts.value.win) + segmentSpan(outcomeCounts.value.loss)))
 
 const equityPlot = computed(() => {
   const values = crsStore.analytics.equityCurve
@@ -338,5 +339,13 @@ function segmentLength(count) {
   }
 
   return (count / metrics.value.totalTrades) * circumference
+}
+
+function segmentVisibleLength(count) {
+  return Math.max(segmentSpan(count) - donutGap, 0)
+}
+
+function segmentSpan(count) {
+  return segmentLength(count)
 }
 </script>

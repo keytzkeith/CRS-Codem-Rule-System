@@ -4,7 +4,7 @@ import api from '@/services/api'
 import router from '@/router'
 
 export const useAuthStore = defineStore('auth', () => {
-  const mockAuthEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_MOCK_AUTH !== 'false'
+  const mockAuthMode = import.meta.env.DEV ? (import.meta.env.VITE_ENABLE_MOCK_AUTH || '').toLowerCase() : ''
   const user = ref(null)
   const token = ref(localStorage.getItem('token'))
   const loading = ref(false)
@@ -72,7 +72,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return response.data
     } catch (err) {
-      if (shouldUseMockAuth(err)) {
+      if (shouldUseMockAuth(err, mockAuthMode)) {
         completeMockAuth(credentials.email, returnUrl)
         return {
           message: 'Mock login successful',
@@ -82,7 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Don't set error for 2FA or approval - these are normal flows
       if (!err.requires2FA && !err.requiresApproval) {
-        error.value = err.response?.data?.error || 'Login failed'
+        error.value = getAuthErrorMessage(err, 'login')
       }
       throw err
     } finally {
@@ -116,7 +116,7 @@ export const useAuthStore = defineStore('auth', () => {
       
       return response.data
     } catch (err) {
-      if (shouldUseMockAuth(err)) {
+      if (shouldUseMockAuth(err, mockAuthMode)) {
         completeMockAuth(userData.email)
         return {
           message: 'Mock registration successful',
@@ -125,7 +125,7 @@ export const useAuthStore = defineStore('auth', () => {
         }
       }
 
-      error.value = err.response?.data?.error || 'Registration failed'
+      error.value = getAuthErrorMessage(err, 'register')
       throw err
     } finally {
       loading.value = false
@@ -222,7 +222,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function checkAuth() {
     if (token.value) {
-      if (token.value === 'mock-dev-token' && mockAuthEnabled) {
+      if (token.value === 'mock-dev-token' && mockAuthMode) {
         const storedUser = localStorage.getItem('mock_auth_user')
         if (storedUser) {
           user.value = JSON.parse(storedUser)
@@ -268,12 +268,45 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function shouldUseMockAuth(err) {
-    if (!mockAuthEnabled) {
+  function shouldUseMockAuth(err, mode = '') {
+    if (mode === 'force' || mode === 'mock') {
+      return true
+    }
+
+    if (!mode || !err?.response) {
       return false
     }
 
-    return !err.response || err.response.status >= 500
+    return [401, 403].includes(err.response.status)
+  }
+
+  function getAuthErrorMessage(err, action = 'login') {
+    const backendMessage = err?.response?.data?.error
+    if (backendMessage) {
+      return backendMessage
+    }
+
+    if (!err?.response) {
+      return 'Unable to reach the server. Check your connection and try again.'
+    }
+
+    if (err.response.status === 429) {
+      return 'Too many attempts. Wait a moment and try again.'
+    }
+
+    if (err.response.status >= 500) {
+      return action === 'register'
+        ? 'Server error while creating your account. Check the backend setup and try again.'
+        : 'Server error while signing you in. Try again shortly.'
+    }
+
+    return action === 'login'
+      ? 'Unable to sign in with those credentials.'
+      : 'Unable to create your account with those details.'
+  }
+
+  function clearError() {
+    error.value = null
   }
 
   function completeMockAuth(email, returnUrl = null) {
@@ -348,6 +381,7 @@ export const useAuthStore = defineStore('auth', () => {
     pendingOnboarding,
     showOnboardingModal,
     isAuthenticated,
+    clearError,
     login,
     register,
     logout,

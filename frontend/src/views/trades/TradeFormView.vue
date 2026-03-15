@@ -8,14 +8,14 @@
       >
         <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
           <router-link to="/trades" class="crs-button crs-button-ghost w-full sm:w-auto">Back</router-link>
-          <button type="button" class="crs-button-primary w-full sm:w-auto" @click="submitTrade">
+          <button type="submit" class="crs-button-primary w-full sm:w-auto" form="crs-trade-form">
             {{ isEditing ? 'Save changes' : 'Save trade' }}
           </button>
         </div>
       </SectionHeader>
     </section>
 
-    <form class="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]" @submit.prevent="submitTrade">
+    <form id="crs-trade-form" class="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]" @submit.prevent="submitTrade">
       <div class="space-y-6">
         <ChartCard eyebrow="Execution" title="Trade facts" description="Core execution numbers and tags for the trade ledger.">
           <div class="grid gap-4 md:grid-cols-2">
@@ -170,7 +170,7 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ChartCard from '@/components/crs/ChartCard.vue'
 import ImagePreviewCard from '@/components/crs/ImagePreviewCard.vue'
@@ -185,8 +185,8 @@ const route = useRoute()
 const router = useRouter()
 const crsStore = useCrsStore()
 
-const existingTrade = route.params.id ? crsStore.getTradeById(route.params.id) : null
-const isEditing = computed(() => Boolean(existingTrade))
+const existingTrade = computed(() => (route.params.id ? crsStore.getTradeById(route.params.id) : null))
+const isEditing = computed(() => Boolean(existingTrade.value))
 
 const sessionOptions = ['London', 'New York', 'Asia']
 const checklistFields = [
@@ -198,7 +198,7 @@ const checklistFields = [
   { key: 'minimumRRMet', label: 'RR >= 1:2' }
 ]
 
-const form = reactive(buildForm(existingTrade))
+const form = reactive(buildForm(existingTrade.value))
 const availableSetupTypes = computed(() => crsStore.availableSetupTypes)
 const availableTags = computed(() => crsStore.availableTags)
 const accounts = computed(() => crsStore.settings.accounts || [])
@@ -226,9 +226,17 @@ const plannedRR = computed(() => `${calculatePlannedRR({
 })}:1`)
 const resultAmount = computed(() => Number((form.resultR * riskAmount.value).toFixed(2)))
 
+watch(
+  existingTrade,
+  (nextTrade) => {
+    Object.assign(form, buildForm(nextTrade))
+  },
+  { immediate: false }
+)
+
 function submitTrade() {
   const savedTrade = crsStore.saveTrade({
-    id: existingTrade?.id,
+    id: existingTrade.value?.id,
     ...form,
     accountName: selectedAccount.value?.name || '',
     setupType: form.setupTypes[0] || 'Custom',

@@ -28,10 +28,10 @@
             <td class="crs-table-cell">{{ formatPrice(trade.entry) }}</td>
             <td class="crs-table-cell">{{ formatPrice(trade.stopLoss) }}</td>
             <td class="crs-table-cell">{{ formatPrice(trade.takeProfit) }}</td>
-            <td class="crs-table-cell">{{ trade.resultR.toFixed(1) }}R</td>
-            <td class="crs-table-cell">${{ formatNumber(Math.abs(trade.resultAmount)) }}</td>
-            <td class="crs-table-cell"><ResultBadge :value="trade.status" /></td>
-            <td class="crs-table-cell">{{ trade.journal.followedPlan ? 'Yes' : 'No' }}</td>
+            <td class="crs-table-cell">{{ formatResultR(trade.resultR) }}</td>
+            <td class="crs-table-cell">{{ formatCurrencyAmount(trade.resultAmount) }}</td>
+            <td class="crs-table-cell"><ResultBadge :value="trade.status || 'Breakeven'" /></td>
+            <td class="crs-table-cell">{{ trade.journal?.followedPlan ? 'Yes' : 'No' }}</td>
           </tr>
         </tbody>
       </table>
@@ -56,7 +56,7 @@
           <p><span class="text-slate-500">Direction</span><br>{{ trade.direction }}</p>
           <p><span class="text-slate-500">Setup</span><br>{{ trade.setupType }}</p>
           <p><span class="text-slate-500">Session</span><br>{{ trade.session }}</p>
-          <p><span class="text-slate-500">Result</span><br>{{ trade.resultR.toFixed(1) }}R / ${{ formatNumber(Math.abs(trade.resultAmount)) }}</p>
+          <p><span class="text-slate-500">Result</span><br>{{ formatResultSummary(trade) }}</p>
         </div>
       </button>
     </div>
@@ -101,5 +101,17 @@ function formatPrice(value) {
 
 function formatNumber(value) {
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value)
+}
+
+function formatResultR(value) {
+  return typeof value === 'number' ? `${value.toFixed(1)}R` : '—'
+}
+
+function formatCurrencyAmount(value) {
+  return typeof value === 'number' ? `$${formatNumber(Math.abs(value))}` : '—'
+}
+
+function formatResultSummary(trade) {
+  return `${formatResultR(trade.resultR)} / ${formatCurrencyAmount(trade.resultAmount)}`
 }
 </script>

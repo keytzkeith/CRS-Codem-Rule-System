@@ -1,11 +1,10 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+  <div class="min-h-screen bg-[radial-gradient(circle_at_top,rgba(215,183,122,0.12),transparent_0_24%),linear-gradient(180deg,#07111f_0%,#050c17_100%)] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
-      <div class="flex items-center justify-center gap-2 sm:gap-3">
-        <img src="/favicon.svg?v=2" alt="TradeTally Logo" class="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0" />
-        <span class="text-xl sm:text-2xl md:text-3xl font-bold text-primary-600 dark:text-primary-400 whitespace-nowrap" style="font-family: 'Bebas Neue', Arial, sans-serif; letter-spacing: 0.05em;">DOMINATE WITH DATA</span>
+      <div class="flex items-center justify-center">
+        <img src="/crs-main.png" alt="CRS Codem System Rule" class="h-16 w-auto max-w-[220px] object-contain" />
       </div>
-      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-white">
         Email Verification
       </h2>
     </div>

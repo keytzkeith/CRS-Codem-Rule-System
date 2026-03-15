@@ -1,74 +1,99 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <div>
-        <div class="flex items-center justify-center mb-6 gap-2 sm:gap-3">
-          <img src="/favicon.svg?v=2" alt="TradeTally Logo" class="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0" />
-          <span class="text-xl sm:text-2xl md:text-3xl font-bold text-primary-600 dark:text-primary-400 whitespace-nowrap" style="font-family: 'Bebas Neue', Arial, sans-serif; letter-spacing: 0.05em;">DOMINATE WITH DATA</span>
-        </div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-          Sign in to your account
-        </h2>
-        <p v-if="allowRegistration" class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-          Or
-          <router-link to="/register" class="font-medium text-primary-600 hover:text-primary-500">
-            create a new account
-          </router-link>
+  <div class="min-h-screen bg-[radial-gradient(circle_at_top,rgba(215,183,122,0.12),transparent_0_24%),linear-gradient(180deg,#07111f_0%,#050c17_100%)] px-4 py-10 sm:px-6 lg:px-8">
+    <div class="mx-auto grid min-h-[calc(100vh-5rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+      <section class="hidden rounded-[32px] border border-white/10 bg-white/[0.03] p-8 text-slate-200 shadow-[0_30px_90px_rgba(2,8,18,0.45)] lg:block">
+        <img src="/crs-main.png" alt="CRS Codem System Rule" class="h-24 w-auto max-w-[260px] object-contain" />
+        <h1 class="mt-4 text-5xl font-semibold tracking-[-0.05em] text-white">Sign in and review the tape with intent.</h1>
+        <p class="mt-5 max-w-xl text-base leading-8 text-slate-300">
+          Your rule system stays focused: record trades, review execution, study discipline, and cut the noise. The login flow should feel like the same product, not a generic auth page.
         </p>
-      </div>
+        <div class="mt-10 grid gap-4 sm:grid-cols-3">
+          <div class="rounded-[22px] border border-white/8 bg-black/20 p-4">
+            <p class="text-sm font-medium text-white">Dashboard</p>
+            <p class="mt-2 text-sm leading-6 text-slate-400">Win rate, net P&amp;L, streaks, and equity in one compact view.</p>
+          </div>
+          <div class="rounded-[22px] border border-white/8 bg-black/20 p-4">
+            <p class="text-sm font-medium text-white">Journal</p>
+            <p class="mt-2 text-sm leading-6 text-slate-400">Short structured review prompts tied to each trade.</p>
+          </div>
+          <div class="rounded-[22px] border border-white/8 bg-black/20 p-4">
+            <p class="text-sm font-medium text-white">Analytics</p>
+            <p class="mt-2 text-sm leading-6 text-slate-400">See recurring setups, session bias, and daily performance patterns.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="mx-auto w-full max-w-md rounded-[32px] border border-white/10 bg-slate-950/70 p-6 shadow-[0_30px_90px_rgba(2,8,18,0.45)] backdrop-blur-xl sm:p-8">
+        <div>
+          <div class="flex items-center">
+            <img src="/crs-main.png" alt="CRS Codem System Rule" class="h-16 w-auto max-w-[220px] object-contain" />
+          </div>
+          <h2 class="mt-8 text-3xl font-semibold tracking-[-0.04em] text-white">
+            Sign in
+          </h2>
+          <p class="mt-3 text-sm leading-7 text-slate-400">
+            Resume your personal trading journal and rule-based review flow.
+          </p>
+          <p v-if="allowRegistration" class="mt-3 text-sm text-slate-400">
+            Need an account?
+            <router-link to="/register" class="font-medium text-amber-200 transition hover:text-amber-100">
+              Create one
+            </router-link>
+          </p>
+        </div>
 
       <!-- Verification message from registration -->
-      <div v-if="verificationMessage" class="rounded-md bg-blue-50 dark:bg-blue-900/20 p-4">
-        <p class="text-sm text-blue-800 dark:text-blue-400">{{ verificationMessage }}</p>
+      <div v-if="verificationMessage" class="mt-6 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-4">
+        <p class="text-sm text-sky-100">{{ verificationMessage }}</p>
       </div>
 
       <!-- 2FA verification form -->
       <div v-if="showTwoFactor">
         <TwoFactorAuth
           :loading="authStore.loading"
-          :error="authStore.error"
+          :error="formError"
           @submit="handleTwoFactorSubmit"
           @cancel="handleTwoFactorCancel"
         />
       </div>
       
       <form v-else class="mt-8 space-y-6" @submit.prevent="handleLogin">
-        <div class="rounded-md shadow-sm -space-y-px">
+        <div class="space-y-4">
           <div>
-            <label for="email" class="sr-only">Email address</label>
+            <label for="email" class="mb-2 block text-sm font-medium text-slate-300">Email</label>
             <input
               id="email"
               v-model="form.email"
               name="email"
               type="email"
               required
-              class="input rounded-t-md"
-              placeholder="Email address"
+              class="crs-input"
+              placeholder="trader@example.com"
               @keydown.enter="handleLogin"
             />
           </div>
           <div>
-            <label for="password" class="sr-only">Password</label>
+            <label for="password" class="mb-2 block text-sm font-medium text-slate-300">Password</label>
             <input
               id="password"
               v-model="form.password"
               name="password"
               type="password"
               required
-              class="input rounded-b-md"
+              class="crs-input"
               placeholder="Password"
               @keydown.enter="handleLogin"
             />
           </div>
         </div>
 
-        <div v-if="authStore.error" class="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
-          <p class="text-sm text-red-800 dark:text-red-400">{{ authStore.error }}</p>
+        <div v-if="formError" class="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+          <p class="text-sm text-red-100">{{ formError }}</p>
           <div v-if="showResendVerification" class="mt-3">
             <button
               @click="handleResendVerification"
               :disabled="resendLoading || resendCooldown > 0"
-              class="text-sm text-primary-600 hover:text-primary-500 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              class="text-sm font-medium text-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span v-if="resendLoading">Sending...</span>
               <span v-else-if="resendCooldown > 0">Resend in {{ resendCooldown }}s</span>
@@ -76,15 +101,15 @@
             </button>
           </div>
           <div v-if="showApprovalMessage" class="mt-3">
-            <p class="text-xs text-red-700 dark:text-red-300">
+            <p class="text-xs text-red-100/80">
               Your account is pending approval from an administrator. You will be able to sign in once approved.
             </p>
           </div>
         </div>
         
         <!-- Resend verification success message -->
-        <div v-if="resendSuccess" class="rounded-md bg-green-50 dark:bg-green-900/20 p-4">
-          <p class="text-sm text-green-800 dark:text-green-400">
+        <div v-if="resendSuccess" class="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4">
+          <p class="text-sm text-emerald-100">
             Verification email sent successfully! Please check your inbox.
           </p>
         </div>
@@ -93,7 +118,7 @@
           <button
             type="submit"
             :disabled="authStore.loading"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+            class="crs-button-primary w-full"
           >
             <span v-if="authStore.loading">Signing in...</span>
             <span v-else>Sign in</span>
@@ -101,17 +126,18 @@
         </div>
 
         <div class="text-center mt-4">
-          <router-link to="/forgot-password" class="text-sm text-primary-600 hover:text-primary-500">
+          <router-link to="/forgot-password" class="text-sm text-slate-400 transition hover:text-white">
             Forgot your password?
           </router-link>
         </div>
       </form>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNotification } from '@/composables/useNotification'
@@ -133,6 +159,7 @@ const resendCooldown = ref(0)
 const resendSuccess = ref(false)
 const showTwoFactor = ref(false)
 const tempToken = ref('')
+const formError = ref('')
 
 const form = ref({
   email: '',
@@ -141,6 +168,8 @@ const form = ref({
 
 async function handleLogin() {
   // Reset state
+  authStore.clearError()
+  formError.value = ''
   showResendVerification.value = false
   showApprovalMessage.value = false
   resendSuccess.value = false
@@ -156,13 +185,16 @@ async function handleLogin() {
     if (error.requiresApproval) {
       showApprovalMessage.value = true
       userEmail.value = error.email || form.value.email
+      formError.value = authStore.error || ''
     } else if (error.requires2FA) {
       showTwoFactor.value = true
       tempToken.value = error.tempToken
       // Clear any error message since 2FA is a normal flow
-      authStore.error = null
+      authStore.clearError()
+      formError.value = ''
+    } else {
+      formError.value = authStore.error || 'Unable to sign in with those credentials.'
     }
-    // Error will be displayed via authStore.error in the template
   }
 }
 
@@ -185,7 +217,8 @@ async function handleResendVerification() {
     showSuccess('Success', response.data.message)
     
     // Clear the auth error since we've sent a new verification email
-    authStore.error = null
+    authStore.clearError()
+    formError.value = ''
     
     // Start cooldown timer
     resendCooldown.value = 60
@@ -204,20 +237,24 @@ async function handleResendVerification() {
 }
 
 async function handleTwoFactorSubmit(code) {
+  formError.value = ''
   try {
     await authStore.verify2FA(tempToken.value, code)
   } catch (error) {
-    // Error will be displayed via authStore.error in the template
+    formError.value = authStore.error || '2FA verification failed'
   }
 }
 
 function handleTwoFactorCancel() {
   showTwoFactor.value = false
   tempToken.value = ''
-  authStore.error = null
+  authStore.clearError()
+  formError.value = ''
 }
 
 onMounted(async () => {
+  authStore.clearError()
+  formError.value = ''
   // Fetch registration config to determine if registration is allowed
   await fetchRegistrationConfig()
   
@@ -225,5 +262,9 @@ onMounted(async () => {
   if (route.query.message) {
     verificationMessage.value = route.query.message
   }
+})
+
+onBeforeUnmount(() => {
+  authStore.clearError()
 })
 </script>

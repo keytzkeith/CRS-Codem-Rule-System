@@ -15,7 +15,7 @@
     --crs-copy: #d9e2f2;
     --crs-muted: #7b8aa3;
     --crs-positive: #73e2a7;
-    --crs-negative: #ff8b8b;
+    --crs-negative: #ef4444;
     --crs-warning: #f2d27c;
     --crs-font-body: "Segoe UI", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
     --crs-font-display: "Segoe UI", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
@@ -424,7 +424,7 @@
   }
 
   .crs-result-loss {
-    background: rgba(255, 139, 139, 0.14);
+    background: rgba(239, 68, 68, 0.14);
     color: var(--crs-negative);
   }
 
@@ -527,15 +527,15 @@
   .crs-donut-track {
     fill: none;
     stroke: rgba(255, 255, 255, 0.08);
-    stroke-width: 18;
+    stroke-width: 16;
   }
 
   .crs-donut-win,
   .crs-donut-loss,
   .crs-donut-breakeven {
     fill: none;
-    stroke-width: 18;
-    stroke-linecap: round;
+    stroke-width: 16;
+    stroke-linecap: butt;
     transform: rotate(-90deg);
     transform-origin: 50% 50%;
   }
@@ -545,7 +545,7 @@
   }
 
   .crs-donut-loss {
-    stroke: #ff5b5b;
+    stroke: #dc2626;
   }
 
   .crs-donut-breakeven {

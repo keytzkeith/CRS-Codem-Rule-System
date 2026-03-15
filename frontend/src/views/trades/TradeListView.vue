@@ -105,7 +105,7 @@ const planFollowRate = computed(() => {
   }
 
   return (
-    (filteredTrades.value.filter((trade) => trade.journal.followedPlan).length / filteredTrades.value.length) *
+    (filteredTrades.value.filter((trade) => trade.journal?.followedPlan).length / filteredTrades.value.length) *
     100
   ).toFixed(1)
 })

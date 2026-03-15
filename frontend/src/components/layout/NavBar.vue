@@ -1,14 +1,8 @@
 <template>
   <header class="sticky top-0 z-50 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
     <nav class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-      <router-link :to="authStore.isAuthenticated ? '/dashboard' : '/'" class="flex items-center gap-4">
-        <div class="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-200/20 bg-amber-200/10 text-xs font-semibold uppercase tracking-[0.38em] text-amber-200">
-          CRS
-        </div>
-        <div>
-          <p class="text-[0.68rem] uppercase tracking-[0.18em] text-slate-500">Codem Rule System</p>
-          <p class="text-lg font-semibold tracking-[-0.03em] text-slate-50" style="font-family: 'Segoe UI', 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;">Discipline over noise.</p>
-        </div>
+      <router-link :to="authStore.isAuthenticated ? '/dashboard' : '/'" class="flex items-center">
+        <img src="/crs-main.png" alt="CRS Codem System Rule" class="h-14 w-auto max-w-[180px] object-contain drop-shadow-[0_12px_32px_rgba(0,0,0,0.28)] sm:h-16 sm:max-w-[220px]" />
       </router-link>
 
       <div v-if="authStore.isAuthenticated" class="hidden items-center gap-2 md:flex">

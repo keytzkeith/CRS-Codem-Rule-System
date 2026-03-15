@@ -95,14 +95,6 @@ watch(
   { deep: true }
 )
 
-watch(
-  localFilters,
-  () => {
-    emit('update:modelValue', { ...localFilters })
-  },
-  { deep: true }
-)
-
 function clearFilters() {
   Object.assign(localFilters, {
     query: '',

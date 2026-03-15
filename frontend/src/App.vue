@@ -7,8 +7,8 @@
 
     <footer v-if="!isAuthRoute" class="border-t border-white/5 bg-slate-950/40 backdrop-blur-md">
       <div class="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-        <p>CRS Codem System Rule</p>
-        <p>Mock-first personal trading journal focused on discipline, review, and clean execution.</p>
+        <p>Your CRS rule system</p>
+        <p>Personal trade review built around discipline, structure, and clean execution.</p>
       </div>
     </footer>
 
