@@ -82,15 +82,11 @@ const routes = [
   },
   {
     path: '/journal/new',
-    name: 'journal-create',
-    component: () => import('@/views/DiaryFormView.vue'),
-    meta: { requiresAuth: true }
+    redirect: '/journal'
   },
   {
     path: '/journal/:id/edit',
-    name: 'journal-edit',
-    component: () => import('@/views/DiaryFormView.vue'),
-    meta: { requiresAuth: true }
+    redirect: to => `/trades/${to.params.id}`
   },
   {
     path: '/diary',
@@ -98,11 +94,11 @@ const routes = [
   },
   {
     path: '/diary/new',
-    redirect: '/journal/new'
+    redirect: '/journal'
   },
   {
     path: '/diary/:id/edit',
-    redirect: to => `/journal/${to.params.id}/edit`
+    redirect: to => `/trades/${to.params.id}`
   },
   {
     path: '/analytics',
@@ -120,7 +116,7 @@ const routes = [
     component: () => import('@/views/SettingsView.vue'),
     meta: { requiresAuth: true }
   },
-  ...CRS_ROUTE_REDIRECTS.map(path => ({
+  ...CRS_ROUTE_REDIRECTS.map((path) => ({
     path,
     redirect: appRedirect
   })),
@@ -136,6 +132,7 @@ const router = createRouter({
     if (savedPosition) {
       return savedPosition
     }
+
     return { top: 0 }
   },
   routes
@@ -160,13 +157,13 @@ router.afterEach((to) => {
   if (authStore.isAuthenticated && authStore.user?.id) {
     identifyUser(authStore.user.id, {
       email: authStore.user.email,
-      tier: authStore.user.tier || 'free'
+      tier: 'crs'
     })
   }
 
   if (to.name && to.meta.requiresAuth) {
-    trackPageView(to.name, { path: to.path })
-    trackFeatureUsage(to.name, { path: to.path })
+    trackPageView(String(to.name), { path: to.path })
+    trackFeatureUsage(String(to.name), { path: to.path })
   }
 })
 

@@ -1,0 +1,272 @@
+For a personal trade dashboard and journal, the mistake most people make is trying to build a full prop-firm analytics platform on day one. You do not need that. You need a dashboard that answers:
+
+Am I following my setup?
+
+Am I improving?
+
+Where am I losing money?
+
+What patterns are working?
+
+Am I being disciplined?
+
+What you actually need
+1. Core dashboard stats
+
+These should be the first things you see:
+
+Total trades
+
+Win rate
+
+Net PnL
+
+Average win
+
+Average loss
+
+Risk-to-reward average
+
+Profit factor
+
+Best day
+
+Worst day
+
+Current streak
+
+Weekly performance
+
+Monthly performance
+
+That alone already gives you a strong overview.
+
+2. Trade list / history
+
+A clean table with:
+
+Date
+
+Pair
+
+Direction
+
+Setup type
+
+Session
+
+Entry
+
+Stop loss
+
+Take profit
+
+Result in R
+
+Result in money
+
+Status: win / loss / breakeven
+
+Screenshot link or image
+
+Notes
+
+This is the backbone. Everything else can be calculated from this.
+
+3. Journal fields
+
+This is where the real growth happens. Keep it short so you will actually fill it in.
+
+For each trade, journal:
+
+Why I took the trade
+
+HTF bias
+
+Entry model used
+
+Was it according to plan? yes/no
+
+Emotion before trade
+
+Emotion after trade
+
+Mistake made
+
+Lesson learned
+
+Optional:
+
+Confidence rating
+
+Sleep / focus rating
+
+News nearby yes/no
+
+Do not add too many fields or you’ll stop journaling.
+
+4. Setup tagging
+
+This is very important for your style.
+
+You should be able to tag trades with:
+
+Reversal
+
+Continuation
+
+Liquidity sweep
+
+BOS entry
+
+OB retest
+
+HTF 4H confirmation
+
+M15 confirmation
+
+London session
+
+New York session
+
+Counter-trend
+
+A+ setup
+
+FOMO / invalid
+
+This helps you later answer:
+“Which setup actually makes me money?”
+
+5. Charts / visuals
+
+Only add visuals that help decision-making.
+
+Essentials:
+
+Equity curve
+
+PnL by week or month
+
+Win rate by setup
+
+Performance by pair
+
+Performance by session
+
+Distribution of wins / losses
+
+Calendar heatmap
+
+Mistake frequency chart
+
+That is enough. Avoid fancy charts that look cool but say nothing.
+
+6. Rule tracking
+
+Since your style is rule-based, add a small discipline section:
+
+For each trade:
+
+HTF BOS confirmed? yes/no
+
+Pulled back to OB? yes/no
+
+M15 confirmation present? yes/no
+
+In direction of bias? yes/no
+
+Session valid? yes/no
+
+Minimum RR met? yes/no
+
+Then show a dashboard card like:
+
+Rule-followed trades: 82%
+
+Trades taken outside plan: 18%
+
+This may become one of your most useful stats.
+
+Best structure for your CRS dashboard
+
+Keep it simple with these pages:
+
+1. Dashboard
+
+Overview cards + main charts
+
+2. Trades
+
+All trades in a table with filters
+
+3. Journal
+
+Single trade detailed view with notes and screenshots
+
+4. Analytics
+
+Breakdowns by setup, pair, session, month, rule-following
+
+5. Settings
+
+Theme, account size, risk per trade, imported data preferences
+
+That is enough for V1.
+
+Recommended design style for CRS
+
+Since you want it to feel cool but not overcomplicated:
+
+Dark theme
+
+Clean cards
+
+Accent color based on your theme
+
+Rounded corners
+
+Soft shadows or glass feel, but subtle
+
+Minimal sidebar
+
+Table with colored status chips
+
+Performance colors:
+
+green for wins
+
+red for losses
+
+amber for breakeven / warning
+
+Large clean stat cards
+
+Simple modern charts
+
+Think:
+trader journal + portfolio dashboard + calm minimal UI
+
+What to avoid building right now
+
+Do not spend time building:
+
+Social features
+
+Too many broker integrations
+
+AI coach
+
+Complex authentication roles
+
+Multi-user system
+
+Advanced tax reporting
+
+20+ chart widgets
+
+Too many journal questions
+
+Strategy backtester inside the dashboard
+
+Build the thing you will actually use daily.

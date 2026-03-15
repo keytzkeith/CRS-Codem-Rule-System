@@ -107,8 +107,8 @@ const schemas = {
     exitPrice: Joi.number().min(0).allow(null, ''),
     quantity: Joi.number().positive().required(),
     side: Joi.string().valid('long', 'short').required(),
-    instrumentType: Joi.string().valid('stock', 'option', 'future', 'crypto').default('stock'),
-    instrument_type: Joi.string().valid('stock', 'option', 'future', 'crypto').optional(), // Accept snake_case for API compatibility
+    instrumentType: Joi.string().valid('stock', 'option', 'future', 'crypto', 'forex', 'index').default('stock'),
+    instrument_type: Joi.string().valid('stock', 'option', 'future', 'crypto', 'forex', 'index').optional(), // Accept snake_case for API compatibility
     commission: Joi.number().default(0),  // Can be negative for rebates
     entryCommission: Joi.number().default(0),  // Can be negative for rebates
     exitCommission: Joi.number().default(0),  // Can be negative for rebates
@@ -199,8 +199,8 @@ const schemas = {
   createShellTrade: Joi.object({
     symbol: Joi.string().max(20).required(),
     side: Joi.string().valid('long', 'short').required(),
-    instrumentType: Joi.string().valid('stock', 'option', 'future', 'crypto').default('stock'),
-    instrument_type: Joi.string().valid('stock', 'option', 'future', 'crypto').optional(),
+    instrumentType: Joi.string().valid('stock', 'option', 'future', 'crypto', 'forex', 'index').default('stock'),
+    instrument_type: Joi.string().valid('stock', 'option', 'future', 'crypto', 'forex', 'index').optional(),
     broker: Joi.string().max(50).allow(''),
     account_identifier: Joi.string().max(50).allow(''),
     strategy: Joi.string().max(100).allow(''),
@@ -253,7 +253,7 @@ const schemas = {
     exitPrice: Joi.number().min(0).allow(null, ''),
     quantity: Joi.number().positive(),
     side: Joi.string().valid('long', 'short'),
-    instrumentType: Joi.string().valid('stock', 'option', 'future', 'crypto'),
+    instrumentType: Joi.string().valid('stock', 'option', 'future', 'crypto', 'forex', 'index'),
     commission: Joi.number(),  // Can be negative for rebates
     entryCommission: Joi.number(),  // Can be negative for rebates
     exitCommission: Joi.number(),  // Can be negative for rebates
@@ -357,6 +357,16 @@ const schemas = {
     defaultStopLossPercent: Joi.number().min(0).max(100).allow(null),
     defaultStopLossDollars: Joi.number().min(0).allow(null),
     defaultTakeProfitPercent: Joi.number().min(0).max(1000).allow(null),
+    crsPreferences: Joi.object({
+      currency: Joi.string().max(10),
+      riskMode: Joi.string().valid('amount', 'percent'),
+      riskPerTrade: Joi.number().min(0).allow(null),
+      preferredPeriod: Joi.string().valid('weekly', 'monthly', 'quarterly'),
+      reviewCadence: Joi.string().valid('daily', 'weekend', 'month-end'),
+      activeAccountId: Joi.string().uuid().allow(null, ''),
+      customTags: Joi.array().items(Joi.string().max(50)),
+      customSetupTypes: Joi.array().items(Joi.string().max(100))
+    }).allow(null),
     dashboardLayout: Joi.array().items(Joi.object({
       id: Joi.string().required(),
       visible: Joi.boolean().required()

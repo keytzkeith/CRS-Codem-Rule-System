@@ -4,6 +4,7 @@ import api from '@/services/api'
 import router from '@/router'
 
 export const useAuthStore = defineStore('auth', () => {
+  const mockAuthEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_MOCK_AUTH !== 'false'
   const user = ref(null)
   const token = ref(localStorage.getItem('token'))
   const loading = ref(false)
@@ -71,6 +72,14 @@ export const useAuthStore = defineStore('auth', () => {
 
       return response.data
     } catch (err) {
+      if (shouldUseMockAuth(err)) {
+        completeMockAuth(credentials.email, returnUrl)
+        return {
+          message: 'Mock login successful',
+          mockAuth: true
+        }
+      }
+
       // Don't set error for 2FA or approval - these are normal flows
       if (!err.requires2FA && !err.requiresApproval) {
         error.value = err.response?.data?.error || 'Login failed'
@@ -107,6 +116,15 @@ export const useAuthStore = defineStore('auth', () => {
       
       return response.data
     } catch (err) {
+      if (shouldUseMockAuth(err)) {
+        completeMockAuth(userData.email)
+        return {
+          message: 'Mock registration successful',
+          mockAuth: true,
+          requiresVerification: false
+        }
+      }
+
       error.value = err.response?.data?.error || 'Registration failed'
       throw err
     } finally {
@@ -123,6 +141,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null
       token.value = null
       localStorage.removeItem('token')
+      localStorage.removeItem('mock_auth_user')
       router.push({ name: 'home' })
     }
   }
@@ -203,6 +222,14 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function checkAuth() {
     if (token.value) {
+      if (token.value === 'mock-dev-token' && mockAuthEnabled) {
+        const storedUser = localStorage.getItem('mock_auth_user')
+        if (storedUser) {
+          user.value = JSON.parse(storedUser)
+        }
+        return
+      }
+
       // Set the authorization header for subsequent requests
       api.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
       await fetchUser()
@@ -239,6 +266,48 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       loading.value = false
     }
+  }
+
+  function shouldUseMockAuth(err) {
+    if (!mockAuthEnabled) {
+      return false
+    }
+
+    return !err.response || err.response.status >= 500
+  }
+
+  function completeMockAuth(email, returnUrl = null) {
+    const mockUser = {
+      id: 'crs-local-user',
+      email: email || 'crs@local.dev',
+      username: 'crs_local',
+      full_name: 'CRS Local User',
+      fullName: 'CRS Local User',
+      onboarding_completed: true,
+      role: 'admin',
+      tier: 'crs',
+      settings: {
+        publicProfile: false,
+        emailNotifications: false,
+        defaultTags: [],
+        accountEquity: 25000
+      }
+    }
+
+    user.value = mockUser
+    token.value = 'mock-dev-token'
+    localStorage.setItem('token', token.value)
+    localStorage.setItem('mock_auth_user', JSON.stringify(mockUser))
+
+    if (returnUrl) {
+      const decoded = decodeURIComponent(returnUrl)
+      if (decoded.startsWith('/')) {
+        router.push(decoded)
+        return
+      }
+    }
+
+    router.push({ name: 'dashboard' })
   }
 
   async function completeOnboarding() {

@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
     public_profile BOOLEAN DEFAULT FALSE,
     default_tags TEXT[],
     import_settings JSONB DEFAULT '{}',
+    crs_preferences JSONB DEFAULT '{}'::jsonb,
     theme VARCHAR(20) DEFAULT 'light',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -57,6 +58,7 @@ CREATE TABLE IF NOT EXISTS trades (
     notes TEXT,
     is_public BOOLEAN DEFAULT FALSE,
     broker VARCHAR(50),
+    instrument_type VARCHAR(20) DEFAULT 'stock',
     strategy VARCHAR(100),
     setup VARCHAR(100),
     tags TEXT[],
@@ -66,6 +68,11 @@ CREATE TABLE IF NOT EXISTS trades (
     mae NUMERIC(10,2) DEFAULT NULL,
     mfe NUMERIC(10,2) DEFAULT NULL
 );
+
+ALTER TABLE trades DROP CONSTRAINT IF EXISTS trades_instrument_type_check;
+ALTER TABLE trades
+ADD CONSTRAINT trades_instrument_type_check
+CHECK (instrument_type IS NULL OR instrument_type IN ('stock', 'option', 'future', 'crypto', 'forex', 'index'));
 
 -- Trade attachments table
 CREATE TABLE IF NOT EXISTS trade_attachments (

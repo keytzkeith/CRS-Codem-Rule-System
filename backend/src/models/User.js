@@ -187,14 +187,15 @@ class User {
       defaultTakeProfitPercent: 'default_take_profit_percent',
       defaultStopLossType: 'default_stop_loss_type',
       defaultStopLossDollars: 'default_stop_loss_dollars',
-      timeDisplayFormat: 'time_display_format'
+      timeDisplayFormat: 'time_display_format',
+      crsPreferences: 'crs_preferences'
     };
 
     Object.entries(settings).forEach(([key, value]) => {
       if (key !== 'user_id' && key !== 'id') {
         const dbColumn = columnMapping[key] || key;
         // For JSONB columns, ensure proper casting and JSON serialization
-        if (dbColumn === 'analytics_chart_layout' || dbColumn === 'dashboard_layout') {
+        if (dbColumn === 'analytics_chart_layout' || dbColumn === 'dashboard_layout' || dbColumn === 'crs_preferences') {
           fields.push(`${dbColumn} = $${paramCount}::jsonb`);
           // PostgreSQL JSONB requires JSON string, not JavaScript object
           values.push(value ? JSON.stringify(value) : null);

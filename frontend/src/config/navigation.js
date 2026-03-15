@@ -15,7 +15,7 @@ export const CRS_NAV_ITEMS = [
     name: 'Journal',
     to: '/journal',
     route: 'journal',
-    activeRoutes: ['journal', 'journal-create', 'journal-edit']
+    activeRoutes: ['journal']
   },
   {
     name: 'Analytics',

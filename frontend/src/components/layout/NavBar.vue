@@ -1,135 +1,84 @@
 <template>
-  <div class="sticky top-0 z-50 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-gray-700" style="width: 100%; min-width: 100vw;">
-    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between h-16">
-        <div class="flex items-center">
-          <router-link :to="authStore.isAuthenticated ? '/dashboard' : '/'" class="flex items-center px-2 py-2 text-xl font-bold text-primary-600">
-            <img src="/favicon.svg" alt="TradeTally Logo" class="h-8 w-auto mr-2" />
-            TradeTally
-          </router-link>
-
-          <div v-if="authStore.isAuthenticated" class="hidden sm:ml-12 sm:flex sm:space-x-2">
-            <router-link
-              v-for="item in navigation"
-              :key="item.route"
-              :to="item.to"
-              class="inline-flex items-center px-3 py-2 rounded-md text-sm font-semibold transition-all duration-200"
-              :class="[
-                isActiveRoute(item)
-                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'
-              ]"
-            >
-              {{ item.name }}
-            </router-link>
-          </div>
+  <header class="sticky top-0 z-50 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
+    <nav class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+      <router-link :to="authStore.isAuthenticated ? '/dashboard' : '/'" class="flex items-center gap-4">
+        <div class="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-200/20 bg-amber-200/10 text-xs font-semibold uppercase tracking-[0.38em] text-amber-200">
+          CRS
         </div>
-
-        <div class="flex items-center space-x-6 ml-8">
-          <div class="hidden sm:flex sm:items-center sm:space-x-6">
-            <template v-if="authStore.isAuthenticated">
-              <button
-                @click="authStore.logout"
-                class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                Logout
-              </button>
-            </template>
-            <template v-else>
-              <router-link to="/login" class="btn-secondary text-sm">Login</router-link>
-              <router-link to="/register" class="btn-primary text-sm">Sign Up</router-link>
-            </template>
-
-            <button
-              @click="toggleDarkMode"
-              class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-            >
-              <SunIcon v-if="isDark" class="h-5 w-5" />
-              <MoonIcon v-else class="h-5 w-5" />
-            </button>
-          </div>
-
-          <div class="sm:hidden flex items-center space-x-2">
-            <button
-              @click="toggleDarkMode"
-              class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-            >
-              <SunIcon v-if="isDark" class="h-5 w-5" />
-              <MoonIcon v-else class="h-5 w-5" />
-            </button>
-            <button
-              @click="toggleMobileMenu"
-              class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              :aria-label="isMobileMenuOpen ? 'Close menu' : 'Open menu'"
-              :aria-expanded="isMobileMenuOpen"
-            >
-              <Bars3Icon v-if="!isMobileMenuOpen" class="h-6 w-6" />
-              <XMarkIcon v-else class="h-6 w-6" />
-            </button>
-          </div>
+        <div>
+          <p class="text-[0.68rem] uppercase tracking-[0.18em] text-slate-500">Codem Rule System</p>
+          <p class="text-lg font-semibold tracking-[-0.03em] text-slate-50" style="font-family: 'Segoe UI', 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;">Discipline over noise.</p>
         </div>
+      </router-link>
+
+      <div v-if="authStore.isAuthenticated" class="hidden items-center gap-2 md:flex">
+        <router-link
+          v-for="item in navigation"
+          :key="item.route"
+          :to="item.to"
+          class="rounded-full px-4 py-2 text-sm transition"
+          :class="isActiveRoute(item)
+            ? 'bg-amber-200/12 text-amber-100 shadow-[0_10px_30px_rgba(215,183,122,0.08)]'
+            : 'text-slate-400 hover:bg-white/5 hover:text-white'"
+        >
+          {{ item.name }}
+        </router-link>
       </div>
 
-      <div v-if="isMobileMenuOpen" class="sm:hidden border-t border-gray-200 dark:border-gray-700">
-        <div class="pt-2 pb-3 space-y-1">
-          <template v-if="authStore.isAuthenticated">
-            <router-link
-              v-for="item in navigation"
-              :key="item.route"
-              :to="item.to"
-              @click="isMobileMenuOpen = false"
-              class="block mx-3 px-4 py-3 rounded-lg text-base font-semibold transition-all duration-200"
-              :class="[
-                isActiveRoute(item)
-                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'
-              ]"
-            >
-              {{ item.name }}
-            </router-link>
-            <div class="border-t border-gray-200 dark:border-gray-700 pt-4 pb-3">
-              <button
-                @click="authStore.logout(); isMobileMenuOpen = false"
-                class="block w-full text-left mx-3 px-4 py-3 rounded-lg text-base font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700 transition-all duration-200"
-              >
-                Logout
-              </button>
-            </div>
-          </template>
-          <template v-else>
-            <router-link
-              to="/login"
-              @click="isMobileMenuOpen = false"
-              class="block mx-3 px-4 py-3 rounded-lg text-base font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700 transition-all duration-200"
-            >
-              Login
-            </router-link>
-            <router-link
-              to="/register"
-              @click="isMobileMenuOpen = false"
-              class="block mx-3 px-4 py-3 rounded-lg text-base font-semibold bg-primary-100 text-primary-700 hover:bg-primary-200 dark:bg-primary-900/30 dark:text-primary-300 dark:hover:bg-primary-900/40 shadow-sm transition-all duration-200"
-            >
-              Sign Up
-            </router-link>
-          </template>
-        </div>
+      <div class="flex items-center gap-3">
+        <button
+          v-if="authStore.isAuthenticated"
+          type="button"
+          class="rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:border-white/20 hover:text-white md:hidden"
+          @click="toggleMobileMenu"
+        >
+          Menu
+        </button>
+
+        <template v-if="authStore.isAuthenticated">
+          <button type="button" class="hidden text-sm text-slate-400 transition hover:text-white md:block" @click="authStore.logout">
+            Logout
+          </button>
+        </template>
+        <template v-else>
+          <router-link to="/login" class="crs-button crs-button-ghost text-white">Login</router-link>
+          <router-link to="/register" class="crs-button-primary">Sign Up</router-link>
+        </template>
       </div>
     </nav>
-  </div>
+
+    <div v-if="authStore.isAuthenticated && isMobileMenuOpen" class="border-t border-white/5 px-4 pb-4 md:hidden">
+      <div class="mt-4 grid gap-2">
+        <router-link
+          v-for="item in navigation"
+          :key="item.route"
+          :to="item.to"
+          class="rounded-xl px-4 py-3 text-sm transition"
+          :class="isActiveRoute(item) ? 'bg-amber-200/12 text-amber-100' : 'bg-white/5 text-slate-300'"
+          @click="isMobileMenuOpen = false"
+        >
+          {{ item.name }}
+        </router-link>
+        <button
+          type="button"
+          class="rounded-2xl bg-white/5 px-4 py-3 text-left text-sm text-slate-300"
+          @click="authStore.logout(); isMobileMenuOpen = false"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  </header>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { SunIcon, MoonIcon, Bars3Icon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { CRS_NAV_ITEMS } from '@/config/navigation'
 
 const authStore = useAuthStore()
 const route = useRoute()
-const isDark = ref(false)
 const isMobileMenuOpen = ref(false)
 
 const navigation = computed(() => CRS_NAV_ITEMS)
@@ -142,20 +91,7 @@ function isActiveRoute(item) {
   return item.activeRoutes.includes(route.name)
 }
 
-function toggleDarkMode() {
-  isDark.value = !isDark.value
-  document.documentElement.classList.toggle('dark')
-  localStorage.setItem('darkMode', isDark.value)
-}
-
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
 }
-
-onMounted(() => {
-  isDark.value = localStorage.getItem('darkMode') === 'true'
-  if (isDark.value) {
-    document.documentElement.classList.add('dark')
-  }
-})
 </script>
