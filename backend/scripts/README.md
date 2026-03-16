@@ -49,6 +49,33 @@ cd backend
 npm run admin:set -- codemtrader@gmail.com 12345678 codemtrader "Codem Trader"
 ```
 
+## Repairing CRS Trade Fields
+
+To backfill CRS-specific derived fields on existing trades, use:
+
+```bash
+cd backend
+npm run trades:repair
+```
+
+Dry run first if you want to inspect what will change:
+
+```bash
+cd backend
+npm run trades:repair -- --dry-run
+```
+
+This script repairs derived CRS fields such as:
+- `setup_stack`
+- `journal_payload`
+- `checklist_payload`
+- `contract_multiplier`
+- `pip_size`
+- `swap`
+- `actual_risk_amount`
+- `risk_percent_of_account`
+- `pips`
+
 ## Admin Permissions
 
 Admin users have the following additional permissions:

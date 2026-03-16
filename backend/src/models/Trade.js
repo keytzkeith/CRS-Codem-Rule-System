@@ -20,6 +20,71 @@ function roundToDbPrecision(value, decimals = 8) {
 }
 
 class Trade {
+  static async findDuplicateBySignature(userId, tradeData, excludeTradeId = null) {
+    const {
+      symbol,
+      side,
+      entryTime,
+      entryPrice,
+      exitPrice,
+      quantity,
+      accountIdentifier,
+      account_identifier
+    } = tradeData;
+
+    const finalAccountIdentifier = account_identifier || accountIdentifier || '';
+
+    if (!userId || !symbol || !side || !entryTime || entryPrice == null || exitPrice == null || quantity == null) {
+      return null;
+    }
+
+    const values = [
+      userId,
+      String(symbol).toUpperCase(),
+      side,
+      String(finalAccountIdentifier),
+      entryTime,
+      roundToDbPrecision(entryPrice),
+      roundToDbPrecision(exitPrice),
+      roundToDbPrecision(quantity)
+    ];
+
+    let query = `
+      SELECT id
+      FROM trades
+      WHERE user_id = $1
+        AND UPPER(symbol) = $2
+        AND side = $3
+        AND COALESCE(account_identifier, '') = $4
+        AND entry_time = $5
+        AND entry_price = $6
+        AND exit_price = $7
+        AND quantity = $8
+    `;
+
+    if (excludeTradeId) {
+      query += ' AND id <> $9';
+      values.push(excludeTradeId);
+    }
+
+    query += ' LIMIT 1';
+
+    const result = await db.query(query, values);
+    return result.rows[0] || null;
+  }
+
+  static ensureNoDuplicateTrade(duplicateTrade, symbol, entryTime) {
+    if (!duplicateTrade) {
+      return;
+    }
+
+    const error = new Error(`Duplicate trade detected for ${String(symbol).toUpperCase()} on ${new Date(entryTime).toISOString()}`);
+    error.status = 409;
+    error.code = 'DUPLICATE_TRADE';
+    error.duplicateTradeId = duplicateTrade.id;
+    throw error;
+  }
+
   /**
    * Ensure tags exist in the tags table
    * Creates tags if they don't exist
@@ -97,6 +162,17 @@ class Trade {
     if (!finalEntryTime) {
       throw new Error('Entry time is required for creating a trade');
     }
+
+    const duplicateTrade = await this.findDuplicateBySignature(userId, {
+      symbol,
+      side,
+      entryTime: finalEntryTime,
+      entryPrice,
+      exitPrice: cleanExitPrice,
+      quantity,
+      account_identifier: finalAccountIdentifier
+    });
+    this.ensureNoDuplicateTrade(duplicateTrade, symbol, finalEntryTime);
 
     // Auto-set point value and underlying asset for futures trades if not provided
     let finalPointValue = pointValue;
@@ -1385,6 +1461,17 @@ class Trade {
     if (updates.stopLoss === '') updates.stopLoss = null;
     if (updates.takeProfit === '') updates.takeProfit = null;
 
+    const duplicateTrade = await this.findDuplicateBySignature(userId, {
+      symbol: updates.symbol || currentTrade.symbol,
+      side: updates.side || currentTrade.side,
+      entryTime: updates.entryTime || currentTrade.entry_time,
+      entryPrice: updates.entryPrice !== undefined ? updates.entryPrice : currentTrade.entry_price,
+      exitPrice: updates.exitPrice !== undefined ? updates.exitPrice : currentTrade.exit_price,
+      quantity: updates.quantity !== undefined ? updates.quantity : currentTrade.quantity,
+      account_identifier: updates.account_identifier !== undefined ? updates.account_identifier : currentTrade.account_identifier
+    }, id);
+    this.ensureNoDuplicateTrade(duplicateTrade, updates.symbol || currentTrade.symbol, updates.entryTime || currentTrade.entry_time);
+
     // Validate expiration date has 4-digit year (safety net for parser bugs)
     if (updates.expirationDate && typeof updates.expirationDate === 'string') {
       const expMatch = updates.expirationDate.match(/^(\d{2})-(\d{2})-(\d{2})$/);
@@ -1760,7 +1847,8 @@ class Trade {
       });
     }
 
-    const hasPnLUpdate = (
+    const hasExplicitPnL = updates.pnl !== undefined || updates.pnlPercent !== undefined;
+    const hasPnLUpdate = !hasExplicitPnL && (
       (updates.entryPrice !== undefined && roundTo(updates.entryPrice) !== roundTo(currentTrade.entry_price)) ||
       (updates.exitPrice !== undefined && roundTo(updates.exitPrice) !== roundTo(currentTrade.exit_price)) ||
       (updates.quantity !== undefined && roundTo(updates.quantity) !== roundTo(currentTrade.quantity)) ||
@@ -1824,8 +1912,9 @@ class Trade {
     const hasExecutionStopLoss = executionsForRCalc.length > 0 &&
       executionsForRCalc.some(ex => ex.stopLoss !== null && ex.stopLoss !== undefined);
 
-    if (updates.entryPrice !== undefined || updates.exitPrice !== undefined ||
-        updates.stopLoss !== undefined || updates.side || executionsToSet !== null) {
+    const hasExplicitRValue = updates.rValue !== undefined;
+    if (!hasExplicitRValue && (updates.entryPrice !== undefined || updates.exitPrice !== undefined ||
+        updates.stopLoss !== undefined || updates.side || executionsToSet !== null)) {
       let entryPrice = updates.entryPrice || currentTrade.entry_price;
       let exitPrice = updates.exitPrice !== undefined ? updates.exitPrice : currentTrade.exit_price;
       let stopLoss = updates.stopLoss !== undefined ? updates.stopLoss : currentTrade.stop_loss;

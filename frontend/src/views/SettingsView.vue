@@ -4,7 +4,7 @@
       <SectionHeader
         eyebrow="Personal defaults"
         title="Minimal settings for a rule-based workflow."
-        description="CRS keeps settings focused on accounts, risk framing, review cadence, and developer preview controls."
+        description="CRS keeps settings focused on accounts, risk framing, and review cadence."
       />
     </section>
 
@@ -12,7 +12,7 @@
       <ChartCard
         eyebrow="CRS preferences"
         title="Journal settings"
-        description="These settings drive trade capture, risk calculations, and the live empty-state preview."
+        description="These settings drive trade capture, risk calculations, and review structure."
       >
         <form class="grid gap-5 md:grid-cols-2" @submit.prevent>
           <div
@@ -25,6 +25,12 @@
             <span class="flex items-center gap-2">Currency <InfoTip text="Controls how all PnL, risk, and account values are formatted throughout the CRS interface." /></span>
             <select v-model="localSettings.currency" class="crs-input">
               <option value="USD">USD ($)</option>
+            </select>
+          </label>
+          <label class="crs-filter-field">
+            <span class="flex items-center gap-2">Session timezone <InfoTip text="CRS uses this timezone to derive Asia, London, and New York sessions from trade times. Kenya is the default." /></span>
+            <select v-model="localSettings.timezone" class="crs-input">
+              <option v-for="option in timezoneOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
           </label>
           <label class="crs-filter-field">
@@ -98,16 +104,6 @@
               </div>
             </div>
           </div>
-          <div class="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm text-slate-300 md:col-span-2">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <p class="text-xs tracking-[0.04em] text-slate-500">Dev preview</p>
-                <p class="mt-1 text-sm text-slate-400">Toggle a no-data mode to verify all empty states without deleting mock trades.</p>
-              </div>
-              <input v-model="localSettings.previewEmptyState" type="checkbox" class="h-4 w-4 rounded border-white/10 bg-transparent text-amber-200" />
-            </div>
-          </div>
-
           <div class="md:col-span-2 rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
             <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -182,7 +178,7 @@
         <div class="space-y-4 text-sm leading-7 text-slate-300">
           <p><span class="text-amber-200">Accounts</span> let you keep separate balances while still applying one active risk model at a time.</p>
           <p><span class="text-amber-200">Risk mode</span> controls whether CRS converts `R` into a dollar result from a fixed amount or a percentage of the active account.</p>
-          <p><span class="text-amber-200">Dev preview</span> is there so you can force empty charts and verify the fallback states without damaging mock trades.</p>
+          <p><span class="text-amber-200">Checklist items</span> stay editable so your validation flow can match your actual process, not a rigid preset.</p>
         </div>
         <div class="mt-6 rounded-[24px] border border-white/5 bg-white/[0.03] p-5">
           <p class="crs-eyebrow">Current saved state</p>
@@ -200,6 +196,7 @@ import InfoTip from '@/components/crs/InfoTip.vue'
 import SectionHeader from '@/components/crs/SectionHeader.vue'
 import { useCrsStore } from '@/stores/crs'
 import { calculateRiskAmount, getActiveAccount } from '@/utils/crsAnalytics'
+import { DEFAULT_SESSION_TIMEZONE } from '@/utils/crsSessions'
 
 const crsStore = useCrsStore()
 
@@ -215,21 +212,16 @@ watch(
   { deep: true }
 )
 
-watch(
-  () => localSettings.previewEmptyState,
-  (nextValue) => {
-    if (nextValue === crsStore.settings.previewEmptyState) {
-      return
-    }
-
-    crsStore.updateSettings({ previewEmptyState: nextValue })
-  }
-)
-
 const formattedSettings = computed(() => JSON.stringify(crsStore.settings, null, 2))
 const effectiveRiskAmount = computed(() => calculateRiskAmount(localSettings))
 const activeAccount = computed(() => getActiveAccount(localSettings))
 const accountLimitReached = computed(() => (localSettings.accounts || []).length >= 10)
+const timezoneOptions = [
+  { label: 'Kenya (Africa/Nairobi)', value: 'Africa/Nairobi' },
+  { label: 'UTC', value: 'UTC' },
+  { label: 'London (Europe/London)', value: 'Europe/London' },
+  { label: 'New York (America/New_York)', value: 'America/New_York' }
+]
 
 function addAccount() {
   if (accountLimitReached.value) {
@@ -294,7 +286,10 @@ function currency(value) {
 }
 
 function cloneSettings(value) {
-  return JSON.parse(JSON.stringify(value))
+  return {
+    ...JSON.parse(JSON.stringify(value)),
+    timezone: value?.timezone || DEFAULT_SESSION_TIMEZONE
+  }
 }
 
 function slugifyChecklistLabel(label) {

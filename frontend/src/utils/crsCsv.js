@@ -1,3 +1,5 @@
+import { DEFAULT_SESSION_TIMEZONE, deriveSessionLabel } from '@/utils/crsSessions'
+
 function parseCsvLine(line) {
   const values = []
   let current = ''
@@ -168,7 +170,7 @@ export function createTradeDraftFromRow(row, fieldMapping, settings) {
     resultAmount: mapped.netProfit !== undefined && mapped.netProfit !== ''
       ? toNumber(mapped.netProfit, 0)
       : toNumber(mapped.profit, 0) - Math.abs(toNumber(mapped.commission, 0)) - Math.abs(toNumber(mapped.swap, 0)),
-    session: mapped.session || 'London',
+    session: deriveSessionLabel(openTime || closeTime || parsedDate, mapped.session || 'London', settings.timezone || DEFAULT_SESSION_TIMEZONE),
     accountId: account.id,
     accountName: account.name,
     setupType: mapped.setupType || 'Imported trade',

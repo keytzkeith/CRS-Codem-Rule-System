@@ -146,6 +146,21 @@ CREATE INDEX IF NOT EXISTS idx_trades_symbol ON trades(symbol);
 CREATE INDEX IF NOT EXISTS idx_trades_trade_date ON trades(trade_date);
 CREATE INDEX IF NOT EXISTS idx_trades_tags ON trades USING GIN(tags);
 CREATE INDEX IF NOT EXISTS idx_trades_public ON trades(is_public) WHERE is_public = TRUE;
+CREATE UNIQUE INDEX IF NOT EXISTS trades_duplicate_signature_idx
+ON trades (
+    user_id,
+    UPPER(symbol),
+    side,
+    COALESCE(account_identifier, ''),
+    entry_time,
+    entry_price,
+    exit_price,
+    quantity
+)
+WHERE entry_time IS NOT NULL
+  AND entry_price IS NOT NULL
+  AND exit_price IS NOT NULL
+  AND quantity IS NOT NULL;
 -- Composite index for analytics queries (covers user + date range + completion status filtering)
 CREATE INDEX IF NOT EXISTS idx_trades_user_date_pnl ON trades(user_id, trade_date, exit_price, pnl);
 -- Partial index for completed trades analytics (most analytics queries filter exit_price IS NOT NULL)

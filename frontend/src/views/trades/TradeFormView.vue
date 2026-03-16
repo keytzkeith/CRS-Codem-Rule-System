@@ -58,10 +58,8 @@
               </select>
             </label>
             <label class="crs-filter-field">
-              <span>Session</span>
-              <select v-model="form.session" class="crs-input">
-                <option v-for="session in sessionOptions" :key="session" :value="session">{{ session }}</option>
-              </select>
+              <span class="flex items-center gap-2">Session <InfoTip text="Derived automatically from trade time using Kenyan time (Africa/Nairobi). Asia runs before 10:00, London from 10:00 to 15:59, and New York from 16:00 onward." /></span>
+              <input :value="form.session" type="text" class="crs-input" readonly />
             </label>
             <label class="crs-filter-field">
               <span class="flex items-center gap-2">Account <InfoTip text="The selected account determines which balance is used for percentage-based risk calculations." /></span>
@@ -241,6 +239,7 @@ import {
   inferContractMultiplier,
   inferPipSize
 } from '@/utils/crsAnalytics'
+import { DEFAULT_SESSION_TIMEZONE, deriveSessionLabel } from '@/utils/crsSessions'
 
 const route = useRoute()
 const router = useRouter()
@@ -249,8 +248,6 @@ const saveError = ref('')
 
 const existingTrade = computed(() => (route.params.id ? crsStore.getTradeById(route.params.id) : null))
 const isEditing = computed(() => Boolean(existingTrade.value))
-
-const sessionOptions = ['London', 'New York', 'Asia']
 
 const form = reactive(buildForm(existingTrade.value))
 const checklistItems = computed(() => crsStore.settings.checklistItems || [])
@@ -337,6 +334,14 @@ watch(
 )
 
 watch(
+  [() => form.openTime, () => form.closeTime, () => form.date],
+  () => {
+    form.session = deriveSessionLabel(form.openTime || form.closeTime || form.date, form.session || 'London', crsStore.settings.timezone || DEFAULT_SESSION_TIMEZONE)
+  },
+  { immediate: true }
+)
+
+watch(
   () => form.pair,
   (nextPair) => {
     if (!nextPair) {
@@ -400,7 +405,7 @@ function buildForm(trade) {
       pair: '',
       direction: 'Long',
       setupTypes: ['OB retest'],
-      session: 'London',
+      session: deriveSessionLabel(seedDateTime, 'London', crsStore.settings.timezone || DEFAULT_SESSION_TIMEZONE),
       accountId: crsStore.settings.activeAccountId,
       volume: 1,
       contractMultiplier: 1,
@@ -437,7 +442,7 @@ function buildForm(trade) {
     pair: trade.pair,
     direction: trade.direction,
     setupTypes: trade.setupStack?.length ? [...trade.setupStack] : [trade.setupType],
-    session: trade.session,
+    session: deriveSessionLabel(trade.openTime || trade.closeTime || trade.date, trade.session || 'London', crsStore.settings.timezone || DEFAULT_SESSION_TIMEZONE),
     accountId: trade.accountId || crsStore.settings.activeAccountId,
     volume: trade.volume || 1,
     contractMultiplier: trade.contractMultiplier || inferContractMultiplier(trade.pair),
@@ -471,6 +476,10 @@ function currency(value) {
 }
 
 function formatTradeSaveError(error) {
+  if (error?.code === 'DUPLICATE_TRADE') {
+    return error.message
+  }
+
   const backendMessage = error?.response?.data?.error
 
   if (backendMessage) {

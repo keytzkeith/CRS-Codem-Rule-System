@@ -18,6 +18,10 @@ const errorHandler = (err, req, res, next) => {
   }
 
   if (isV1Request(req)) {
+    if (err.status) {
+      return sendV1Error(res, err.status, err.status === 409 ? 'CONFLICT' : 'BAD_REQUEST', err.message);
+    }
+
     if (err.name === 'ValidationError') {
       return sendV1Error(res, 400, 'VALIDATION_ERROR', err.message);
     }
@@ -27,7 +31,10 @@ const errorHandler = (err, req, res, next) => {
     }
 
     if (err.code === '23505') {
-      return sendV1Error(res, 409, 'CONFLICT', 'Resource already exists');
+      const message = err.constraint === 'trades_duplicate_signature_idx'
+        ? 'Duplicate trade detected. This trade already exists.'
+        : 'Resource already exists';
+      return sendV1Error(res, 409, 'CONFLICT', message);
     }
 
     if (err.code === '23503') {
@@ -56,10 +63,19 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
+  if (err.status) {
+    return res.status(err.status).json({
+      error: err.status === 409 ? 'Conflict' : 'Bad Request',
+      message: err.message
+    });
+  }
+
   if (err.code === '23505') { // PostgreSQL unique violation
     return res.status(409).json({
       error: 'Conflict',
-      message: 'Resource already exists'
+      message: err.constraint === 'trades_duplicate_signature_idx'
+        ? 'Duplicate trade detected. This trade already exists.'
+        : 'Resource already exists'
     });
   }
 

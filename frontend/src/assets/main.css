@@ -777,7 +777,8 @@
   }
 
   .crs-calendar-stat-value {
-    @apply min-w-0 break-words whitespace-normal leading-tight;
+    @apply min-w-0 overflow-hidden text-ellipsis whitespace-nowrap leading-tight;
+    font-variant-numeric: tabular-nums;
   }
 
   .crs-calendar-nav {

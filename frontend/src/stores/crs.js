@@ -1,7 +1,8 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { crsDefaultSettings, crsMockTrades } from '@/data/crsMockData'
+import { crsDefaultSettings } from '@/data/crsDefaults'
 import api from '@/services/api'
+import { DEFAULT_SESSION_TIMEZONE, deriveSessionLabel } from '@/utils/crsSessions'
 import {
   buildAnalyticsSeries,
   buildChecklistSummary,
@@ -14,16 +15,17 @@ import {
   calculateRiskAmount,
   calculateRiskPercentOfAccount,
   calculatePlannedRR,
+  classifyTradeOutcome,
   inferContractMultiplier,
   inferPipSize,
   sortTradesDesc
 } from '@/utils/crsAnalytics'
 
 export const useCrsStore = defineStore('crs', () => {
-  const sourceTrades = ref(crsMockTrades)
+  const sourceTrades = ref([])
   const settings = ref(structuredClone(crsDefaultSettings))
-  const availableSetupTypes = ref([...new Set([...crsDefaultSettings.customSetupTypes, ...crsMockTrades.map((trade) => trade.setupType)])].sort())
-  const availableTags = ref([...new Set([...crsDefaultSettings.customTags, ...crsMockTrades.flatMap((trade) => trade.tags)])].sort())
+  const availableSetupTypes = ref([...new Set(crsDefaultSettings.customSetupTypes)].sort())
+  const availableTags = ref([...new Set(crsDefaultSettings.customTags)].sort())
   const persistenceLoading = ref(false)
   const persistenceReady = ref(false)
   const persistenceError = ref(null)
@@ -31,7 +33,7 @@ export const useCrsStore = defineStore('crs', () => {
   const tradesLoading = ref(false)
   const tradesReady = ref(false)
   const tradesError = ref(null)
-  const trades = computed(() => (settings.value.previewEmptyState ? [] : sourceTrades.value))
+  const trades = computed(() => sourceTrades.value)
 
   const sortedTrades = computed(() => sortTradesDesc(trades.value))
   const filterOptions = computed(() => {
@@ -175,9 +177,33 @@ export const useCrsStore = defineStore('crs', () => {
     }
   }
 
+  function findDuplicateTrade(tradeDraft, excludeId = null) {
+    const candidate = normalizeTrade(tradeDraft, settings.value.timezone || DEFAULT_SESSION_TIMEZONE)
+    const candidateFingerprint = buildTradeFingerprint(candidate)
+
+    if (!candidateFingerprint) {
+      return null
+    }
+
+    return sourceTrades.value.find((trade) => {
+      if (excludeId && trade.id === excludeId) {
+        return false
+      }
+
+      return buildTradeFingerprint(trade) === candidateFingerprint
+    }) || null
+  }
+
   function saveTrade(tradeDraft) {
-    const normalizedTrade = normalizeTrade(tradeDraft)
+    const normalizedTrade = normalizeTrade(tradeDraft, settings.value.timezone || DEFAULT_SESSION_TIMEZONE)
     const existingIndex = sourceTrades.value.findIndex((trade) => trade.id === normalizedTrade.id)
+
+    if (existingIndex === -1) {
+      const duplicate = findDuplicateTrade(normalizedTrade)
+      if (duplicate) {
+        throw createDuplicateTradeError(duplicate)
+      }
+    }
 
     if (existingIndex >= 0) {
       sourceTrades.value.splice(existingIndex, 1, normalizedTrade)
@@ -195,13 +221,6 @@ export const useCrsStore = defineStore('crs', () => {
   function replaceTrades(nextTrades) {
     sourceTrades.value = [...nextTrades]
     refreshAvailableOptions()
-  }
-
-  function resetPreviewEmptyState() {
-    settings.value = {
-      ...settings.value,
-      previewEmptyState: false
-    }
   }
 
   async function hydratePersistence(force = false) {
@@ -241,6 +260,7 @@ export const useCrsStore = defineStore('crs', () => {
       settings.value = {
         ...settings.value,
         currency: crsPreferences.currency || settings.value.currency,
+        timezone: crsPreferences.timezone || settings.value.timezone,
         riskMode: crsPreferences.riskMode || settings.value.riskMode,
         riskPerTrade: crsPreferences.riskPerTrade ?? settings.value.riskPerTrade,
         preferredPeriod: crsPreferences.preferredPeriod || settings.value.preferredPeriod,
@@ -285,7 +305,7 @@ export const useCrsStore = defineStore('crs', () => {
       })
 
       const backendTrades = response.data?.trades || []
-      replaceTrades(backendTrades.map((trade) => mapTradeFromBackend(trade, settings.value.accounts)))
+      replaceTrades(backendTrades.map((trade) => mapTradeFromBackend(trade, settings.value.accounts, settings.value.timezone || DEFAULT_SESSION_TIMEZONE)))
       tradesReady.value = true
       return sourceTrades.value
     } catch (error) {
@@ -298,7 +318,12 @@ export const useCrsStore = defineStore('crs', () => {
   }
 
   async function persistTrade(tradeDraft) {
-    const normalizedTrade = normalizeTrade(tradeDraft)
+    const normalizedTrade = normalizeTrade(tradeDraft, settings.value.timezone || DEFAULT_SESSION_TIMEZONE)
+    const duplicate = !normalizedTrade.id ? findDuplicateTrade(normalizedTrade) : null
+
+    if (duplicate) {
+      throw createDuplicateTradeError(duplicate)
+    }
 
     if (!localStorage.getItem('token')) {
       return saveTrade(normalizedTrade)
@@ -313,7 +338,7 @@ export const useCrsStore = defineStore('crs', () => {
         ? await api.put(`/trades/${normalizedTrade.id}`, payload)
         : await api.post('/trades', payload)
 
-      const savedTrade = mapTradeFromBackend(response.data?.trade || response.data, settings.value.accounts)
+      const savedTrade = mapTradeFromBackend(response.data?.trade || response.data, settings.value.accounts, settings.value.timezone || DEFAULT_SESSION_TIMEZONE)
       const existingIndex = sourceTrades.value.findIndex((trade) => trade.id === savedTrade.id)
 
       if (existingIndex >= 0) {
@@ -402,13 +427,11 @@ export const useCrsStore = defineStore('crs', () => {
     persistenceError.value = null
 
     try {
-      const preservedPreviewState = nextSettings.previewEmptyState
       const syncedAccounts = await syncAccounts(nextSettings.accounts || [], nextSettings.activeAccountId)
       const resolvedSettings = {
         ...cloneSettings(nextSettings),
         accounts: syncedAccounts,
-        activeAccountId: resolveActiveAccountId(nextSettings.activeAccountId, syncedAccounts),
-        previewEmptyState: preservedPreviewState
+        activeAccountId: resolveActiveAccountId(nextSettings.activeAccountId, syncedAccounts)
       }
 
       const response = await api.put('/settings', {
@@ -421,6 +444,7 @@ export const useCrsStore = defineStore('crs', () => {
       settings.value = {
         ...settings.value,
         currency: crsPreferences.currency || resolvedSettings.currency,
+        timezone: crsPreferences.timezone || resolvedSettings.timezone,
         riskMode: crsPreferences.riskMode || resolvedSettings.riskMode,
         riskPerTrade: crsPreferences.riskPerTrade ?? resolvedSettings.riskPerTrade,
         preferredPeriod: crsPreferences.preferredPeriod || resolvedSettings.preferredPeriod,
@@ -429,8 +453,7 @@ export const useCrsStore = defineStore('crs', () => {
         accounts: syncedAccounts,
         customTags: mergeUniqueStrings(resolvedSettings.customTags),
         customSetupTypes: mergeUniqueStrings(resolvedSettings.customSetupTypes),
-        checklistItems: normalizeChecklistItems(resolvedSettings.checklistItems),
-        previewEmptyState: preservedPreviewState
+        checklistItems: normalizeChecklistItems(resolvedSettings.checklistItems)
       }
 
       refreshAvailableOptions()
@@ -519,9 +542,9 @@ export const useCrsStore = defineStore('crs', () => {
     hydratePersistence,
     hydrateTrades,
     persistSettings,
-    resetPreviewEmptyState,
     addSetupType,
     addTag,
+    findDuplicateTrade,
     saveTrade,
     persistTrade,
     deleteTrade,
@@ -529,7 +552,7 @@ export const useCrsStore = defineStore('crs', () => {
   }
 })
 
-function normalizeTrade(tradeDraft) {
+function normalizeTrade(tradeDraft, timezone = DEFAULT_SESSION_TIMEZONE) {
   const closePrice = Number(tradeDraft.closePrice ?? tradeDraft.exitPrice ?? 0)
   const pair = String(tradeDraft.pair || '').toUpperCase()
   const volume = Number(tradeDraft.volume ?? tradeDraft.quantity ?? 0)
@@ -583,6 +606,11 @@ function normalizeTrade(tradeDraft) {
       ).concat(normalizedSetupStack.slice(1))
     )
   ]
+  const outcome = classifyTradeOutcome({
+    status: tradeDraft.status,
+    resultAmount,
+    resultR
+  })
 
   return {
     id: tradeDraft.id || `crs-${Date.now()}`,
@@ -593,7 +621,7 @@ function normalizeTrade(tradeDraft) {
     direction: tradeDraft.direction,
     setupType: normalizedSetupStack[0] || 'Custom',
     setupStack: normalizedSetupStack[0] ? normalizedSetupStack : ['Custom'],
-    session: tradeDraft.session,
+    session: deriveSessionLabel(tradeDraft.openTime || tradeDraft.closeTime || tradeDraft.date, tradeDraft.session || 'London', timezone),
     accountId: tradeDraft.accountId || null,
     accountName: tradeDraft.accountName || '',
     volume,
@@ -605,7 +633,7 @@ function normalizeTrade(tradeDraft) {
     stopLoss: Number(tradeDraft.stopLoss || 0),
     takeProfit: Number(tradeDraft.takeProfit || 0),
     closePrice,
-    status: resultR > 0 ? 'Win' : resultR < 0 ? 'Loss' : 'Breakeven',
+    status: outcome === 'win' ? 'Win' : outcome === 'loss' ? 'Loss' : 'Breakeven',
     resultR,
     resultAmount,
     actualRiskAmount: Number(tradeDraft.actualRiskAmount ?? calculateActualRiskAmount({
@@ -642,6 +670,7 @@ function normalizeTrade(tradeDraft) {
 function buildCrsPreferencesPayload(settings) {
   return {
     currency: settings.currency || 'USD',
+    timezone: settings.timezone || DEFAULT_SESSION_TIMEZONE,
     riskMode: settings.riskMode || 'amount',
     riskPerTrade: Number(settings.riskPerTrade || 0),
     preferredPeriod: settings.preferredPeriod || 'monthly',
@@ -654,7 +683,7 @@ function buildCrsPreferencesPayload(settings) {
 }
 
 function mapTradeToBackend(trade, settings) {
-  const normalizedTrade = normalizeTrade(trade)
+  const normalizedTrade = normalizeTrade(trade, settings?.timezone || DEFAULT_SESSION_TIMEZONE)
   const instrumentType = inferInstrumentType(normalizedTrade.pair)
   const entryPrice = Number(normalizedTrade.entry || 0)
   const stopLoss = Number(normalizedTrade.stopLoss || 0) || null
@@ -669,28 +698,6 @@ function mapTradeToBackend(trade, settings) {
     instrumentType
   })
   const tags = mergeUniqueStrings(normalizedTrade.tags, normalizedTrade.setupStack.slice(1))
-  const metadata = {
-    version: 1,
-    session: normalizedTrade.session || '',
-    accountName: normalizedTrade.accountName || resolveAccountName(normalizedTrade.accountId, settings.accounts),
-    setupStack: normalizedTrade.setupStack,
-    volume: normalizedTrade.volume,
-    contractMultiplier: normalizedTrade.contractMultiplier,
-    pipSize: normalizedTrade.pipSize,
-    openTime: normalizedTrade.openTime,
-    closeTime: normalizedTrade.closeTime,
-    commission: normalizedTrade.commission,
-    swap: normalizedTrade.swap,
-    closePrice: normalizedTrade.closePrice,
-    actualRiskAmount: normalizedTrade.actualRiskAmount,
-    riskPercentOfAccount: normalizedTrade.riskPercentOfAccount,
-    pips: normalizedTrade.pips,
-    resultAmount,
-    resultR,
-    screenshot: normalizedTrade.screenshot || '',
-    journal: normalizedTrade.journal,
-    checklist: normalizedTrade.checklist
-  }
 
   return {
     symbol: normalizedTrade.pair,
@@ -705,30 +712,41 @@ function mapTradeToBackend(trade, settings) {
     account_identifier: normalizedTrade.accountId || '',
     strategy: normalizedTrade.session || '',
     setup: normalizedTrade.setupType,
+    setupStack: normalizedTrade.setupStack,
     tags,
-    notes: serializeCrsNotes(normalizedTrade.journal?.notes, metadata),
+    notes: normalizedTrade.journal?.notes || '',
+    pnl: resultAmount,
+    rValue: resultR,
     commission: normalizedTrade.commission || 0,
-    fees: normalizedTrade.swap || 0,
+    fees: 0,
+    swap: normalizedTrade.swap || 0,
     stopLoss,
     takeProfit,
     chartUrl: normalizedTrade.screenshot || null,
+    contractMultiplier: normalizedTrade.contractMultiplier || null,
+    pipSize: normalizedTrade.pipSize || null,
+    actualRiskAmount: normalizedTrade.actualRiskAmount || 0,
+    riskPercentOfAccount: normalizedTrade.riskPercentOfAccount || 0,
+    pips: normalizedTrade.pips || 0,
+    journalPayload: normalizedTrade.journal,
+    checklistPayload: normalizedTrade.checklist,
     pointValue: normalizedTrade.contractMultiplier || null,
     confidence: deriveConfidence(normalizedTrade.checklist),
     manualTargetHitFirst: resultR >= 0 ? 'take_profit' : 'stop_loss'
   }
 }
 
-function mapTradeFromBackend(trade, accounts = []) {
+function mapTradeFromBackend(trade, accounts = [], timezone = DEFAULT_SESSION_TIMEZONE) {
   const metadata = parseCrsNotes(trade.notes)
   const accountId = trade.account_identifier || trade.accountIdentifier || null
-  const accountName = metadata.accountName || resolveAccountName(accountId, accounts)
-  const setupStack = metadata.setupStack?.length
-    ? metadata.setupStack
+  const accountName = resolveAccountName(accountId, accounts)
+  const setupStack = (trade.setupStack || trade.setup_stack || metadata.setupStack)?.length
+    ? (trade.setupStack || trade.setup_stack || metadata.setupStack)
     : [String(trade.setup || 'Custom').trim()].filter(Boolean)
-  const resultAmount = metadata.resultAmount ?? Number(trade.pnl || 0)
-  const resultR = metadata.resultR ?? Number(trade.rValue ?? trade.r_value ?? 0)
-  const journal = metadata.journal || {}
-  const checklist = metadata.checklist || {}
+  const resultAmount = Number(trade.pnl ?? metadata.resultAmount ?? 0)
+  const resultR = Number(trade.rValue ?? trade.r_value ?? metadata.resultR ?? 0)
+  const journal = trade.journalPayload || trade.journal_payload || metadata.journal || {}
+  const checklist = trade.checklistPayload || trade.checklist_payload || metadata.checklist || {}
 
   return normalizeTrade({
     id: trade.id,
@@ -739,35 +757,35 @@ function mapTradeFromBackend(trade, accounts = []) {
     direction: trade.side === 'short' ? 'Short' : 'Long',
     setupType: trade.setup || setupStack[0] || 'Custom',
     setupStack,
-    session: metadata.session || trade.strategy || 'London',
+    session: trade.strategy || metadata.session || 'London',
     accountId,
     accountName,
-    volume: Number(metadata.volume ?? trade.quantity ?? 0),
-    contractMultiplier: Number(metadata.contractMultiplier ?? trade.pointValue ?? trade.point_value ?? inferContractMultiplier(trade.symbol)),
-    pipSize: Number(metadata.pipSize ?? inferPipSize(trade.symbol)),
-    commission: Number(metadata.commission ?? trade.commission ?? 0),
-    swap: Number(metadata.swap ?? trade.fees ?? 0),
+    volume: Number(trade.quantity ?? metadata.volume ?? 0),
+    contractMultiplier: Number(trade.contractMultiplier ?? trade.contract_multiplier ?? trade.pointValue ?? trade.point_value ?? metadata.contractMultiplier ?? inferContractMultiplier(trade.symbol)),
+    pipSize: Number(trade.pipSize ?? trade.pip_size ?? metadata.pipSize ?? inferPipSize(trade.symbol)),
+    commission: Number(trade.commission ?? metadata.commission ?? 0),
+    swap: Number(trade.swap ?? metadata.swap ?? trade.fees ?? 0),
     entry: Number(trade.entryPrice ?? trade.entry_price ?? 0),
     stopLoss: Number(trade.stopLoss ?? trade.stop_loss ?? 0),
     takeProfit: Number(trade.takeProfit ?? trade.take_profit ?? 0),
     closePrice: Number(trade.exitPrice ?? trade.exit_price ?? 0),
     resultR,
     resultAmount,
-    actualRiskAmount: Number(metadata.actualRiskAmount || 0),
-    riskPercentOfAccount: Number(metadata.riskPercentOfAccount || calculateRiskPercentOfAccount({
+    actualRiskAmount: Number((trade.actualRiskAmount ?? trade.actual_risk_amount ?? metadata.actualRiskAmount) || 0),
+    riskPercentOfAccount: Number((trade.riskPercentOfAccount ?? trade.risk_percent_of_account ?? metadata.riskPercentOfAccount) || calculateRiskPercentOfAccount({
       entry: Number(trade.entryPrice ?? trade.entry_price ?? 0),
       stopLoss: Number(trade.stopLoss ?? trade.stop_loss ?? 0),
-      volume: Number(metadata.volume ?? trade.quantity ?? 0),
-      contractMultiplier: Number(metadata.contractMultiplier ?? trade.pointValue ?? trade.point_value ?? inferContractMultiplier(trade.symbol))
+      volume: Number(trade.quantity ?? metadata.volume ?? 0),
+      contractMultiplier: Number(trade.contractMultiplier ?? trade.contract_multiplier ?? trade.pointValue ?? trade.point_value ?? metadata.contractMultiplier ?? inferContractMultiplier(trade.symbol))
     }, resolveAccountSize(accountId, accounts))),
-    pips: Number(metadata.pips ?? calculatePipsMoved({
+    pips: Number(trade.pips ?? metadata.pips ?? calculatePipsMoved({
       pair: trade.symbol,
       entry: Number(trade.entryPrice ?? trade.entry_price ?? 0),
       closePrice: Number(trade.exitPrice ?? trade.exit_price ?? 0),
       direction: trade.side === 'short' ? 'Short' : 'Long',
-      pipSize: Number(metadata.pipSize ?? inferPipSize(trade.symbol))
+      pipSize: Number(trade.pipSize ?? trade.pip_size ?? metadata.pipSize ?? inferPipSize(trade.symbol))
     })),
-    tags: trade.tags || [],
+    tags: mergeUniqueStrings(trade.tags || []),
     screenshot: metadata.screenshot || trade.chartUrl || trade.chart_url || null,
     journal: {
       whyTaken: journal.whyTaken || '',
@@ -778,17 +796,10 @@ function mapTradeFromBackend(trade, accounts = []) {
       emotionAfter: journal.emotionAfter || '',
       mistakeMade: journal.mistakeMade || '',
       lessonLearned: journal.lessonLearned || '',
-      notes: journal.notes || metadata.visibleNotes || ''
+      notes: journal.notes || metadata.visibleNotes || String(trade.notes || '').trim()
     },
-    checklist: {
-      htfBosConfirmed: Boolean(checklist.htfBosConfirmed),
-      pullbackToOb: Boolean(checklist.pullbackToOb),
-      m15Confirmation: Boolean(checklist.m15Confirmation),
-      tradedWithBias: Boolean(checklist.tradedWithBias),
-      validSession: Boolean(checklist.validSession),
-      minimumRRMet: Boolean(checklist.minimumRRMet)
-    }
-  })
+    checklist: Object.fromEntries(Object.entries(checklist || {}).map(([key, value]) => [key, Boolean(value)]))
+  }, timezone)
 }
 
 function mapAccountFromBackend(account) {
@@ -870,6 +881,41 @@ function normalizeDateTimeValue(value) {
   }
 
   return text.replace(' ', 'T').slice(0, 19)
+}
+
+function roundFingerprintNumber(value, decimals = 4) {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) {
+    return ''
+  }
+
+  return numeric.toFixed(decimals)
+}
+
+function buildTradeFingerprint(trade) {
+  const pair = String(trade?.pair || '').trim().toUpperCase()
+  const direction = String(trade?.direction || '').trim().toLowerCase()
+  const accountId = String(trade?.accountId || '').trim()
+  const openTime = normalizeDateTimeValue(trade?.openTime || '')
+  const entry = roundFingerprintNumber(trade?.entry)
+  const closePrice = roundFingerprintNumber(trade?.closePrice)
+  const volume = roundFingerprintNumber(trade?.volume)
+
+  if (!pair || !direction || !openTime || !entry || !closePrice || !volume) {
+    return null
+  }
+
+  return [pair, direction, accountId, openTime, entry, closePrice, volume].join('|')
+}
+
+function createDuplicateTradeError(duplicateTrade) {
+  const duplicateDate = normalizeDateTimeValue(duplicateTrade?.openTime || duplicateTrade?.date || '').replace('T', ' ').trim()
+  const error = new Error(
+    `Duplicate trade detected for ${duplicateTrade?.pair || 'this trade'}${duplicateDate ? ` on ${duplicateDate}` : ''}.`
+  )
+  error.code = 'DUPLICATE_TRADE'
+  error.duplicateTradeId = duplicateTrade?.id || null
+  return error
 }
 
 function serializeCrsNotes(visibleNotes = '', metadata = {}) {

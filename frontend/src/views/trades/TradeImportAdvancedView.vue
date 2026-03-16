@@ -90,15 +90,25 @@
         </div>
       </ChartCard>
     </div>
+
+    <ImportReportCard
+      :duplicates="duplicateRows"
+      :invalid-rows="invalidRows"
+      file-name="crs-advanced-import-report.csv"
+      title="Advanced import review"
+      description="Skipped rows are listed here so you can inspect duplicates or incomplete mapped rows before adjusting the import."
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import ChartCard from '@/components/crs/ChartCard.vue'
+import ImportReportCard from '@/components/crs/ImportReportCard.vue'
 import SectionHeader from '@/components/crs/SectionHeader.vue'
 import { useCrsStore } from '@/stores/crs'
 import { CRS_IMPORT_FIELDS, createDefaultFieldMapping, createTradeDraftFromRow, normalizeHeader, parseCsvText } from '@/utils/crsCsv'
+import { createImportIssue } from '@/utils/crsImportReport'
 
 const crsStore = useCrsStore()
 const fileInput = ref(null)
@@ -107,6 +117,8 @@ const records = ref([])
 const importing = ref(false)
 const error = ref('')
 const message = ref('')
+const duplicateRows = ref([])
+const invalidRows = ref([])
 const fieldMapping = reactive({})
 
 const importFields = CRS_IMPORT_FIELDS
@@ -157,6 +169,8 @@ async function importMappedRows() {
   importing.value = true
   error.value = ''
   message.value = ''
+  duplicateRows.value = []
+  invalidRows.value = []
 
   try {
     if (!crsStore.settings.accounts.length) {
@@ -165,18 +179,41 @@ async function importMappedRows() {
     }
 
     let imported = 0
-    for (const row of records.value) {
+    let duplicates = 0
+    let invalid = 0
+    for (const [index, row] of records.value.entries()) {
       const tradeDraft = createTradeDraftFromRow(row, fieldMapping, crsStore.settings)
       if (!tradeDraft.pair || !tradeDraft.entry || !tradeDraft.closePrice) {
+        invalid += 1
+        invalidRows.value.push(createImportIssue({
+          rowNumber: index + 2,
+          tradeDraft,
+          reason: 'Mapped row is missing one of the required fields: symbol, entry, or close price.'
+        }))
         continue
       }
 
-      await crsStore.persistTrade(tradeDraft)
-      imported += 1
+      try {
+        await crsStore.persistTrade(tradeDraft)
+        imported += 1
+      } catch (requestError) {
+        if (requestError?.code === 'DUPLICATE_TRADE') {
+          duplicates += 1
+          duplicateRows.value.push(createImportIssue({
+            rowNumber: index + 2,
+            tradeDraft,
+            reason: requestError.message,
+            duplicateTradeId: requestError.duplicateTradeId
+          }))
+          continue
+        }
+
+        throw requestError
+      }
     }
 
-    message.value = imported
-      ? `Imported ${imported} mapped trade${imported === 1 ? '' : 's'} successfully.`
+    message.value = imported || duplicates
+      ? `Imported ${imported} mapped trade${imported === 1 ? '' : 's'} successfully.${duplicates ? ` Skipped ${duplicates} duplicate${duplicates === 1 ? '' : 's'}.` : ''}${invalid ? ` Ignored ${invalid} incomplete row${invalid === 1 ? '' : 's'}.` : ''}`
       : 'No valid rows matched the current mapping.'
   } catch (requestError) {
     error.value = requestError.message || 'Unable to import the mapped rows.'

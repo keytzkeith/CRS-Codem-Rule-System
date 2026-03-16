@@ -124,7 +124,7 @@
   </div>
 
   <div v-else class="crs-page">
-    <ChartCard eyebrow="Missing trade" title="Trade not found" description="This mock record does not exist in the seeded CRS dataset.">
+    <ChartCard eyebrow="Missing trade" title="Trade not found" description="This trade could not be found in your current CRS ledger.">
       <router-link to="/trades" class="crs-button-primary">Return to trade list</router-link>
     </ChartCard>
   </div>

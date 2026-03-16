@@ -16,7 +16,7 @@
     <section class="crs-stat-grid">
       <MetricCard label="Total trades" :value="String(metrics.totalTrades)" hint="Current trade ledger" info="Total number of trades currently included in the dashboard calculations." />
       <MetricCard label="Win rate" :value="`${metrics.winRate}%`" hint="Clean execution rate" tone="positive" info="Percentage of all trades that closed positive." />
-      <MetricCard label="Net PnL" :value="currency(metrics.netPnl)" hint="Across all seeded trades" :tone="metrics.netPnl >= 0 ? 'positive' : 'negative'" info="Combined profit and loss across the full current dataset." />
+      <MetricCard label="Net PnL" :value="currency(metrics.netPnl)" hint="Across all recorded trades" :tone="metrics.netPnl >= 0 ? 'positive' : 'negative'" info="Combined profit and loss across the full current dataset." />
       <MetricCard label="Average win" :value="currency(metrics.avgWin)" hint="Winners only" tone="positive" info="Average currency gain across winning trades only." />
       <MetricCard label="Average loss" :value="currency(metrics.avgLoss)" hint="Losses only" tone="negative" info="Average currency loss across losing trades only." />
       <MetricCard label="Profit factor" :value="String(metrics.profitFactor)" hint="Gross wins / gross losses" tone="warning" info="Gross winning amount divided by gross losing amount. Above 1.0 means gains outweigh losses." />

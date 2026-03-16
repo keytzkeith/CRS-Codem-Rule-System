@@ -135,6 +135,9 @@ const schemas = {
     entryCommission: Joi.number().default(0),  // Can be negative for rebates
     exitCommission: Joi.number().default(0),  // Can be negative for rebates
     fees: Joi.number().default(0),  // Can be negative for rebates
+    pnl: Joi.number().allow(null, ''),
+    pnlPercent: Joi.number().allow(null, ''),
+    rValue: Joi.number().allow(null, ''),
     mae: Joi.number().allow(null, ''),
     mfe: Joi.number().allow(null, ''),
     notes: Joi.string().allow(''),
@@ -298,6 +301,9 @@ const schemas = {
     entryCommission: Joi.number(),  // Can be negative for rebates
     exitCommission: Joi.number(),  // Can be negative for rebates
     fees: Joi.number(),  // Can be negative for rebates
+    pnl: Joi.number().allow(null, ''),
+    pnlPercent: Joi.number().allow(null, ''),
+    rValue: Joi.number().allow(null, ''),
     mae: Joi.number().allow(null, ''),
     mfe: Joi.number().allow(null, ''),
     notes: Joi.string().allow(''),
@@ -415,6 +421,7 @@ const schemas = {
     defaultTakeProfitPercent: Joi.number().min(0).max(1000).allow(null),
     crsPreferences: Joi.object({
       currency: Joi.string().max(10),
+      timezone: Joi.string().max(50),
       riskMode: Joi.string().valid('amount', 'percent'),
       riskPerTrade: Joi.number().min(0).allow(null),
       preferredPeriod: Joi.string().valid('weekly', 'monthly', 'quarterly'),

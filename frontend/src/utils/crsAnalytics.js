@@ -1,8 +1,37 @@
 import { format, parseISO, startOfWeek } from 'date-fns'
 
+const BREAKEVEN_EPSILON = 0.0005
+
 function round(value, digits = 2) {
   const factor = 10 ** digits
   return Math.round(value * factor) / factor
+}
+
+export function classifyTradeOutcome(trade) {
+  const resultAmount = Number(trade?.resultAmount)
+  if (Number.isFinite(resultAmount)) {
+    if (Math.abs(resultAmount) <= BREAKEVEN_EPSILON) {
+      return 'breakeven'
+    }
+
+    return resultAmount > 0 ? 'win' : 'loss'
+  }
+
+  const resultR = Number(trade?.resultR)
+  if (Number.isFinite(resultR) && Math.abs(resultR) <= BREAKEVEN_EPSILON) {
+    return 'breakeven'
+  }
+
+  if (Number.isFinite(resultR)) {
+    return resultR > 0 ? 'win' : 'loss'
+  }
+
+  const status = String(trade?.status || '').trim().toLowerCase()
+  if (status === 'win' || status === 'loss' || status === 'breakeven') {
+    return status
+  }
+
+  return 'breakeven'
 }
 
 export function calculatePlannedRR(trade) {
@@ -142,8 +171,8 @@ export function buildDashboardMetrics(trades) {
     }
   }
 
-  const wins = trades.filter((trade) => trade.resultAmount > 0)
-  const losses = trades.filter((trade) => trade.resultAmount < 0)
+  const wins = trades.filter((trade) => classifyTradeOutcome(trade) === 'win')
+  const losses = trades.filter((trade) => classifyTradeOutcome(trade) === 'loss')
   const netPnl = trades.reduce((sum, trade) => sum + trade.resultAmount, 0)
   const grossWins = wins.reduce((sum, trade) => sum + trade.resultAmount, 0)
   const grossLosses = Math.abs(losses.reduce((sum, trade) => sum + trade.resultAmount, 0))
@@ -167,7 +196,7 @@ export function buildDashboardMetrics(trades) {
   let streakCount = 0
 
   for (const trade of streakSource) {
-    const nextType = trade.resultAmount > 0 ? 'win' : trade.resultAmount < 0 ? 'loss' : 'breakeven'
+    const nextType = classifyTradeOutcome(trade)
 
     if (streakCount === 0) {
       streakType = nextType
@@ -185,7 +214,7 @@ export function buildDashboardMetrics(trades) {
 
   return {
     totalTrades: trades.length,
-    winRate: round((wins.length / trades.length) * 100, 1),
+    winRate: round((wins.length / (wins.length + losses.length || trades.length)) * 100, 1),
     netPnl: round(netPnl, 2),
     avgWin: wins.length ? round(grossWins / wins.length, 2) : 0,
     avgLoss: losses.length ? round(Math.abs(losses.reduce((sum, trade) => sum + trade.resultAmount, 0)) / losses.length, 2) : 0,
@@ -248,7 +277,7 @@ function aggregateByField(trades, field) {
 
       acc[key].trades += 1
       acc[key].pnl += trade.resultAmount
-      if (trade.resultAmount > 0) {
+      if (classifyTradeOutcome(trade) === 'win') {
         acc[key].wins += 1
       }
       return acc
@@ -273,7 +302,7 @@ function aggregateBySetupStack(trades) {
         acc[setup].trades += 1
         acc[setup].pnl += trade.resultAmount
 
-        if (trade.resultAmount > 0) {
+        if (classifyTradeOutcome(trade) === 'win') {
           acc[setup].wins += 1
         }
       })
@@ -291,9 +320,9 @@ function aggregateBySetupStack(trades) {
 
 export function buildAnalyticsSeries(trades, settings = {}) {
   const outcomeCounts = {
-    win: trades.filter((trade) => trade.resultAmount > 0).length,
-    loss: trades.filter((trade) => trade.resultAmount < 0).length,
-    breakeven: trades.filter((trade) => trade.resultAmount === 0).length
+    win: trades.filter((trade) => classifyTradeOutcome(trade) === 'win').length,
+    loss: trades.filter((trade) => classifyTradeOutcome(trade) === 'loss').length,
+    breakeven: trades.filter((trade) => classifyTradeOutcome(trade) === 'breakeven').length
   }
 
   const calendar = trades.map((trade) => ({

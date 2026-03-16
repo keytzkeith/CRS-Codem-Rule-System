@@ -216,7 +216,7 @@
       </ChartCard>
     </div>
 
-    <div class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+    <div class="grid gap-6 xl:grid-cols-[1.28fr_0.72fr] 2xl:grid-cols-[1.35fr_0.65fr]">
       <ChartCard eyebrow="Monthly review" title="Daily performance calendar" description="A cleaner month-by-month review of trading days, with simple previous and next navigation.">
         <template #actions>
           <InfoTip text="Move backward and forward by month. Cells with color had trades on that day, while neutral cells had no activity recorded." />
@@ -242,15 +242,25 @@
             </div>
             <div class="crs-calendar-stat">
               <div class="text-sm text-slate-400">P&amp;L</div>
-              <div class="crs-calendar-stat-value mt-2 text-3xl font-semibold" :class="monthlySummary.pnl >= 0 ? 'text-emerald-300' : 'text-red-400'">{{ compactCurrency(monthlySummary.pnl) }}</div>
+              <div class="crs-calendar-stat-value mt-2 text-[clamp(1.7rem,2.5vw,2.25rem)] font-semibold" :class="monthlySummary.pnl >= 0 ? 'text-emerald-300' : 'text-red-400'">{{ compactCurrency(monthlySummary.pnl) }}</div>
             </div>
             <div class="crs-calendar-stat">
               <div class="text-sm text-slate-400">Best day</div>
-              <div class="crs-calendar-stat-value mt-2 text-2xl font-semibold text-white">{{ monthlySummary.bestDay ? compactCurrency(monthlySummary.bestDay.value) : 'No data' }}</div>
+              <div
+                class="crs-calendar-stat-value mt-2 text-[clamp(1.35rem,2vw,1.8rem)] font-semibold"
+                :class="monthlySummary.bestDay ? (monthlySummary.bestDay.value >= 0 ? 'text-emerald-300' : 'text-red-400') : 'text-white'"
+              >
+                {{ monthlySummary.bestDay ? compactCurrency(monthlySummary.bestDay.value) : 'No data' }}
+              </div>
             </div>
             <div class="crs-calendar-stat">
               <div class="text-sm text-slate-400">Worst day</div>
-              <div class="crs-calendar-stat-value mt-2 text-2xl font-semibold text-white">{{ monthlySummary.worstDay ? compactCurrency(monthlySummary.worstDay.value) : 'No data' }}</div>
+              <div
+                class="crs-calendar-stat-value mt-2 text-[clamp(1.35rem,2vw,1.8rem)] font-semibold"
+                :class="monthlySummary.worstDay ? (monthlySummary.worstDay.value >= 0 ? 'text-emerald-300' : 'text-red-400') : 'text-white'"
+              >
+                {{ monthlySummary.worstDay ? compactCurrency(monthlySummary.worstDay.value) : 'No data' }}
+              </div>
             </div>
             <div class="crs-calendar-stat">
               <div class="text-sm text-slate-400">Win rate</div>
@@ -324,8 +334,7 @@ import { useCrsStore } from '@/stores/crs'
 
 const crsStore = useCrsStore()
 const analytics = computed(() => crsStore.analytics)
-const latestCalendarDate = computed(() => analytics.value.calendar.at(-1)?.date || analytics.value.equityCurve.at(-1)?.date || new Date().toISOString())
-const monthCursor = ref(parseISO(latestCalendarDate.value))
+const monthCursor = ref(startOfMonth(new Date()))
 const hoveredEquityPoint = ref(null)
 const hoveredWeekRow = ref(null)
 const hoveredMonthRow = ref(null)
@@ -437,7 +446,10 @@ const equityAxisTicks = computed(() => {
 })
 const calendarMap = computed(() =>
   analytics.value.calendar.reduce((acc, cell) => {
-    acc[cell.date] = cell
+    acc[normalizeCalendarDate(cell.date)] = {
+      ...cell,
+      date: normalizeCalendarDate(cell.date)
+    }
     return acc
   }, {})
 )
@@ -457,7 +469,7 @@ const visibleMonthCells = computed(() => {
   })
 })
 const currentMonthEntries = computed(() =>
-  analytics.value.calendar.filter((cell) => isSameMonth(parseISO(cell.date), monthCursor.value))
+  analytics.value.calendar.filter((cell) => isSameMonth(parseISO(normalizeCalendarDate(cell.date)), monthCursor.value))
 )
 const monthlySummary = computed(() => {
   if (!currentMonthEntries.value.length) {
@@ -514,11 +526,11 @@ function dotColor(cell) {
 }
 
 function dayOfMonth(value) {
-  return format(parseISO(value), 'd')
+  return format(parseISO(normalizeCalendarDate(value)), 'd')
 }
 
 function formatCellDate(value) {
-  const normalized = String(value).replace(' ', 'T')
+  const normalized = normalizeCalendarDate(value)
   return format(parseISO(normalized), normalized.includes('T') ? 'MMM d, yyyy HH:mm' : 'MMM d, yyyy')
 }
 
@@ -566,5 +578,19 @@ function splitBarLabel(label) {
   }
 
   return [label, '']
+}
+
+function normalizeCalendarDate(value) {
+  const text = String(value || '').trim()
+
+  if (!text) {
+    return new Date().toISOString().slice(0, 10)
+  }
+
+  if (text.length >= 10) {
+    return text.slice(0, 10)
+  }
+
+  return text
 }
 </script>
