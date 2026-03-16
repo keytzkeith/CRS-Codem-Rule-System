@@ -45,7 +45,7 @@ if ! command_exists docker; then
     exit 1
 fi
 
-if ! docker ps | grep -q tradetally; then
+if ! docker ps | grep -Eq 'crs|tradetally'; then
     print_warning "TradeTally containers are not running. Starting them..."
     docker-compose -f docker-compose.dev.yaml up -d
     sleep 10
@@ -60,6 +60,8 @@ print_status "Migration directory created at $MIGRATION_DIR"
 echo -e "\n${YELLOW}Step 3: Exporting PostgreSQL database${NC}"
 
 echo "Exporting database..."
+docker exec crs-db-dev pg_dump -U trader -d tradetally > "$MIGRATION_DIR/tradetally_backup_$BACKUP_DATE.sql" 2>/dev/null || \
+docker exec crs-db pg_dump -U trader -d tradetally > "$MIGRATION_DIR/tradetally_backup_$BACKUP_DATE.sql" 2>/dev/null || \
 docker exec tradetally-db-dev pg_dump -U trader -d tradetally > "$MIGRATION_DIR/tradetally_backup_$BACKUP_DATE.sql" 2>/dev/null || \
 docker exec tradetally-postgres-1 pg_dump -U trader -d tradetally > "$MIGRATION_DIR/tradetally_backup_$BACKUP_DATE.sql" 2>/dev/null || \
 docker exec tradetally-db pg_dump -U trader -d tradetally > "$MIGRATION_DIR/tradetally_backup_$BACKUP_DATE.sql"
@@ -77,7 +79,7 @@ echo -e "\n${YELLOW}Step 4: Exporting application data${NC}"
 
 # Try different container names
 CONTAINER_NAME=""
-for name in tradetally-app-dev tradetally-app; do
+for name in crs-app-dev crs-app tradetally-app-dev tradetally-app; do
     if docker ps | grep -q $name; then
         CONTAINER_NAME=$name
         break

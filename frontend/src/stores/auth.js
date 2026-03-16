@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/services/api'
 import router from '@/router'
+import { useCrsStore } from '@/stores/crs'
 
 export const useAuthStore = defineStore('auth', () => {
   const mockAuthMode = import.meta.env.DEV ? (import.meta.env.VITE_ENABLE_MOCK_AUTH || '').toLowerCase() : ''
@@ -21,6 +22,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(credentials, returnUrl = null) {
     loading.value = true
     error.value = null
+    const crsStore = useCrsStore()
 
     try {
       const response = await api.post('/auth/login', credentials)
@@ -57,6 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Fetch complete user data with settings
       await fetchUser()
+      await crsStore.hydratePersistence(true)
 
       // If there's a return URL, redirect there instead of dashboard
       if (returnUrl) {
@@ -93,6 +96,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function register(userData) {
     loading.value = true
     error.value = null
+    const crsStore = useCrsStore()
     
     try {
       const response = await api.post('/auth/register', userData)
@@ -111,6 +115,7 @@ export const useAuthStore = defineStore('auth', () => {
         token.value = authToken
         localStorage.setItem('token', authToken)
         api.defaults.headers.common['Authorization'] = `Bearer ${authToken}`
+        await crsStore.hydratePersistence(true)
         router.push({ name: 'dashboard' })
       }
       
@@ -239,6 +244,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function verify2FA(tempToken, twoFactorCode) {
     loading.value = true
     error.value = null
+    const crsStore = useCrsStore()
     
     try {
       const response = await api.post('/auth/verify-2fa', { 
@@ -257,6 +263,7 @@ export const useAuthStore = defineStore('auth', () => {
       api.defaults.headers.common['Authorization'] = `Bearer ${authToken}`
 
       await fetchUser()
+      await crsStore.hydratePersistence(true)
 
       router.push({ name: 'dashboard' })
       return response.data

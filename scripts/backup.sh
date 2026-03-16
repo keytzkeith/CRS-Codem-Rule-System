@@ -103,7 +103,13 @@ log_error() {
 # Detect Docker containers (supports both prod and dev naming)
 detect_containers() {
     # Try production containers first, then dev
-    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^tradetally-db$"; then
+    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^crs-db$"; then
+        DB_CONTAINER="crs-db"
+        APP_CONTAINER="crs-app"
+    elif docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^crs-db-dev$"; then
+        DB_CONTAINER="crs-db-dev"
+        APP_CONTAINER="crs-app-dev"
+    elif docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^tradetally-db$"; then
         DB_CONTAINER="tradetally-db"
         APP_CONTAINER="tradetally-app"
     elif docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^tradetally-db-dev$"; then
@@ -174,7 +180,7 @@ backup_database() {
     if [ "$MODE" == "docker" ]; then
         # Docker mode: use docker exec
         if [ -z "$DB_CONTAINER" ] || ! docker ps --format '{{.Names}}' | grep -q "^${DB_CONTAINER}$"; then
-            log_error "Database container is not running (tried tradetally-db and tradetally-db-dev)"
+            log_error "Database container is not running (tried crs-db, crs-db-dev, tradetally-db, and tradetally-db-dev)"
             exit 1
         fi
 

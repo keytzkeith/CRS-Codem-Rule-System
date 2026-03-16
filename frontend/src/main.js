@@ -4,6 +4,7 @@ import App from './App.vue'
 import router from './router'
 import './assets/main.css'
 import { useAuthStore } from './stores/auth'
+import { useCrsStore } from './stores/crs'
 import { useAnalytics } from './composables/useAnalytics'
 
 const app = createApp(App)
@@ -13,10 +14,15 @@ app.use(router)
 
 async function bootstrap() {
   const authStore = useAuthStore()
+  const crsStore = useCrsStore()
 
   try {
     // Initialize auth state before mount.
     await authStore.checkAuth()
+
+    if (authStore.isAuthenticated) {
+      await crsStore.hydratePersistence()
+    }
   } catch (error) {
     console.error('Auth bootstrap failed:', error)
   }

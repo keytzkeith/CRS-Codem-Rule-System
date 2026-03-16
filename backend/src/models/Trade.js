@@ -65,11 +65,16 @@ class Trade {
       originalFeesCurrency,
       stopLoss, takeProfit, takeProfitTargets, chartUrl,
       brokerConnectionId, accountIdentifier, account_identifier,
-      conid, manualTargetHitFirst
+      conid, manualTargetHitFirst,
+      setupStack, journalPayload, checklistPayload,
+      contractMultiplier, pipSize, swap, actualRiskAmount, riskPercentOfAccount, pips
     } = tradeData;
 
     // Use snake_case version if provided, fallback to camelCase for legacy support
     const finalAccountIdentifier = account_identifier || accountIdentifier;
+    const finalSetupStack = Array.isArray(setupStack) ? setupStack.filter(Boolean) : [];
+    const finalJournalPayload = journalPayload && typeof journalPayload === 'object' ? journalPayload : {};
+    const finalChecklistPayload = checklistPayload && typeof checklistPayload === 'object' ? checklistPayload : {};
 
     // Convert empty strings to null for optional fields
     const cleanExitTime = exitTime === '' ? null : exitTime;
@@ -119,7 +124,8 @@ class Trade {
 
     // Use provided P&L if available (e.g., from Schwab), otherwise calculate it
     // Use finalPointValue which may have been auto-set for futures
-    const pnl = providedPnL !== undefined ? providedPnL : this.calculatePnL(entryPrice, cleanExitPrice, quantity, side, commission, fees, instrumentType, contractSize, finalPointValue);
+    const totalFees = (Number(fees) || 0) + (Number(swap) || 0);
+    const pnl = providedPnL !== undefined ? providedPnL : this.calculatePnL(entryPrice, cleanExitPrice, quantity, side, commission, totalFees, instrumentType, contractSize, finalPointValue);
     const pnlPercent = providedPnLPercent !== undefined ? providedPnLPercent : this.calculatePnLPercent(entryPrice, cleanExitPrice, side, pnl, quantity, instrumentType, finalPointValue);
 
     // Calculate R-Multiple later after applying default stop loss
@@ -460,9 +466,10 @@ class Trade {
         contract_month, contract_year, tick_size, point_value, underlying_asset, import_id,
         original_currency, exchange_rate, original_entry_price_currency, original_exit_price_currency,
         original_pnl_currency, original_commission_currency, original_fees_currency,
-        stop_loss, take_profit, take_profit_targets, r_value, chart_url, broker_connection_id, account_identifier, conid, manual_target_hit_first
+        stop_loss, take_profit, take_profit_targets, r_value, chart_url, broker_connection_id, account_identifier, conid, manual_target_hit_first,
+        setup_stack, journal_payload, checklist_payload, contract_multiplier, pip_size, swap, actual_risk_amount, risk_percent_of_account, pips
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59, $60, $61)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59, $60, $61, $62, $63, $64, $65, $66, $67, $68, $69, $70)
       RETURNING *
     `;
 
@@ -486,7 +493,16 @@ class Trade {
       roundToDbPrecision(finalStopLoss), roundToDbPrecision(finalTakeProfit), JSON.stringify(aggregatedTakeProfitTargets || []),
       roundToDbPrecision(rValue), chartUrl || null, brokerConnectionId || null, finalAccountIdentifier ? String(finalAccountIdentifier).substring(0, 50) : null,
       conid || null,
-      manualTargetHitFirst || null
+      manualTargetHitFirst || null,
+      JSON.stringify(finalSetupStack),
+      JSON.stringify(finalJournalPayload),
+      JSON.stringify(finalChecklistPayload),
+      roundToDbPrecision(contractMultiplier),
+      roundToDbPrecision(pipSize),
+      roundToDbPrecision(swap) || 0,
+      roundToDbPrecision(actualRiskAmount),
+      roundToDbPrecision(riskPercentOfAccount, 4),
+      roundToDbPrecision(pips)
     ];
 
     const result = await db.query(query, values);
@@ -852,7 +868,7 @@ class Trade {
 
     // Sum all commissions and fees
     const commission = executions.reduce((sum, f) => sum + (parseFloat(f.commission) || 0), 0);
-    const fees = executions.reduce((sum, f) => sum + (parseFloat(f.fees) || 0), 0);
+    const fees = executions.reduce((sum, f) => sum + (parseFloat(f.fees) || 0), 0) + (parseFloat(trade.swap) || 0);
 
     // Calculate P&L if we have both entry fills and exit fills
     let pnl = null;
@@ -1319,7 +1335,8 @@ class Trade {
       'fees', 'pnl', 'pnlPercent', 'mae', 'mfe', 'strikePrice', 'tickSize', 'pointValue',
       'stopLoss', 'takeProfit', 'rValue', 'exchangeRate',
       'originalEntryPriceCurrency', 'originalExitPriceCurrency', 'originalPnlCurrency',
-      'originalCommissionCurrency', 'originalFeesCurrency'
+      'originalCommissionCurrency', 'originalFeesCurrency',
+      'contractMultiplier', 'pipSize', 'swap', 'actualRiskAmount', 'riskPercentOfAccount', 'pips'
     ];
 
     numericFields.forEach(field => {
@@ -1547,13 +1564,14 @@ class Trade {
       // Calculate updated P&L and hold time
       // Use !== undefined to properly handle 0 values for commission and fees
       const pointValue = updates.pointValue !== undefined ? updates.pointValue : currentTrade.point_value;
+      const updatedSwap = updates.swap !== undefined ? updates.swap : currentTrade.swap;
       updatedTrade.pnl = this.calculatePnL(
         updatedTrade.entry_price,
         updatedTrade.exit_price,
         updatedTrade.quantity,
         updatedTrade.side,
         updates.commission !== undefined ? updates.commission : currentTrade.commission,
-        updates.fees !== undefined ? updates.fees : currentTrade.fees,
+        Number(updates.fees !== undefined ? updates.fees : currentTrade.fees) + Number(updatedSwap || 0),
         updates.instrumentType || currentTrade.instrument_type || 'stock',
         updates.contractSize !== undefined ? updates.contractSize : (currentTrade.contract_size || (currentTrade.instrument_type === 'option' ? 100 : 1)),
         pointValue
@@ -1700,7 +1718,7 @@ class Trade {
         fields.push(`${dbKey} = $${paramCount}`);
 
         // Handle JSON/JSONB fields that need serialization
-        if (key === 'classificationMetadata' || key === 'newsEvents' || key === 'takeProfitTargets') {
+        if (key === 'classificationMetadata' || key === 'newsEvents' || key === 'takeProfitTargets' || key === 'setupStack' || key === 'journalPayload' || key === 'checklistPayload') {
           console.log(`[TRADE UPDATE] Saving ${key} as ${dbKey}:`, JSON.stringify(value));
           values.push(JSON.stringify(value));
         } else {
@@ -1752,7 +1770,8 @@ class Trade {
       (updates.instrumentType !== undefined && updates.instrumentType !== currentTrade.instrument_type) ||
       (updates.contractSize !== undefined && roundTo(updates.contractSize) !== roundTo(currentTrade.contract_size)) ||
       (updates.pointValue !== undefined && roundTo(updates.pointValue) !== roundTo(currentTrade.point_value)) ||
-      (updates.tickSize !== undefined && roundTo(updates.tickSize) !== roundTo(currentTrade.tick_size))
+      (updates.tickSize !== undefined && roundTo(updates.tickSize) !== roundTo(currentTrade.tick_size)) ||
+      (updates.swap !== undefined && roundTo(updates.swap) !== roundTo(currentTrade.swap))
     );
 
     console.log('[PNL DEBUG] hasPnLUpdate result:', hasPnLUpdate);
@@ -1765,7 +1784,8 @@ class Trade {
       const contractSize = updates.contractSize !== undefined ? updates.contractSize : (currentTrade.contract_size || (instrumentType === 'option' ? 100 : 1));
       // Use !== undefined to properly handle 0 values for commission and fees
       const commission = updates.commission !== undefined ? updates.commission : currentTrade.commission;
-      const fees = updates.fees !== undefined ? updates.fees : currentTrade.fees;
+      const fees = (updates.fees !== undefined ? updates.fees : currentTrade.fees) || 0;
+      const swap = (updates.swap !== undefined ? updates.swap : currentTrade.swap) || 0;
 
       const pnl = this.calculatePnL(
         updates.entryPrice !== undefined ? updates.entryPrice : currentTrade.entry_price,
@@ -1773,7 +1793,7 @@ class Trade {
         quantity,
         updates.side || currentTrade.side,
         commission,
-        fees,
+        Number(fees) + Number(swap),
         instrumentType,
         contractSize,
         pointValue

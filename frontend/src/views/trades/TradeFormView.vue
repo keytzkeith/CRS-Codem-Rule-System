@@ -4,19 +4,34 @@
       <SectionHeader
         eyebrow="Trade capture"
         :title="isEditing ? 'Edit trade' : 'Record a new trade'"
-        description="Compact, rule-based entry flow. Save once and the dashboard, trades list, journal, and analytics update from the same mock store."
+        description="Compact, rule-based entry flow. Save once and the dashboard, trades list, journal, and analytics update from the same CRS record."
       >
         <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
           <router-link to="/trades" class="crs-button crs-button-ghost w-full sm:w-auto">Back</router-link>
-          <button type="submit" class="crs-button-primary w-full sm:w-auto" form="crs-trade-form">
-            {{ isEditing ? 'Save changes' : 'Save trade' }}
+          <button type="submit" class="crs-button-primary w-full sm:w-auto" :disabled="crsStore.tradesLoading || !accounts.length" form="crs-trade-form">
+            {{ crsStore.tradesLoading ? 'Saving...' : isEditing ? 'Save changes' : 'Save trade' }}
           </button>
         </div>
       </SectionHeader>
     </section>
 
-    <form id="crs-trade-form" class="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]" @submit.prevent="submitTrade">
+    <ChartCard
+      v-if="!accounts.length"
+      eyebrow="Account required"
+      title="Create an account before recording trades."
+      description="CRS needs an account context for balance-based risk, imports, and equity analytics."
+    >
+      <router-link to="/accounts" class="crs-button-primary w-full sm:w-auto">Go to accounts</router-link>
+    </ChartCard>
+
+    <form v-else id="crs-trade-form" class="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]" @submit.prevent="submitTrade">
       <div class="space-y-6">
+        <div
+          v-if="saveError"
+          class="rounded-[18px] border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100"
+        >
+          {{ saveError }}
+        </div>
         <ChartCard eyebrow="Execution" title="Trade facts" description="Core execution numbers and tags for the trade ledger.">
           <div class="grid gap-4 md:grid-cols-2">
             <label class="crs-filter-field">
@@ -24,8 +39,16 @@
               <input v-model="form.date" type="date" class="crs-input" placeholder="2026-03-15" required />
             </label>
             <label class="crs-filter-field">
+              <span>Open time</span>
+              <input v-model="form.openTime" type="datetime-local" class="crs-input" step="1" />
+            </label>
+            <label class="crs-filter-field">
               <span class="flex items-center gap-2">Pair <InfoTip text="Instrument or symbol traded, such as EURUSD, XAUUSD, or NAS100." /></span>
               <input v-model="form.pair" type="text" class="crs-input" placeholder="EURUSD" required />
+            </label>
+            <label class="crs-filter-field">
+              <span>Close time</span>
+              <input v-model="form.closeTime" type="datetime-local" class="crs-input" step="1" />
             </label>
             <label class="crs-filter-field">
               <span>Direction</span>
@@ -76,8 +99,34 @@
               <input v-model.number="form.takeProfit" type="number" step="0.0001" class="crs-input" placeholder="1.08720" required />
             </label>
             <label class="crs-filter-field">
-              <span class="flex items-center gap-2">Result in R <InfoTip text="Your realized trade result in units of risk. CRS multiplies this by your active risk amount to compute currency PnL." /></span>
-              <input v-model.number="form.resultR" type="number" step="0.1" class="crs-input" placeholder="1.8" required />
+              <span>Volume traded</span>
+              <input v-model.number="form.volume" type="number" step="0.01" class="crs-input" placeholder="0.04" required />
+            </label>
+            <label class="crs-filter-field">
+              <span class="flex items-center gap-2">Close price <InfoTip text="Use the actual close price, not just the target. CRS calculates the realized R multiple from entry, stop loss, and this close price." /></span>
+              <input v-model.number="form.closePrice" type="number" step="0.0001" class="crs-input" placeholder="1.08412" required />
+            </label>
+            <label class="crs-filter-field">
+              <span class="flex items-center gap-2">Contract multiplier <InfoTip text="CRS auto-detects a multiplier by symbol, but you can override it for metals, indices, or broker-specific contract sizing." /></span>
+              <input v-model.number="form.contractMultiplier" type="number" step="0.01" class="crs-input" placeholder="100" required />
+            </label>
+            <label class="crs-filter-field">
+              <span class="flex items-center gap-2">Result in R <InfoTip text="Calculated automatically from entry, stop loss, direction, and close price. This uses 3 decimal places to avoid masking small differences." /></span>
+              <input :value="formatRValue(form.resultR)" type="text" class="crs-input" readonly />
+            </label>
+            <label class="crs-filter-field">
+              <span>Commission</span>
+              <div class="relative">
+                <span class="crs-field-prefix">{{ currencySymbol }}</span>
+                <input v-model.number="form.commission" type="number" step="0.01" class="crs-input crs-input-prefixed" placeholder="0.00" />
+              </div>
+            </label>
+            <label class="crs-filter-field">
+              <span>Swap / fees</span>
+              <div class="relative">
+                <span class="crs-field-prefix">{{ currencySymbol }}</span>
+                <input v-model.number="form.swap" type="number" step="0.01" class="crs-input crs-input-prefixed" placeholder="0.00" />
+              </div>
             </label>
             <label class="crs-filter-field md:col-span-2">
               <span>Result amount</span>
@@ -135,12 +184,12 @@
         <ChartCard eyebrow="Checklist" title="Rule validation" description="Tick the rule-based conditions that were actually present.">
           <div class="grid gap-3">
             <label
-              v-for="item in checklistFields"
-              :key="item.key"
+              v-for="item in checklistItems"
+              :key="item.id"
               class="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300"
             >
               <span>{{ item.label }}</span>
-              <input v-model="form.checklist[item.key]" type="checkbox" class="h-4 w-4 rounded border-white/10 bg-transparent text-amber-200" />
+              <input v-model="form.checklist[item.id]" type="checkbox" class="h-4 w-4 rounded border-white/10 bg-transparent text-amber-200" />
             </label>
           </div>
         </ChartCard>
@@ -160,7 +209,10 @@
             <MetricCard label="Status" :value="statusLabel" :tone="statusTone" hint="Derived from result in R" />
             <MetricCard label="Planned RR" :value="plannedRR" hint="From entry, stop, and target" info="Calculated from the distance between entry, stop loss, and take profit." />
             <MetricCard label="Risk per trade" :value="currency(riskAmount)" hint="From settings" tone="warning" info="This is the live risk amount from settings, adjusted by the selected account if risk mode uses percentages." />
-            <MetricCard label="Result amount" :value="currency(resultAmount)" :tone="resultAmount >= 0 ? 'positive' : 'negative'" hint="Calculated automatically" info="Computed as result in R multiplied by the current active risk amount." />
+            <MetricCard label="Actual risk" :value="currency(actualRiskAmount)" hint="From stop and volume" tone="warning" info="Calculated from stop-loss distance, volume, and contract multiplier. This is the true amount placed at risk on the trade." />
+            <MetricCard label="Risk of account" :value="`${riskPercentOfAccount.toFixed(3)}%`" hint="Consistency check" info="Shows the actual percentage of the selected account risked on this trade so you can compare it to your usual standard." />
+            <MetricCard label="Pips / points" :value="String(pipsMoved)" hint="Move captured" info="The signed move from entry to close converted using the inferred or overridden pip size." />
+            <MetricCard label="Result amount" :value="currency(resultAmount)" :tone="resultAmount >= 0 ? 'positive' : 'negative'" hint="Calculated automatically" info="Computed from price movement, volume, contract multiplier, commission, and swap or fees." />
             <MetricCard label="Plan-followed" :value="form.journal.followedPlan ? 'Yes' : 'No'" hint="Journal switch" />
           </div>
         </ChartCard>
@@ -170,7 +222,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ChartCard from '@/components/crs/ChartCard.vue'
 import ImagePreviewCard from '@/components/crs/ImagePreviewCard.vue'
@@ -179,26 +231,29 @@ import MetricCard from '@/components/crs/MetricCard.vue'
 import SectionHeader from '@/components/crs/SectionHeader.vue'
 import TagPicker from '@/components/crs/TagPicker.vue'
 import { useCrsStore } from '@/stores/crs'
-import { calculatePlannedRR } from '@/utils/crsAnalytics'
+import {
+  calculateActualRiskAmount,
+  calculateNetPnl,
+  calculatePlannedRR,
+  calculatePipsMoved,
+  calculateResultR,
+  calculateRiskPercentOfAccount,
+  inferContractMultiplier,
+  inferPipSize
+} from '@/utils/crsAnalytics'
 
 const route = useRoute()
 const router = useRouter()
 const crsStore = useCrsStore()
+const saveError = ref('')
 
 const existingTrade = computed(() => (route.params.id ? crsStore.getTradeById(route.params.id) : null))
 const isEditing = computed(() => Boolean(existingTrade.value))
 
 const sessionOptions = ['London', 'New York', 'Asia']
-const checklistFields = [
-  { key: 'htfBosConfirmed', label: 'HTF BOS confirmed' },
-  { key: 'pullbackToOb', label: 'Pullback to OB' },
-  { key: 'm15Confirmation', label: 'M15 confirmation' },
-  { key: 'tradedWithBias', label: 'Traded with bias' },
-  { key: 'validSession', label: 'Valid session' },
-  { key: 'minimumRRMet', label: 'RR >= 1:2' }
-]
 
 const form = reactive(buildForm(existingTrade.value))
+const checklistItems = computed(() => crsStore.settings.checklistItems || [])
 const availableSetupTypes = computed(() => crsStore.availableSetupTypes)
 const availableTags = computed(() => crsStore.availableTags)
 const accounts = computed(() => crsStore.settings.accounts || [])
@@ -224,7 +279,46 @@ const plannedRR = computed(() => `${calculatePlannedRR({
   stopLoss: form.stopLoss,
   takeProfit: form.takeProfit
 })}:1`)
-const resultAmount = computed(() => Number((form.resultR * riskAmount.value).toFixed(2)))
+const resultAmount = computed(() => calculateNetPnl({
+  entry: form.entry,
+  closePrice: form.closePrice,
+  direction: form.direction,
+  volume: form.volume,
+  contractMultiplier: form.contractMultiplier,
+  commission: form.commission,
+  swap: form.swap
+}))
+const actualRiskAmount = computed(() => calculateActualRiskAmount({
+  entry: form.entry,
+  stopLoss: form.stopLoss,
+  volume: form.volume,
+  contractMultiplier: form.contractMultiplier
+}))
+const calculatedResultR = computed(() => {
+  if (!actualRiskAmount.value) {
+    return calculateResultR({
+      entry: form.entry,
+      stopLoss: form.stopLoss,
+      closePrice: form.closePrice,
+      direction: form.direction
+    })
+  }
+
+  return Number((resultAmount.value / actualRiskAmount.value).toFixed(3))
+})
+const riskPercentOfAccount = computed(() => calculateRiskPercentOfAccount({
+  entry: form.entry,
+  stopLoss: form.stopLoss,
+  volume: form.volume,
+  contractMultiplier: form.contractMultiplier
+}, selectedAccount.value?.size))
+const pipsMoved = computed(() => calculatePipsMoved({
+  pair: form.pair,
+  entry: form.entry,
+  closePrice: form.closePrice,
+  direction: form.direction,
+  pipSize: form.pipSize
+}))
 
 watch(
   existingTrade,
@@ -234,31 +328,89 @@ watch(
   { immediate: false }
 )
 
-function submitTrade() {
-  const savedTrade = crsStore.saveTrade({
-    id: existingTrade.value?.id,
-    ...form,
-    accountName: selectedAccount.value?.name || '',
-    setupType: form.setupTypes[0] || 'Custom',
-    setupStack: form.setupTypes,
-    resultAmount: resultAmount.value
-  })
+watch(
+  [() => form.entry, () => form.stopLoss, () => form.closePrice, () => form.direction, () => form.volume, () => form.contractMultiplier, () => form.commission, () => form.swap],
+  () => {
+    form.resultR = calculatedResultR.value
+  },
+  { immediate: true }
+)
 
-  router.push(`/trades/${savedTrade.id}`)
+watch(
+  () => form.pair,
+  (nextPair) => {
+    if (!nextPair) {
+      return
+    }
+
+    if (!existingTrade.value || !existingTrade.value.contractMultiplier) {
+      form.contractMultiplier = inferContractMultiplier(nextPair)
+    }
+
+    if (!existingTrade.value || !existingTrade.value.pipSize) {
+      form.pipSize = inferPipSize(nextPair)
+    }
+  },
+  { immediate: true }
+)
+
+async function submitTrade() {
+  saveError.value = ''
+
+  if (!accounts.value.length || !form.accountId) {
+    router.push('/accounts')
+    return
+  }
+
+  form.date = (form.openTime || form.closeTime || form.date).slice(0, 10)
+
+  try {
+    const savedTrade = await crsStore.persistTrade({
+      id: existingTrade.value?.id,
+      ...form,
+      accountName: selectedAccount.value?.name || '',
+      setupType: form.setupTypes[0] || 'Custom',
+      setupStack: form.setupTypes,
+      volume: form.volume,
+      openTime: form.openTime,
+      closeTime: form.closeTime,
+      contractMultiplier: form.contractMultiplier,
+      pipSize: form.pipSize,
+      commission: form.commission,
+      swap: form.swap,
+      actualRiskAmount: actualRiskAmount.value,
+      riskPercentOfAccount: riskPercentOfAccount.value,
+      pips: pipsMoved.value,
+      resultAmount: resultAmount.value
+    })
+
+    router.push(`/trades/${savedTrade.id}`)
+  } catch (error) {
+    saveError.value = formatTradeSaveError(error)
+  }
 }
 
 function buildForm(trade) {
   if (!trade) {
+    const seedDateTime = `${new Date().toISOString().slice(0, 16)}`
     return {
-      date: new Date().toISOString().slice(0, 10),
+      date: seedDateTime.slice(0, 10),
+      openTime: seedDateTime,
+      closeTime: '',
       pair: '',
       direction: 'Long',
       setupTypes: ['OB retest'],
       session: 'London',
       accountId: crsStore.settings.activeAccountId,
+      volume: 1,
+      contractMultiplier: 1,
+      pipSize: 0.01,
+      commission: 0,
+      swap: 0,
       entry: 0,
       stopLoss: 0,
       takeProfit: 0,
+      closePrice: 0,
       resultR: 0,
       resultAmount: 0,
       tags: [],
@@ -274,27 +426,28 @@ function buildForm(trade) {
         lessonLearned: '',
         notes: ''
       },
-      checklist: {
-        htfBosConfirmed: false,
-        pullbackToOb: false,
-        m15Confirmation: false,
-        tradedWithBias: false,
-        validSession: false,
-        minimumRRMet: false
-      }
+      checklist: buildChecklistState()
     }
   }
 
   return {
-    date: trade.date,
+    date: trade.openTime?.slice(0, 10) || trade.date,
+    openTime: trade.openTime?.slice(0, 16) || `${trade.date}T00:00`,
+    closeTime: trade.closeTime?.slice(0, 16) || '',
     pair: trade.pair,
     direction: trade.direction,
     setupTypes: trade.setupStack?.length ? [...trade.setupStack] : [trade.setupType],
     session: trade.session,
     accountId: trade.accountId || crsStore.settings.activeAccountId,
+    volume: trade.volume || 1,
+    contractMultiplier: trade.contractMultiplier || inferContractMultiplier(trade.pair),
+    pipSize: trade.pipSize || inferPipSize(trade.pair),
+    commission: trade.commission || 0,
+    swap: trade.swap || 0,
     entry: trade.entry,
     stopLoss: trade.stopLoss,
     takeProfit: trade.takeProfit,
+    closePrice: trade.closePrice || trade.entry,
     resultR: trade.resultR,
     resultAmount: trade.resultAmount,
     tags: [...trade.tags],
@@ -302,9 +455,7 @@ function buildForm(trade) {
     journal: {
       ...trade.journal
     },
-    checklist: {
-      ...trade.checklist
-    }
+    checklist: buildChecklistState(trade.checklist)
   }
 }
 
@@ -312,9 +463,39 @@ function currency(value) {
   const amount = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: activeCurrency.value,
-    maximumFractionDigits: 0
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(Math.abs(value))
 
   return value < 0 ? `-${amount}` : amount
+}
+
+function formatTradeSaveError(error) {
+  const backendMessage = error?.response?.data?.error
+
+  if (backendMessage) {
+    return backendMessage
+  }
+
+  if (!error?.response) {
+    return 'Unable to reach the backend. Check that the API server is running and try again.'
+  }
+
+  if (error.response.status >= 500) {
+    return 'Server error while saving the trade. Check the backend logs and try again.'
+  }
+
+  return 'Unable to save the trade with the current values.'
+}
+
+function buildChecklistState(existing = {}) {
+  return (crsStore.settings.checklistItems || []).reduce((acc, item) => {
+    acc[item.id] = Boolean(existing[item.id])
+    return acc
+  }, {})
+}
+
+function formatRValue(value) {
+  return `${Number(value || 0).toFixed(3)}R`
 }
 </script>

@@ -7,6 +7,7 @@ This is the current recommended local workflow for CRS.
 - Frontend: `5173`
 - Backend: `3000`
 - Postgres: `5433`
+- Adminer: `8080`
 
 ## Runtime Shape
 
@@ -82,6 +83,24 @@ VITE_API_URL=/api
 docker compose -f docker-compose.dev.yaml up -d postgres
 ```
 
+### Optional: Start Adminer
+
+```bash
+docker compose -f docker-compose.dev.yaml up -d adminer
+```
+
+Open:
+
+- `http://localhost:8080`
+
+Suggested login values:
+
+- System: `PostgreSQL`
+- Server: `postgres`
+- Username: value of `DB_USER`
+- Password: value of `DB_PASSWORD`
+- Database: value of `DB_NAME`
+
 ### 2. Start backend
 
 ```bash
@@ -142,8 +161,16 @@ Usually one of these:
 Check:
 
 - backend is using `DB_PORT=5433`
-- Docker container `tradetally-db-dev` is up
+- Docker container `crs-db-dev` is up
 - backend startup logs completed migrations successfully
+
+### I want to inspect the data visually
+
+Use Adminer on `http://localhost:8080`. It is the fastest local way to:
+
+- open the `trades` table
+- confirm migrations applied
+- inspect CRS trade fields such as `setup_stack`, `journal_payload`, and `checklist_payload`
 
 ## Current Recommendation
 

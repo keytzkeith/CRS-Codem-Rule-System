@@ -1,4 +1,4 @@
-import { parseISO, format, startOfWeek } from 'date-fns'
+import { format, parseISO, startOfWeek } from 'date-fns'
 
 function round(value, digits = 2) {
   const factor = 10 ** digits
@@ -13,11 +13,115 @@ export function calculatePlannedRR(trade) {
     return 0
   }
 
-  return round(reward / risk, 2)
+  return round(reward / risk, 3)
+}
+
+export function calculateResultR(trade) {
+  const risk = Math.abs(Number(trade.entry || 0) - Number(trade.stopLoss || 0))
+  const close = Number(trade.closePrice ?? trade.exitPrice ?? 0)
+  const entry = Number(trade.entry || 0)
+
+  if (!risk || !close || !entry) {
+    return 0
+  }
+
+  const reward = trade.direction === 'Short' ? entry - close : close - entry
+  return round(reward / risk, 3)
+}
+
+export function calculateNetPnl(trade) {
+  const entry = Number(trade.entry || 0)
+  const close = Number(trade.closePrice ?? trade.exitPrice ?? 0)
+  const volume = Number(trade.volume || trade.quantity || 0)
+  const multiplier = Number(trade.contractMultiplier || 1)
+  const commission = Number(trade.commission || 0)
+  const swap = Number(trade.swap || 0)
+
+  if (!entry || !close || !volume || !multiplier) {
+    return 0
+  }
+
+  const priceMove = trade.direction === 'Short' ? entry - close : close - entry
+  const grossPnl = priceMove * volume * multiplier
+  return round(grossPnl - commission - swap, 2)
+}
+
+export function calculateActualRiskAmount(trade) {
+  const riskDistance = Math.abs(Number(trade.entry || 0) - Number(trade.stopLoss || 0))
+  const volume = Number(trade.volume || trade.quantity || 0)
+  const multiplier = Number(trade.contractMultiplier || 1)
+
+  if (!riskDistance || !volume || !multiplier) {
+    return 0
+  }
+
+  return round(riskDistance * volume * multiplier, 2)
+}
+
+export function calculateRiskPercentOfAccount(trade, accountSize = 0) {
+  const balance = Number(accountSize || 0)
+  if (!balance) {
+    return 0
+  }
+
+  return round((calculateActualRiskAmount(trade) / balance) * 100, 3)
+}
+
+export function inferContractMultiplier(symbol = '') {
+  const value = String(symbol || '').toUpperCase()
+
+  if (['XAUUSD', 'XAUUSDSHORT', 'XAUUSDLONG'].some((entry) => value.startsWith(entry.replace('SHORT', '').replace('LONG', '')))) {
+    return 100
+  }
+
+  if (value === 'XAGUSD') {
+    return 5000
+  }
+
+  if (/^[A-Z]{6}$/.test(value)) {
+    return 100000
+  }
+
+  if (/^(US30|NAS100|SPX|GER40|UK100|DJI|NQ|ES)/.test(value)) {
+    return 1
+  }
+
+  return 1
+}
+
+export function inferPipSize(symbol = '') {
+  const value = String(symbol || '').toUpperCase()
+
+  if (value.includes('JPY')) {
+    return 0.01
+  }
+
+  if (value.startsWith('XAU') || value.startsWith('XAG') || /^(US30|NAS100|SPX|GER40|UK100|DJI|NQ|ES)/.test(value)) {
+    return 0.1
+  }
+
+  if (/^[A-Z]{6}$/.test(value)) {
+    return 0.0001
+  }
+
+  return 0.01
+}
+
+export function calculatePipsMoved(trade) {
+  const entry = Number(trade.entry || 0)
+  const close = Number(trade.closePrice ?? trade.exitPrice ?? 0)
+  const pipSize = Number(trade.pipSize || inferPipSize(trade.pair))
+
+  if (!entry || !close || !pipSize) {
+    return 0
+  }
+
+  const move = trade.direction === 'Short' ? entry - close : close - entry
+  return round(move / pipSize, 1)
 }
 
 export function sortTradesDesc(trades) {
-  return [...trades].sort((a, b) => new Date(b.date) - new Date(a.date))
+  return [...trades].sort((a, b) => getTradeTimestamp(b) - getTradeTimestamp(a))
 }
 
 export function buildDashboardMetrics(trades) {
@@ -95,15 +199,15 @@ export function buildDashboardMetrics(trades) {
   }
 }
 
-export function buildEquityCurve(trades) {
-  let balance = 0
+export function buildEquityCurve(trades, settings = {}) {
+  let balance = Number(getActiveAccount(settings)?.size || 0)
 
   return [...trades]
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .sort((a, b) => getTradeTimestamp(a) - getTradeTimestamp(b))
     .map((trade) => {
       balance += trade.resultAmount
       return {
-        date: trade.date,
+        date: trade.openTime || trade.closeTime || trade.date,
         value: round(balance, 2)
       }
     })
@@ -111,9 +215,9 @@ export function buildEquityCurve(trades) {
 
 export function buildPnlByPeriod(trades) {
   const grouped = trades.reduce((acc, trade) => {
-    const date = parseISO(trade.date)
-    const weekKey = format(startOfWeek(date, { weekStartsOn: 1 }), 'MMM d')
-    const monthKey = format(date, 'MMM')
+    const date = parseTradeDate(trade)
+    const weekKey = format(startOfWeek(date, { weekStartsOn: 1 }), 'MMM d, yyyy')
+    const monthKey = format(date, 'MMM yyyy')
 
     acc.week[weekKey] = (acc.week[weekKey] || 0) + trade.resultAmount
     acc.month[monthKey] = (acc.month[monthKey] || 0) + trade.resultAmount
@@ -185,7 +289,7 @@ function aggregateBySetupStack(trades) {
     .sort((a, b) => b.pnl - a.pnl)
 }
 
-export function buildAnalyticsSeries(trades) {
+export function buildAnalyticsSeries(trades, settings = {}) {
   const outcomeCounts = {
     win: trades.filter((trade) => trade.resultAmount > 0).length,
     loss: trades.filter((trade) => trade.resultAmount < 0).length,
@@ -228,7 +332,7 @@ export function buildAnalyticsSeries(trades) {
     .sort((a, b) => b.value - a.value)
 
   return {
-    equityCurve: buildEquityCurve(trades),
+    equityCurve: buildEquityCurve(trades, settings),
     pnlByPeriod: buildPnlByPeriod(trades),
     performanceByPair: aggregateByField(trades, 'pair'),
     performanceBySession: aggregateByField(trades, 'session'),
@@ -239,18 +343,9 @@ export function buildAnalyticsSeries(trades) {
   }
 }
 
-export function buildChecklistSummary(trades) {
-  const labels = [
-    ['htfBosConfirmed', 'HTF BOS'],
-    ['pullbackToOb', 'Pullback to OB'],
-    ['m15Confirmation', 'M15 confirmation'],
-    ['tradedWithBias', 'With bias'],
-    ['validSession', 'Valid session'],
-    ['minimumRRMet', 'RR >= 1:2']
-  ]
-
-  return labels.map(([key, label]) => {
-    const passed = trades.filter((trade) => trade.checklist[key]).length
+export function buildChecklistSummary(trades, checklistItems = []) {
+  return checklistItems.map(({ id, label }) => {
+    const passed = trades.filter((trade) => trade.checklist?.[id]).length
     return {
       label,
       passed,
@@ -276,11 +371,11 @@ export function buildFilterOptions(trades) {
 export function getActiveAccount(settings) {
   const accounts = Array.isArray(settings.accounts) ? settings.accounts : []
   const active = accounts.find((account) => account.id === settings.activeAccountId)
-  return active || accounts[0] || { id: 'default', name: 'Primary account', size: 0 }
+  return active || accounts[0] || null
 }
 
 export function calculateRiskAmount(settings) {
-  const accountSize = Number(getActiveAccount(settings).size || 0)
+  const accountSize = Number(getActiveAccount(settings)?.size || 0)
   const riskPerTrade = Number(settings.riskPerTrade || 0)
 
   if (settings.riskMode === 'percent') {
@@ -288,4 +383,21 @@ export function calculateRiskAmount(settings) {
   }
 
   return round(riskPerTrade, 2)
+}
+
+function parseTradeDate(trade) {
+  const value = trade.openTime || trade.closeTime || trade.date
+  if (!value) {
+    return new Date()
+  }
+
+  const parsed = typeof value === 'string'
+    ? parseISO(value.includes('T') ? value : value.replace(' ', 'T'))
+    : new Date(value)
+
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed
+}
+
+function getTradeTimestamp(trade) {
+  return parseTradeDate(trade).getTime()
 }

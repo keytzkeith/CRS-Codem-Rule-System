@@ -4,7 +4,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: tradetally-db
+    container_name: crs-db
     environment:
       POSTGRES_USER: ${DB_USER:-trader}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
@@ -22,8 +22,8 @@ services:
   # Application (Frontend + Backend)
   # Build locally to ensure latest features including chart fixes
   app:
-    image: potentialmidas/tradetally:latest
-    container_name: tradetally-app
+    image: keytzkeith/crs-codem-system:latest
+    container_name: crs-app
     depends_on:
       postgres:
         condition: service_healthy
@@ -43,7 +43,7 @@ services:
       EMAIL_PORT: ${EMAIL_PORT:-587}
       EMAIL_USER: ${EMAIL_USER:-}
       EMAIL_PASS: ${EMAIL_PASS:-}
-      EMAIL_FROM: ${EMAIL_FROM:-noreply@tradetally.io}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@crs.local}
       # Frontend API URL
       VITE_API_URL: ${VITE_API_URL:-http://localhost/api}
       # CORS Configuration for Mobile Apps

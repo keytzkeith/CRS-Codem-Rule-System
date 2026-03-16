@@ -66,7 +66,16 @@ CREATE TABLE IF NOT EXISTS trades (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     executions JSONB,
     mae NUMERIC(10,2) DEFAULT NULL,
-    mfe NUMERIC(10,2) DEFAULT NULL
+    mfe NUMERIC(10,2) DEFAULT NULL,
+    contract_multiplier NUMERIC(20,8),
+    pip_size NUMERIC(20,8),
+    swap NUMERIC(20,8) DEFAULT 0,
+    actual_risk_amount NUMERIC(20,8),
+    risk_percent_of_account NUMERIC(10,4),
+    pips NUMERIC(20,8),
+    setup_stack JSONB DEFAULT '[]'::jsonb,
+    journal_payload JSONB DEFAULT '{}'::jsonb,
+    checklist_payload JSONB DEFAULT '{}'::jsonb
 );
 
 ALTER TABLE trades DROP CONSTRAINT IF EXISTS trades_instrument_type_check;

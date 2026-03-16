@@ -1,5 +1,8 @@
 <template>
-  <header class="sticky top-0 z-50 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
+  <header
+    class="sticky top-0 z-50 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl transition-transform duration-300 ease-out"
+    :class="headerClass"
+  >
     <nav class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
       <router-link :to="authStore.isAuthenticated ? '/dashboard' : '/'" class="flex items-center">
         <img src="/crs-main.png" alt="CRS Codem System Rule" class="h-14 w-auto max-w-[180px] object-contain drop-shadow-[0_12px_32px_rgba(0,0,0,0.28)] sm:h-16 sm:max-w-[220px]" />
@@ -66,7 +69,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { CRS_NAV_ITEMS } from '@/config/navigation'
@@ -74,8 +77,13 @@ import { CRS_NAV_ITEMS } from '@/config/navigation'
 const authStore = useAuthStore()
 const route = useRoute()
 const isMobileMenuOpen = ref(false)
+const isMobileHeaderHidden = ref(false)
+let lastScrollY = 0
 
-const navigation = computed(() => CRS_NAV_ITEMS)
+const navigation = computed(() =>
+  CRS_NAV_ITEMS.filter((item) => !item.adminOnly || authStore.user?.role === 'admin')
+)
+const headerClass = computed(() => (isMobileHeaderHidden.value ? '-translate-y-full md:translate-y-0' : 'translate-y-0'))
 
 function isActiveRoute(item) {
   if (!item.activeRoutes?.length) {
@@ -88,4 +96,63 @@ function isActiveRoute(item) {
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
 }
+
+function handleScroll() {
+  const currentScrollY = window.scrollY
+  const isDesktop = window.innerWidth >= 768
+
+  if (isDesktop) {
+    isMobileHeaderHidden.value = false
+    lastScrollY = currentScrollY
+    return
+  }
+
+  if (isMobileMenuOpen.value) {
+    isMobileHeaderHidden.value = false
+    lastScrollY = currentScrollY
+    return
+  }
+
+  if (currentScrollY <= 24) {
+    isMobileHeaderHidden.value = false
+    lastScrollY = currentScrollY
+    return
+  }
+
+  const scrollingDown = currentScrollY > lastScrollY
+  const scrollDelta = Math.abs(currentScrollY - lastScrollY)
+
+  if (scrollDelta < 8) {
+    return
+  }
+
+  isMobileHeaderHidden.value = scrollingDown
+  lastScrollY = currentScrollY
+}
+
+watch(
+  () => route.fullPath,
+  () => {
+    isMobileMenuOpen.value = false
+    isMobileHeaderHidden.value = false
+  }
+)
+
+watch(
+  () => isMobileMenuOpen.value,
+  (isOpen) => {
+    if (isOpen) {
+      isMobileHeaderHidden.value = false
+    }
+  }
+)
+
+onMounted(() => {
+  lastScrollY = window.scrollY
+  window.addEventListener('scroll', handleScroll, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
 </script>

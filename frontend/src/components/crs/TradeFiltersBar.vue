@@ -58,7 +58,7 @@
       />
     </div>
     <div class="lg:col-span-6 flex flex-col gap-3 pt-2 sm:flex-row">
-      <button type="button" class="crs-button crs-button-ghost w-full sm:w-auto" @click="$emit('update:modelValue', { ...localFilters })">
+      <button type="button" class="crs-button crs-button-ghost w-full sm:w-auto" @click="applyFilters">
         Apply filters
       </button>
       <button type="button" class="crs-button crs-button-muted w-full sm:w-auto" @click="clearFilters">
@@ -107,5 +107,11 @@ function clearFilters() {
     startDate: '',
     endDate: ''
   })
+
+  emit('update:modelValue', { ...localFilters })
+}
+
+function applyFilters() {
+  emit('update:modelValue', { ...localFilters })
 }
 </script>

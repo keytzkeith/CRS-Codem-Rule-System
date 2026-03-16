@@ -4,20 +4,31 @@
       <SectionHeader
         eyebrow="Trade archive"
         title="Every execution, filtered by intent."
-        description="Search the full mock trade ledger by pair, session, setup, outcome, and date so review stays quick and honest."
+        description="Search the full trade ledger by pair, session, setup, outcome, and date so review stays quick and honest."
       >
-        <router-link to="/trades/new" class="crs-button-primary">Add trade</router-link>
+        <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+          <router-link :to="accountRequiredRoute('/trades/import')" class="crs-button crs-button-ghost w-full sm:w-auto">Import CSV</router-link>
+          <button type="button" class="crs-button crs-button-ghost w-full sm:w-auto" :disabled="exporting" @click="exportTrades">
+            {{ exporting ? 'Exporting...' : 'Export CSV' }}
+          </button>
+          <router-link :to="accountRequiredRoute('/trades/new')" class="crs-button-primary w-full sm:w-auto">Add trade</router-link>
+        </div>
       </SectionHeader>
     </section>
+
+    <div v-if="importError" class="rounded-[18px] border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+      {{ importError }}
+    </div>
 
     <ChartCard
       eyebrow="Filter stack"
       title="Search and narrow the tape"
-      description="Use the same mock source of truth that powers the dashboard and analytics."
+      description="Use the same CRS source of truth that powers the dashboard and analytics."
     >
       <TradeFiltersBar
-        v-model="filters"
+        :model-value="filters"
         :options="filterOptions"
+        @update:modelValue="applyFilters"
         @create-tag="crsStore.addTag"
         @create-setup="crsStore.addSetupType"
       />
@@ -34,6 +45,8 @@
           <MetricCard label="Net result" :value="currency(filteredPnl)" :tone="filteredPnl >= 0 ? 'positive' : 'negative'" hint="Filtered only" />
           <MetricCard label="Win rate" :value="`${filteredWinRate}%`" hint="Based on current filter stack" tone="positive" />
           <MetricCard label="Plan-followed" :value="`${planFollowRate}%`" hint="Discipline inside filtered set" />
+          <MetricCard label="Volume traded" :value="formatVolume(filteredVolume)" hint="Sum of size" />
+          <MetricCard label="Net pips / points" :value="String(filteredPips)" :tone="filteredPips >= 0 ? 'positive' : 'negative'" hint="Signed move total" />
         </div>
       </ChartCard>
 
@@ -61,21 +74,49 @@
     >
       <TradesTable :trades="filteredTrades" @select="openTrade" />
     </ChartCard>
+
+    <div class="flex justify-end">
+      <button
+        type="button"
+        class="crs-button-danger w-full sm:w-auto"
+        :disabled="crsStore.tradesLoading || !crsStore.sourceTrades.length"
+        @click="deleteAllTrades"
+      >
+        {{ crsStore.tradesLoading ? 'Deleting...' : `Delete all trades (${crsStore.sourceTrades.length})` }}
+      </button>
+    </div>
+
+    <ConfirmDialog
+      :open="showDeleteAllDialog"
+      badge="Delete all trades"
+      title="Delete every recorded trade?"
+      :message="`This will permanently remove all ${crsStore.sourceTrades.length} trades from the current ledger. This cannot be undone.`"
+      confirm-text="Delete all trades"
+      loading-text="Deleting trades..."
+      :loading="crsStore.tradesLoading"
+      @cancel="showDeleteAllDialog = false"
+      @confirm="confirmDeleteAllTrades"
+    />
   </div>
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import ChartCard from '@/components/crs/ChartCard.vue'
+import ConfirmDialog from '@/components/crs/ConfirmDialog.vue'
 import MetricCard from '@/components/crs/MetricCard.vue'
 import SectionHeader from '@/components/crs/SectionHeader.vue'
 import TradeFiltersBar from '@/components/crs/TradeFiltersBar.vue'
 import TradesTable from '@/components/crs/TradesTable.vue'
 import { useCrsStore } from '@/stores/crs'
+import { exportTradesToCsv } from '@/utils/crsCsv'
 
 const router = useRouter()
 const crsStore = useCrsStore()
+const exporting = ref(false)
+const importError = ref('')
+const showDeleteAllDialog = ref(false)
 
 const filters = reactive({
   query: '',
@@ -92,6 +133,8 @@ const filters = reactive({
 const filterOptions = computed(() => crsStore.filterOptions)
 const filteredTrades = computed(() => crsStore.filterTrades(filters))
 const filteredPnl = computed(() => filteredTrades.value.reduce((sum, trade) => sum + trade.resultAmount, 0))
+const filteredVolume = computed(() => filteredTrades.value.reduce((sum, trade) => sum + Number(trade.volume || 0), 0))
+const filteredPips = computed(() => Number(filteredTrades.value.reduce((sum, trade) => sum + Number(trade.pips || 0), 0).toFixed(1)))
 const filteredWinRate = computed(() => {
   if (!filteredTrades.value.length) {
     return 0
@@ -131,9 +174,59 @@ function currency(value) {
   const amount = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: crsStore.settings.currency || 'USD',
-    maximumFractionDigits: 0
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(Math.abs(value))
 
   return value < 0 ? `-${amount}` : amount
+}
+
+function formatVolume(value) {
+  return Number(value || 0).toFixed(2)
+}
+
+function accountRequiredRoute(target) {
+  return crsStore.settings.accounts?.length ? target : '/accounts'
+}
+
+function applyFilters(nextFilters) {
+  Object.assign(filters, nextFilters)
+}
+
+async function exportTrades() {
+  exporting.value = true
+  importError.value = ''
+
+  try {
+    const csv = exportTradesToCsv(filteredTrades.value)
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `crs-trades-${new Date().toISOString().slice(0, 10)}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    importError.value = error?.response?.data?.error || 'Unable to export trades right now.'
+  } finally {
+    exporting.value = false
+  }
+}
+
+async function deleteAllTrades() {
+  if (!crsStore.sourceTrades.length) {
+    return
+  }
+
+  showDeleteAllDialog.value = true
+}
+
+async function confirmDeleteAllTrades() {
+  try {
+    await crsStore.deleteAllTrades()
+    showDeleteAllDialog.value = false
+  } catch (error) {
+    importError.value = error?.response?.data?.error || 'Unable to delete all trades right now.'
+  }
 }
 </script>

@@ -36,6 +36,7 @@ The clean local setup for this repo is:
 - frontend running natively on `5173`
 - backend running natively on `3000`
 - Postgres running in Docker on `5433`
+- optional Adminer database dashboard on `8080`
 
 ### 1. Start Postgres
 
@@ -70,6 +71,27 @@ Then open:
 - Frontend: `5173`
 - Backend API: `3000`
 - Postgres: `5433`
+- Adminer: `8080`
+
+## Database Dashboard
+
+You can browse the local PostgreSQL database in the browser with Adminer:
+
+```bash
+docker compose -f docker-compose.dev.yaml up -d postgres adminer
+```
+
+Then open:
+
+- `http://localhost:8080`
+
+Use the database credentials from [backend/.env](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/.env), typically:
+
+- system: `PostgreSQL`
+- server: `postgres` when using Docker network, or `host.docker.internal` / `localhost` depending on how you connect
+- username: value of `DB_USER`
+- password: value of `DB_PASSWORD`
+- database: value of `DB_NAME`
 
 If you hit `address already in use`, it usually means an old dev process is still running. Clean up with:
 
@@ -136,6 +158,7 @@ Current backend direction:
 - reuse `diary_entries`
 - reuse `user_accounts`
 - extend settings for CRS preferences where needed
+- persist CRS trade fields directly on `trades` for setup stack, journal/checklist payloads, and risk metrics
 
 ## What Still Needs Work
 

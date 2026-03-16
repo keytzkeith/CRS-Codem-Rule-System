@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "[DEPLOY] TradeTally Quick Deploy Script"
+echo "[DEPLOY] CRS Quick Deploy Script"
 echo "=================================="
 
 # Check if Docker is installed
@@ -20,7 +20,7 @@ fi
 echo "[OK] Docker is installed"
 
 # Create deployment directory
-DEPLOY_DIR="tradetally-deployment"
+DEPLOY_DIR="crs-deployment"
 if [ -d "$DEPLOY_DIR" ]; then
     echo "[INFO] Directory $DEPLOY_DIR already exists. Using existing directory."
     cd "$DEPLOY_DIR"
@@ -55,11 +55,11 @@ fi
 
 # Update docker-compose.yml with correct image name
 echo "[CONFIG] Please update the Docker image name in docker-compose.yml"
-echo "Replace 'YOUR_DOCKERHUB_USERNAME/tradetally:latest' with your actual image name"
-read -p "Enter your Docker Hub image name (e.g., username/tradetally:latest): " IMAGE_NAME
+echo "Replace 'YOUR_DOCKERHUB_USERNAME/crs-codem-system:latest' with your actual image name"
+read -p "Enter your Docker Hub image name (e.g., username/crs-codem-system:latest): " IMAGE_NAME
 
 if [ ! -z "$IMAGE_NAME" ]; then
-    sed -i.bak "s|YOUR_DOCKERHUB_USERNAME/tradetally:latest|${IMAGE_NAME}|" docker-compose.yml
+    sed -i.bak "s|YOUR_DOCKERHUB_USERNAME/crs-codem-system:latest|${IMAGE_NAME}|" docker-compose.yml
     echo "[OK] Updated image name to: $IMAGE_NAME"
 fi
 
@@ -67,7 +67,7 @@ fi
 mkdir -p logs data
 
 # Start deployment
-echo "[DEPLOY] Starting TradeTally deployment..."
+echo "[DEPLOY] Starting CRS deployment..."
 docker-compose up -d
 
 # Wait for database to be ready
@@ -76,13 +76,13 @@ sleep 10
 
 # Initialize database schema
 echo "[DB] Initializing database schema..."
-docker exec -i tradetally-db psql -U trader -d tradetally < schema.sql 2>/dev/null || echo "Schema may already exist"
+docker exec -i crs-db psql -U trader -d tradetally < schema.sql 2>/dev/null || docker exec -i tradetally-db psql -U trader -d tradetally < schema.sql 2>/dev/null || echo "Schema may already exist"
 
 echo ""
-echo "[SUCCESS] TradeTally deployment complete!"
+echo "[SUCCESS] CRS deployment complete!"
 echo ""
 echo "[INFO] Access your application:"
-echo "   TradeTally: http://localhost"
+echo "   CRS: http://localhost"
 echo "   Database Admin: http://localhost:8080"
 echo ""
 echo "[DEMO] Demo Login:"

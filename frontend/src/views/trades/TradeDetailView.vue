@@ -6,7 +6,7 @@
           <p class="crs-eyebrow">Trade journal</p>
           <h1 class="crs-section-title">{{ trade.pair }} · {{ trade.setupType }}</h1>
           <p class="crs-section-copy">
-            {{ formatLongDate(trade.date) }} · {{ trade.direction }} · {{ trade.session }} · {{ trade.accountName || 'Primary account' }} · {{ trade.tags.join(' / ') }}
+            {{ formatLongDate(trade.date) }} · {{ trade.direction }} · {{ trade.session }} · {{ trade.accountName || 'No account selected' }} · {{ trade.tags.join(' / ') }}
           </p>
           <div v-if="trade.setupStack?.length" class="mt-4 flex flex-wrap gap-2">
             <span
@@ -20,6 +20,9 @@
         </div>
         <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
           <ResultBadge :value="trade.status" />
+          <button type="button" class="crs-button-danger w-full sm:w-auto" :disabled="deleting" @click="removeTrade">
+            {{ deleting ? 'Deleting...' : 'Delete trade' }}
+          </button>
           <router-link :to="`/trades/${trade.id}/edit`" class="crs-button crs-button-ghost w-full sm:w-auto">Edit trade</router-link>
           <router-link to="/trades" class="crs-button crs-button-ghost w-full sm:w-auto">Back to trades</router-link>
         </div>
@@ -34,9 +37,18 @@
       >
         <div class="grid gap-4 sm:grid-cols-2">
           <MetricCard label="Entry" :value="formatPrice(trade.entry)" hint="Initial execution" />
+          <MetricCard label="Close price" :value="formatPrice(trade.closePrice)" hint="Actual close" />
+          <MetricCard label="Open time" :value="formatDateTime(trade.openTime)" hint="Execution start" />
+          <MetricCard label="Close time" :value="formatDateTime(trade.closeTime)" hint="Execution end" />
+          <MetricCard label="Volume" :value="String(trade.volume || 0)" hint="Position size" />
+          <MetricCard label="Multiplier" :value="String(trade.contractMultiplier || 1)" hint="Contract sizing" />
           <MetricCard label="Stop loss" :value="formatPrice(trade.stopLoss)" hint="Invalidation" tone="negative" />
           <MetricCard label="Take profit" :value="formatPrice(trade.takeProfit)" hint="Primary target" tone="positive" />
-          <MetricCard label="Result" :value="`${trade.resultR.toFixed(1)}R`" :hint="currency(trade.resultAmount)" :tone="trade.resultAmount >= 0 ? 'positive' : 'negative'" />
+          <MetricCard label="Result" :value="`${trade.resultR.toFixed(3)}R`" :hint="currency(trade.resultAmount)" :tone="trade.resultAmount >= 0 ? 'positive' : 'negative'" />
+          <MetricCard label="Actual risk" :value="currency(trade.actualRiskAmount || 0)" hint="Capital at risk" tone="warning" />
+          <MetricCard label="Risk of account" :value="`${Number(trade.riskPercentOfAccount || 0).toFixed(3)}%`" hint="Consistency" />
+          <MetricCard label="Pips / points" :value="String(trade.pips || 0)" hint="Signed move" />
+          <MetricCard label="Holding time" :value="formatHoldingTime(trade)" hint="Open to close" />
           <MetricCard label="Followed plan" :value="trade.journal.followedPlan ? 'Yes' : 'No'" hint="Rule-based execution" />
           <MetricCard label="Planned RR" :value="`${trade.plannedRR}:1`" hint="Reward to risk" />
         </div>
@@ -57,7 +69,7 @@
         title="Rule validation"
         description="This is the execution checklist that keeps the system objective."
       >
-        <ChecklistPanel :checklist="trade.checklist" />
+        <ChecklistPanel :checklist="trade.checklist" :items="checklistItems" />
       </ChartCard>
 
       <ChartCard
@@ -97,6 +109,18 @@
         </div>
       </ChartCard>
     </div>
+
+    <ConfirmDialog
+      :open="showDeleteDialog"
+      badge="Delete trade"
+      title="Delete this trade?"
+      :message="`This will permanently remove ${trade.pair} from ${formatLongDate(trade.date)} and cannot be undone.`"
+      confirm-text="Delete trade"
+      loading-text="Deleting trade..."
+      :loading="deleting"
+      @cancel="showDeleteDialog = false"
+      @confirm="confirmDeleteTrade"
+    />
   </div>
 
   <div v-else class="crs-page">
@@ -107,20 +131,25 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { format, parseISO } from 'date-fns'
 import ChartCard from '@/components/crs/ChartCard.vue'
 import ChecklistPanel from '@/components/crs/ChecklistPanel.vue'
+import ConfirmDialog from '@/components/crs/ConfirmDialog.vue'
 import ImagePreviewCard from '@/components/crs/ImagePreviewCard.vue'
 import MetricCard from '@/components/crs/MetricCard.vue'
 import ResultBadge from '@/components/crs/ResultBadge.vue'
 import { useCrsStore } from '@/stores/crs'
 
 const route = useRoute()
+const router = useRouter()
 const crsStore = useCrsStore()
+const deleting = ref(false)
+const showDeleteDialog = ref(false)
 
 const trade = computed(() => crsStore.getTradeById(route.params.id))
+const checklistItems = computed(() => crsStore.settings.checklistItems || [])
 
 function formatPrice(value) {
   return value >= 100 ? value.toFixed(2) : value.toFixed(4)
@@ -130,13 +159,72 @@ function formatLongDate(value) {
   return format(parseISO(value), 'MMMM d, yyyy')
 }
 
+function formatDateTime(value) {
+  if (!value) {
+    return '—'
+  }
+
+  return format(parseISO(value), 'MMM d, yyyy HH:mm')
+}
+
+function formatHoldingTime(tradeRecord) {
+  if (!tradeRecord?.openTime || !tradeRecord?.closeTime) {
+    return '—'
+  }
+
+  const start = parseISO(tradeRecord.openTime)
+  const end = parseISO(tradeRecord.closeTime)
+  const durationMs = end.getTime() - start.getTime()
+
+  if (!Number.isFinite(durationMs) || durationMs <= 0) {
+    return '—'
+  }
+
+  const totalMinutes = Math.floor(durationMs / 60000)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+
+  if (hours && minutes) {
+    return `${hours}h ${minutes}m`
+  }
+
+  if (hours) {
+    return `${hours}h`
+  }
+
+  return `${minutes}m`
+}
+
 function currency(value) {
   const amount = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: crsStore.settings.currency || 'USD',
-    maximumFractionDigits: 0
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(Math.abs(value))
 
   return value < 0 ? `-${amount}` : amount
+}
+
+async function removeTrade() {
+  if (!trade.value || deleting.value) {
+    return
+  }
+  showDeleteDialog.value = true
+}
+
+async function confirmDeleteTrade() {
+  if (!trade.value || deleting.value) {
+    return
+  }
+  deleting.value = true
+
+  try {
+    await crsStore.deleteTrade(trade.value.id)
+    showDeleteDialog.value = false
+    router.push('/trades')
+  } finally {
+    deleting.value = false
+  }
 }
 </script>

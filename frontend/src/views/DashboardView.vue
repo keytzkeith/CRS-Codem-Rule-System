@@ -14,7 +14,7 @@
     </section>
 
     <section class="crs-stat-grid">
-      <MetricCard label="Total trades" :value="String(metrics.totalTrades)" hint="Seeded sample journal" chip="mock data" info="Total number of trades currently included in the dashboard calculations." />
+      <MetricCard label="Total trades" :value="String(metrics.totalTrades)" hint="Current trade ledger" info="Total number of trades currently included in the dashboard calculations." />
       <MetricCard label="Win rate" :value="`${metrics.winRate}%`" hint="Clean execution rate" tone="positive" info="Percentage of all trades that closed positive." />
       <MetricCard label="Net PnL" :value="currency(metrics.netPnl)" hint="Across all seeded trades" :tone="metrics.netPnl >= 0 ? 'positive' : 'negative'" info="Combined profit and loss across the full current dataset." />
       <MetricCard label="Average win" :value="currency(metrics.avgWin)" hint="Winners only" tone="positive" info="Average currency gain across winning trades only." />
@@ -30,10 +30,10 @@
       <ChartCard
         eyebrow="Equity pulse"
         title="Equity curve"
-        description="A compact line read on how the sample month compounds when rule-following stays high."
+      description="A compact line read on how the account compounds when rule-following stays high."
       >
         <div v-if="equityPlot.length" class="crs-chart-stage">
-        <svg viewBox="0 0 640 260" class="h-64 w-full">
+        <svg :viewBox="`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`" class="h-72 w-full">
           <defs>
             <linearGradient id="equityLine" x1="0%" x2="100%" y1="0%" y2="100%">
               <stop offset="0%" stop-color="#f2d7a1" />
@@ -45,7 +45,7 @@
             </linearGradient>
           </defs>
           <g>
-            <line v-for="line in gridLines" :key="line.y" x1="12" x2="628" :y1="line.y" :y2="line.y" class="crs-chart-grid-line" />
+            <line v-for="line in gridLines" :key="line.y" :x1="PLOT_LEFT" :x2="PLOT_RIGHT" :y1="line.y" :y2="line.y" class="crs-chart-grid-line" />
           </g>
           <polygon :points="equityAreaPoints" class="crs-chart-area-fill" />
           <polyline
@@ -61,21 +61,29 @@
             <circle :cx="point.x" :cy="point.y" r="16" fill="transparent" class="cursor-pointer" @mouseenter="hoveredEquityPoint = point" @mouseleave="hoveredEquityPoint = null" />
           </g>
           <g v-for="line in gridLines" :key="line.label">
-            <text x="8" :y="line.y - 4" text-anchor="start" class="crs-chart-axis-label">{{ currency(line.value) }}</text>
+            <text :x="PLOT_LEFT - 10" :y="line.y + 4" text-anchor="end" class="crs-chart-axis-label">{{ currency(line.value) }}</text>
+          </g>
+          <g v-for="tick in equityAxisTicks" :key="tick.label">
+            <text
+              :x="tick.x"
+              :y="PLOT_BOTTOM + 20"
+              text-anchor="start"
+              class="crs-chart-axis-label"
+              :transform="`rotate(90 ${tick.x} ${PLOT_BOTTOM + 20})`"
+            >
+              {{ tick.label }}
+            </text>
           </g>
         </svg>
         <div
           v-if="hoveredEquityPoint"
           class="crs-chart-hover-card"
-          :style="{ left: `${hoveredEquityPoint.x / 640 * 100}%`, top: `${hoveredEquityPoint.y / 260 * 100}%`, transform: 'translate(-10%, -120%)' }"
+          :style="{ left: `${hoveredEquityPoint.x / CHART_WIDTH * 100}%`, top: `${hoveredEquityPoint.y / CHART_HEIGHT * 100}%`, transform: 'translate(-10%, -120%)' }"
         >
           <div><strong>{{ formatDate(hoveredEquityPoint.label) }}</strong></div>
           <div>Equity: <strong>{{ currency(hoveredEquityPoint.value) }}</strong></div>
           <div>Trade #: {{ hoveredEquityPoint.index + 1 }}</div>
         </div>
-        </div>
-        <div v-if="equityPlot.length" class="mt-4 flex flex-wrap justify-between gap-3 text-xs uppercase tracking-[0.18em] text-slate-500">
-          <span v-for="point in edgeLabels" :key="point.label">{{ point.label }}</span>
         </div>
         <EmptyState
           v-else
@@ -136,7 +144,7 @@
             </div>
             <div class="text-right">
               <ResultBadge :value="trade.status" />
-              <p class="mt-2 text-lg font-semibold text-white">{{ trade.resultR.toFixed(1) }}R</p>
+              <p class="mt-2 text-lg font-semibold text-white">{{ trade.resultR.toFixed(3) }}R</p>
             </div>
           </router-link>
         </div>
@@ -155,18 +163,19 @@
         title="Outcome distribution"
         description="A compact read on how the ledger is splitting across wins, losses, and breakeven outcomes."
       >
-        <div v-if="metrics.totalTrades" class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+        <div v-if="metrics.totalTrades" class="grid gap-6 xl:grid-cols-[240px_minmax(0,1fr)] xl:items-start">
           <div class="flex justify-center">
-            <svg viewBox="0 0 220 220" class="h-52 w-52">
-              <circle class="crs-donut-track" cx="110" cy="110" r="74" />
-              <circle class="crs-donut-win" cx="110" cy="110" r="74" :stroke-dasharray="winDash" stroke-dashoffset="0" />
-              <circle class="crs-donut-loss" cx="110" cy="110" r="74" :stroke-dasharray="lossDash" :stroke-dashoffset="lossOffset" />
-              <circle class="crs-donut-breakeven" cx="110" cy="110" r="74" :stroke-dasharray="breakevenDash" :stroke-dashoffset="breakevenOffset" />
-              <text x="110" y="102" text-anchor="middle" fill="#f8fafc" font-size="34" font-weight="600">{{ metrics.totalTrades }}</text>
-              <text x="110" y="128" text-anchor="middle" fill="#7b8aa3" font-size="12">Trades logged</text>
+            <svg viewBox="0 0 220 160" class="h-40 w-56 overflow-visible">
+              <path :d="semiDonutPath" pathLength="100" class="crs-semi-donut-track" />
+              <path :d="semiDonutPath" pathLength="100" class="crs-semi-donut-win" :stroke-dasharray="semiDonutSegments.win.dash" :stroke-dashoffset="semiDonutSegments.win.offset" />
+              <path :d="semiDonutPath" pathLength="100" class="crs-semi-donut-loss" :stroke-dasharray="semiDonutSegments.loss.dash" :stroke-dashoffset="semiDonutSegments.loss.offset" />
+              <path :d="semiDonutPath" pathLength="100" class="crs-semi-donut-breakeven" :stroke-dasharray="semiDonutSegments.breakeven.dash" :stroke-dashoffset="semiDonutSegments.breakeven.offset" />
+              <text x="110" y="108" text-anchor="middle" fill="#f8fafc" font-size="24" font-weight="700">{{ metrics.winRate }}%</text>
+              <text x="110" y="126" text-anchor="middle" fill="#7b8aa3" font-size="11">Win rate</text>
+              <text x="110" y="142" text-anchor="middle" fill="#94a3b8" font-size="10">{{ metrics.totalTrades }} trades</text>
             </svg>
           </div>
-          <div class="space-y-4">
+          <div class="min-w-0 space-y-4">
             <div class="flex items-center justify-between rounded-[16px] border border-emerald-400/15 bg-emerald-400/5 px-4 py-3">
               <div class="flex items-center gap-3 text-sm text-slate-200">
                 <span class="h-3 w-3 rounded-full bg-emerald-400"></span>
@@ -188,24 +197,31 @@
               </div>
               <span class="text-lg font-semibold text-white">{{ outcomeCounts.breakeven }}</span>
             </div>
-            <div class="pt-2">
-              <p class="text-xs uppercase tracking-[0.14em] text-slate-500">Weekly PnL</p>
-              <div class="mt-3 crs-chart-shell">
+          </div>
+          <div class="min-w-0 pt-2 xl:col-span-2">
+            <p class="text-xs tracking-[0.04em] text-slate-500">Weekly PnL</p>
+            <div class="mt-3 overflow-x-auto">
+              <div class="crs-chart-shell min-w-max">
                 <div
                   v-for="row in pnlWeek"
                   :key="row.label"
-                  class="crs-chart-bar-hit"
+                  class="crs-chart-column crs-chart-bar-hit"
                   @mouseenter="hoveredWeekRow = row"
                   @mouseleave="hoveredWeekRow = null"
                 >
-                  <div class="text-xs text-slate-400">{{ currency(row.value) }}</div>
-                  <div class="crs-chart-bar" :style="{ height: `${barHeight(row.value)}%`, opacity: row.value < 0 ? 0.55 : 1 }"></div>
-                  <div class="crs-chart-caption">{{ row.label }}</div>
+                  <div class="crs-chart-value" :class="row.value >= 0 ? 'text-emerald-300' : 'text-red-400'">{{ currency(row.value) }}</div>
+                  <div class="crs-chart-bar-stage">
+                    <div class="crs-chart-bar" :class="{ 'crs-chart-bar-negative': row.value < 0 }" :style="{ height: `${barHeight(row.value)}%` }"></div>
+                  </div>
+                  <div class="crs-chart-caption">
+                    <span>{{ barLabelPrimary(row.label) }}</span>
+                    <span class="crs-chart-caption-sub">{{ barLabelSecondary(row.label) }}</span>
+                  </div>
                 </div>
               </div>
-              <div v-if="hoveredWeekRow" class="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-slate-300">
-                <strong class="text-white">{{ hoveredWeekRow.label }}</strong> closed at {{ currency(hoveredWeekRow.value) }}.
-              </div>
+            </div>
+            <div v-if="hoveredWeekRow" class="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-slate-300">
+              <strong class="text-white">{{ hoveredWeekRow.label }}</strong> closed at {{ currency(hoveredWeekRow.value) }}.
             </div>
           </div>
         </div>
@@ -239,14 +255,78 @@ const recentTrades = computed(() => crsStore.recentTrades)
 const checklistSummary = computed(() => crsStore.checklistSummary)
 const pnlWeek = computed(() => crsStore.analytics.pnlByPeriod.week)
 const outcomeCounts = computed(() => crsStore.analytics.outcomeCounts)
-const circumference = 2 * Math.PI * 74
-const donutGap = 9
+const semiDonutPath = 'M 34 128 A 76 76 0 0 1 186 128'
+const semiDonutGap = 3
+const semiDonutMinVisible = 4
+const CHART_WIDTH = 640
+const CHART_HEIGHT = 300
+const PLOT_LEFT = 88
+const PLOT_RIGHT = 620
+const PLOT_TOP = 16
+const PLOT_BOTTOM = 210
+const PLOT_HEIGHT = PLOT_BOTTOM - PLOT_TOP
 
-const winDash = computed(() => `${segmentVisibleLength(outcomeCounts.value.win)} ${circumference}`)
-const lossDash = computed(() => `${segmentVisibleLength(outcomeCounts.value.loss)} ${circumference}`)
-const breakevenDash = computed(() => `${segmentVisibleLength(outcomeCounts.value.breakeven)} ${circumference}`)
-const lossOffset = computed(() => -segmentSpan(outcomeCounts.value.win))
-const breakevenOffset = computed(() => -(segmentSpan(outcomeCounts.value.win) + segmentSpan(outcomeCounts.value.loss)))
+const semiDonutSegments = computed(() => {
+  const segments = [
+    { key: 'win', count: outcomeCounts.value.win },
+    { key: 'loss', count: outcomeCounts.value.loss },
+    { key: 'breakeven', count: outcomeCounts.value.breakeven }
+  ]
+  const activeSegments = segments.filter((segment) => segment.count > 0)
+  const total = activeSegments.reduce((sum, segment) => sum + segment.count, 0)
+
+  if (!total) {
+    return {
+      win: { dash: '0 100', offset: 0 },
+      loss: { dash: '0 100', offset: 0 },
+      breakeven: { dash: '0 100', offset: 0 }
+    }
+  }
+
+  const availableLength = Math.max(100 - activeSegments.length * semiDonutGap, 0)
+  const normalized = activeSegments.map((segment) => ({
+    ...segment,
+    length: (segment.count / total) * availableLength
+  }))
+
+  let deficit = 0
+  normalized.forEach((segment) => {
+    if (segment.length < semiDonutMinVisible) {
+      deficit += semiDonutMinVisible - segment.length
+      segment.length = semiDonutMinVisible
+    }
+  })
+
+  if (deficit > 0) {
+    const adjustable = normalized.filter((segment) => segment.length > semiDonutMinVisible)
+    const adjustableTotal = adjustable.reduce((sum, segment) => sum + (segment.length - semiDonutMinVisible), 0)
+
+    if (adjustableTotal > 0) {
+      adjustable.forEach((segment) => {
+        const reducible = segment.length - semiDonutMinVisible
+        const reduction = Math.min((reducible / adjustableTotal) * deficit, reducible)
+        segment.length -= reduction
+      })
+    }
+  }
+
+  let offset = 0
+  const mapped = {
+    win: { dash: '0 100', offset: 0 },
+    loss: { dash: '0 100', offset: 0 },
+    breakeven: { dash: '0 100', offset: 0 }
+  }
+
+  normalized.forEach((segment) => {
+    mapped[segment.key] = {
+      dash: `${segment.length} 100`,
+      offset
+    }
+    offset -= segment.length + semiDonutGap
+  })
+
+  return mapped
+})
 
 const equityPlot = computed(() => {
   const values = crsStore.analytics.equityCurve
@@ -255,8 +335,6 @@ const equityPlot = computed(() => {
     return []
   }
 
-  const width = 620
-  const height = 220
   const max = Math.max(...values.map((item) => item.value))
   const min = Math.min(...values.map((item) => item.value))
   const range = max - min || 1
@@ -265,8 +343,8 @@ const equityPlot = computed(() => {
     label: item.date,
     value: item.value,
     index,
-    x: 12 + (index * (width - 24)) / Math.max(values.length - 1, 1),
-    y: 12 + ((max - item.value) / range) * (height - 24)
+    x: PLOT_LEFT + (index * (PLOT_RIGHT - PLOT_LEFT)) / Math.max(values.length - 1, 1),
+    y: PLOT_TOP + ((max - item.value) / range) * PLOT_HEIGHT
   }))
 })
 
@@ -278,7 +356,7 @@ const equityAreaPoints = computed(() => {
 
   const first = equityPlot.value[0]
   const last = equityPlot.value[equityPlot.value.length - 1]
-  return [`${first.x},236`, ...equityPlot.value.map((point) => `${point.x},${point.y}`), `${last.x},236`].join(' ')
+  return [`${first.x},${PLOT_BOTTOM}`, ...equityPlot.value.map((point) => `${point.x},${point.y}`), `${last.x},${PLOT_BOTTOM}`].join(' ')
 })
 const gridLines = computed(() => {
   if (!equityPlot.value.length) {
@@ -294,17 +372,23 @@ const gridLines = computed(() => {
     const ratio = index / steps
     const value = max - (max - min) * ratio
     return {
-      y: 12 + ratio * 196,
+      y: PLOT_TOP + ratio * PLOT_HEIGHT,
       value
     }
   })
 })
-const edgeLabels = computed(() => {
+const equityAxisTicks = computed(() => {
   if (equityPlot.value.length <= 2) {
-    return equityPlot.value
+    return equityPlot.value.map((point) => ({
+      x: point.x,
+      label: formatDate(point.label)
+    }))
   }
 
-  return [equityPlot.value[0], equityPlot.value[Math.floor(equityPlot.value.length / 2)], equityPlot.value.at(-1)]
+  return [equityPlot.value[0], equityPlot.value[Math.floor(equityPlot.value.length / 2)], equityPlot.value.at(-1)].map((point) => ({
+    x: point.x,
+    label: formatDate(point.label)
+  }))
 })
 
 const streakText = computed(() => `${metrics.value.currentStreak.count} ${metrics.value.currentStreak.type}`)
@@ -318,7 +402,8 @@ function currency(value) {
   const amount = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: crsStore.settings.currency || 'USD',
-    maximumFractionDigits: 0
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(Math.abs(value))
 
   return value < 0 ? `-${amount}` : amount
@@ -330,22 +415,29 @@ function formatDate(value) {
 
 function barHeight(value) {
   const max = Math.max(...pnlWeek.value.map((row) => Math.abs(row.value)), 1)
-  return Math.max((Math.abs(value) / max) * 100, 10)
+  return Math.max((Math.abs(value) / max) * 100, 3)
 }
 
-function segmentLength(count) {
-  if (!metrics.value.totalTrades) {
-    return 0
+function barLabelPrimary(label) {
+  const [firstPart = label] = splitBarLabel(label)
+  return firstPart
+}
+
+function barLabelSecondary(label) {
+  const [, secondPart = ''] = splitBarLabel(label)
+  return secondPart
+}
+
+function splitBarLabel(label) {
+  if (label.includes(', ')) {
+    return label.split(', ')
   }
 
-  return (count / metrics.value.totalTrades) * circumference
-}
+  const parts = label.split(' ')
+  if (parts.length >= 2) {
+    return [parts.slice(0, -1).join(' '), parts.at(-1)]
+  }
 
-function segmentVisibleLength(count) {
-  return Math.max(segmentSpan(count) - donutGap, 0)
-}
-
-function segmentSpan(count) {
-  return segmentLength(count)
+  return [label, '']
 }
 </script>

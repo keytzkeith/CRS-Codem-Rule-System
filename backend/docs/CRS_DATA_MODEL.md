@@ -129,6 +129,18 @@ The backend direction remains:
 - store accounts through `user_accounts`
 - store CRS preferences via settings extensions
 
+Current backend trade table now has first-class CRS fields for:
+
+- `setup_stack`
+- `journal_payload`
+- `checklist_payload`
+- `contract_multiplier`
+- `pip_size`
+- `swap`
+- `actual_risk_amount`
+- `risk_percent_of_account`
+- `pips`
+
 Reference:
 
 - [CRS_API_CONTRACT.md](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/docs/CRS_API_CONTRACT.md)

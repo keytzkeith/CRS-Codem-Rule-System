@@ -25,6 +25,7 @@
             <td class="crs-table-cell">{{ trade.direction }}</td>
             <td class="crs-table-cell">{{ trade.setupType }}</td>
             <td class="crs-table-cell">{{ trade.session }}</td>
+            <td class="crs-table-cell">{{ formatVolume(trade.volume) }}</td>
             <td class="crs-table-cell">{{ formatPrice(trade.entry) }}</td>
             <td class="crs-table-cell">{{ formatPrice(trade.stopLoss) }}</td>
             <td class="crs-table-cell">{{ formatPrice(trade.takeProfit) }}</td>
@@ -56,6 +57,7 @@
           <p><span class="text-slate-500">Direction</span><br>{{ trade.direction }}</p>
           <p><span class="text-slate-500">Setup</span><br>{{ trade.setupType }}</p>
           <p><span class="text-slate-500">Session</span><br>{{ trade.session }}</p>
+          <p><span class="text-slate-500">Volume</span><br>{{ formatVolume(trade.volume) }}</p>
           <p><span class="text-slate-500">Result</span><br>{{ formatResultSummary(trade) }}</p>
         </div>
       </button>
@@ -82,6 +84,7 @@ const columns = [
   { key: 'direction', label: 'Direction' },
   { key: 'setupType', label: 'Setup' },
   { key: 'session', label: 'Session' },
+  { key: 'volume', label: 'Volume' },
   { key: 'entry', label: 'Entry' },
   { key: 'stopLoss', label: 'Stop' },
   { key: 'takeProfit', label: 'Target' },
@@ -100,11 +103,14 @@ function formatPrice(value) {
 }
 
 function formatNumber(value) {
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value)
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value)
 }
 
 function formatResultR(value) {
-  return typeof value === 'number' ? `${value.toFixed(1)}R` : '—'
+  return typeof value === 'number' ? `${value.toFixed(3)}R` : '—'
 }
 
 function formatCurrencyAmount(value) {
@@ -113,5 +119,9 @@ function formatCurrencyAmount(value) {
 
 function formatResultSummary(trade) {
   return `${formatResultR(trade.resultR)} / ${formatCurrencyAmount(trade.resultAmount)}`
+}
+
+function formatVolume(value) {
+  return Number(value || 0).toFixed(2)
 }
 </script>

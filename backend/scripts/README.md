@@ -6,7 +6,7 @@ The first user to register on a fresh TradeTally installation is automatically g
 
 ## Making Additional Admins
 
-To give additional users admin privileges, use the `make-admin.js` script:
+To promote an existing user to admin only, use the `make-admin.js` script:
 
 ```bash
 cd backend
@@ -17,6 +17,37 @@ This will:
 - Update the user's role to 'admin' in the database
 - Show confirmation with user details
 - Exit with an error if the user is not found
+
+## Creating Or Updating An Admin User
+
+To create a new admin user or reset an existing admin user's password in one step, use:
+
+```bash
+cd backend
+node scripts/set-admin-user.js user@example.com StrongPassword123 username "Full Name"
+```
+
+Example:
+
+```bash
+cd backend
+node scripts/set-admin-user.js codemtrader@gmail.com 12345678 codemtrader "Codem Trader"
+```
+
+This command will:
+- create the user if it does not exist
+- or update the existing user
+- set the password with a bcrypt hash
+- force `role = admin`
+- force `tier = pro`
+- mark the account active, verified, and admin-approved
+
+If you prefer npm scripts:
+
+```bash
+cd backend
+npm run admin:set -- codemtrader@gmail.com 12345678 codemtrader "Codem Trader"
+```
 
 ## Admin Permissions
 

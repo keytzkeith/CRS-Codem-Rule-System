@@ -23,6 +23,20 @@ const sanitizeForLogging = (body) => {
   return sanitized;
 };
 
+const crsJournalPayloadSchema = Joi.object({
+  whyTaken: Joi.string().allow('', null),
+  htfBias: Joi.string().allow('', null),
+  entryModel: Joi.string().allow('', null),
+  followedPlan: Joi.boolean(),
+  emotionBefore: Joi.string().allow('', null),
+  emotionAfter: Joi.string().allow('', null),
+  mistakeMade: Joi.string().allow('', null),
+  lessonLearned: Joi.string().allow('', null),
+  notes: Joi.string().allow('', null)
+}).unknown(true);
+
+const crsChecklistPayloadSchema = Joi.object().pattern(Joi.string(), Joi.boolean()).allow(null);
+
 // Normalize snake_case fields to camelCase for API compatibility
 const normalizeFieldNames = (body) => {
   if (!body || typeof body !== 'object') return body;
@@ -42,7 +56,14 @@ const normalizeFieldNames = (body) => {
     tick_size: 'tickSize',
     point_value: 'pointValue',
     stop_loss: 'stopLoss',
-    take_profit: 'takeProfit'
+    take_profit: 'takeProfit',
+    setup_stack: 'setupStack',
+    journal_payload: 'journalPayload',
+    checklist_payload: 'checklistPayload',
+    contract_multiplier: 'contractMultiplier',
+    pip_size: 'pipSize',
+    actual_risk_amount: 'actualRiskAmount',
+    risk_percent_of_account: 'riskPercentOfAccount'
   };
   
   Object.keys(fieldMappings).forEach(snakeCase => {
@@ -101,6 +122,7 @@ const schemas = {
 
   createTrade: Joi.object({
     symbol: Joi.string().max(20).required(),
+    tradeDate: Joi.date().iso(),
     entryTime: Joi.date().iso().required(),
     exitTime: Joi.date().iso().allow(null, ''),
     entryPrice: Joi.number().positive().required(),
@@ -138,6 +160,22 @@ const schemas = {
       shares: Joi.number().integer().positive().allow(null).optional(),
       percentage: Joi.number().min(1).max(100).allow(null).optional()
     })).default([]),
+    setupStack: Joi.array().items(Joi.string().max(100)).default([]),
+    setup_stack: Joi.array().items(Joi.string().max(100)).optional(),
+    journalPayload: crsJournalPayloadSchema,
+    journal_payload: crsJournalPayloadSchema,
+    checklistPayload: crsChecklistPayloadSchema,
+    checklist_payload: crsChecklistPayloadSchema,
+    contractMultiplier: Joi.number().positive().allow(null, ''),
+    contract_multiplier: Joi.number().positive().allow(null, ''),
+    pipSize: Joi.number().positive().allow(null, ''),
+    pip_size: Joi.number().positive().allow(null, ''),
+    swap: Joi.number().allow(null, ''),
+    actualRiskAmount: Joi.number().allow(null, ''),
+    actual_risk_amount: Joi.number().allow(null, ''),
+    riskPercentOfAccount: Joi.number().allow(null, ''),
+    risk_percent_of_account: Joi.number().allow(null, ''),
+    pips: Joi.number().allow(null, ''),
     // Chart URL for TradingView links
     chartUrl: Joi.string().uri().max(1000).allow(null, ''),
     // Manual target hit override (SL/TP hit first)
@@ -247,6 +285,7 @@ const schemas = {
 
   updateTrade: Joi.object({
     symbol: Joi.string().max(20),
+    tradeDate: Joi.date().iso(),
     entryTime: Joi.date().iso(),
     exitTime: Joi.date().iso().allow(null, ''),
     entryPrice: Joi.number().positive(),
@@ -284,6 +323,22 @@ const schemas = {
       shares: Joi.number().integer().positive().allow(null).optional(),
       percentage: Joi.number().min(1).max(100).allow(null).optional()
     })).default([]),
+    setupStack: Joi.array().items(Joi.string().max(100)).default([]),
+    setup_stack: Joi.array().items(Joi.string().max(100)).optional(),
+    journalPayload: crsJournalPayloadSchema,
+    journal_payload: crsJournalPayloadSchema,
+    checklistPayload: crsChecklistPayloadSchema,
+    checklist_payload: crsChecklistPayloadSchema,
+    contractMultiplier: Joi.number().positive().allow(null, ''),
+    contract_multiplier: Joi.number().positive().allow(null, ''),
+    pipSize: Joi.number().positive().allow(null, ''),
+    pip_size: Joi.number().positive().allow(null, ''),
+    swap: Joi.number().allow(null, ''),
+    actualRiskAmount: Joi.number().allow(null, ''),
+    actual_risk_amount: Joi.number().allow(null, ''),
+    riskPercentOfAccount: Joi.number().allow(null, ''),
+    risk_percent_of_account: Joi.number().allow(null, ''),
+    pips: Joi.number().allow(null, ''),
     // Chart URL for TradingView links
     chartUrl: Joi.string().uri().max(1000).allow(null, ''),
     // Manual target hit override (SL/TP hit first)
@@ -366,7 +421,11 @@ const schemas = {
       reviewCadence: Joi.string().valid('daily', 'weekend', 'month-end'),
       activeAccountId: Joi.string().uuid().allow(null, ''),
       customTags: Joi.array().items(Joi.string().max(50)),
-      customSetupTypes: Joi.array().items(Joi.string().max(100))
+      customSetupTypes: Joi.array().items(Joi.string().max(100)),
+      checklistItems: Joi.array().items(Joi.object({
+        id: Joi.string().max(80).required(),
+        label: Joi.string().max(120).required()
+      }))
     }).allow(null),
     dashboardLayout: Joi.array().items(Joi.object({
       id: Joi.string().required(),

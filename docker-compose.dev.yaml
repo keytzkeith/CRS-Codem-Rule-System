@@ -4,7 +4,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: tradetally-db-dev
+    container_name: crs-db-dev
     environment:
       POSTGRES_USER: ${DB_USER:-trader}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-trader_password}
@@ -26,7 +26,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: tradetally-app-dev
+    container_name: crs-app-dev
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,7 +46,7 @@ services:
       EMAIL_PORT: ${EMAIL_PORT:-587}
       EMAIL_USER: ${EMAIL_USER:-}
       EMAIL_PASS: ${EMAIL_PASS:-}
-      EMAIL_FROM: ${EMAIL_FROM:-noreply@tradetally.io}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@crs.local}
       # Frontend API URL - use relative path so it works on any port
       VITE_API_URL: ${VITE_API_URL:-/api}
       # CORS Configuration for Mobile Apps
@@ -90,7 +90,7 @@ services:
   # Optional: Adminer for database management
   adminer:
     image: adminer:latest
-    container_name: tradetally-adminer-dev
+    container_name: crs-adminer-dev
     depends_on:
       - postgres
     ports:

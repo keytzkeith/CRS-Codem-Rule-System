@@ -19,15 +19,18 @@ const props = defineProps({
   checklist: {
     type: Object,
     required: true
+  },
+  items: {
+    type: Array,
+    default: () => []
   }
 })
 
-const items = computed(() => [
-  { key: 'htfBosConfirmed', label: 'HTF BOS confirmed', value: props.checklist.htfBosConfirmed },
-  { key: 'pullbackToOb', label: 'Pullback to OB', value: props.checklist.pullbackToOb },
-  { key: 'm15Confirmation', label: 'M15 confirmation', value: props.checklist.m15Confirmation },
-  { key: 'tradedWithBias', label: 'Traded with bias', value: props.checklist.tradedWithBias },
-  { key: 'validSession', label: 'Valid session', value: props.checklist.validSession },
-  { key: 'minimumRRMet', label: 'RR >= 1:2.5', value: props.checklist.minimumRRMet }
-])
+const items = computed(() =>
+  props.items.map((item) => ({
+    key: item.id,
+    label: item.label,
+    value: Boolean(props.checklist?.[item.id])
+  }))
+)
 </script>

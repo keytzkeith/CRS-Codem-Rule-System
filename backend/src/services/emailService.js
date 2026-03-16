@@ -188,7 +188,7 @@ class EmailService {
     const mailOptions = {
       from: {
         name: 'TradeTally',
-        address: process.env.EMAIL_FROM || 'noreply@tradetally.io'
+        address: process.env.EMAIL_FROM || 'noreply@crs.local'
       },
       to: email,
       subject: 'Verify your email - TradeTally',
@@ -242,7 +242,7 @@ class EmailService {
     const mailOptions = {
       from: {
         name: 'TradeTally',
-        address: process.env.EMAIL_FROM || 'noreply@tradetally.io'
+        address: process.env.EMAIL_FROM || 'noreply@crs.local'
       },
       to: email,
       subject: 'Reset your password - TradeTally',
@@ -296,7 +296,7 @@ class EmailService {
     const mailOptions = {
       from: {
         name: 'TradeTally',
-        address: process.env.EMAIL_FROM || 'noreply@tradetally.io'
+        address: process.env.EMAIL_FROM || 'noreply@crs.local'
       },
       to: email,
       subject: 'Confirm your new email - TradeTally',
@@ -359,7 +359,7 @@ class EmailService {
     const mailOptions = {
       from: {
         name: 'TradeTally',
-        address: process.env.EMAIL_FROM || 'noreply@tradetally.io'
+        address: process.env.EMAIL_FROM || 'noreply@crs.local'
       },
       to: email,
       subject: `${isExpired ? 'Your Pro trial ended' : `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} left on your trial`} - TradeTally`,
@@ -428,7 +428,7 @@ class EmailService {
       ${this.getMarketingFooter(unsubscribeUrl)}
     `;
     const mailOptions = {
-      from: { name: 'TradeTally', address: process.env.EMAIL_FROM || 'noreply@tradetally.io' },
+      from: { name: 'CRS', address: process.env.EMAIL_FROM || 'noreply@crs.local' },
       to: email,
       subject: `${tradeCount} trades this week - TradeTally`,
       html: this.getBaseTemplate('Your Week in Trades', content),
@@ -479,7 +479,7 @@ class EmailService {
       ${this.getMarketingFooter(unsubscribeUrl)}
     `;
     const mailOptions = {
-      from: { name: 'TradeTally', address: process.env.EMAIL_FROM || 'noreply@tradetally.io' },
+      from: { name: 'CRS', address: process.env.EMAIL_FROM || 'noreply@crs.local' },
       to: email,
       subject: `Your journal is waiting - TradeTally`,
       html: this.getBaseTemplate('Your journal is waiting', content),

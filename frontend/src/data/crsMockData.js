@@ -471,20 +471,22 @@ export const crsDefaultSettings = {
   preferredPeriod: 'monthly',
   reviewCadence: 'weekend',
   previewEmptyState: false,
-  activeAccountId: 'account-1',
-  accounts: [
-    {
-      id: 'account-1',
-      name: 'Primary account',
-      size: 25000
-    }
-  ],
+  activeAccountId: null,
+  accounts: [],
   customSetupTypes: [
     'OB retest',
     'Continuation',
     'Liquidity sweep',
     'BOS entry',
     'Reversal'
+  ],
+  checklistItems: [
+    { id: 'htfBosConfirmed', label: 'HTF BOS confirmed' },
+    { id: 'pullbackToOb', label: 'Pullback to OB' },
+    { id: 'm15Confirmation', label: 'M15 confirmation' },
+    { id: 'tradedWithBias', label: 'Traded with bias' },
+    { id: 'validSession', label: 'Valid session' },
+    { id: 'minimumRRMet', label: 'Minimum RR met' }
   ],
   customTags: [
     'continuation',

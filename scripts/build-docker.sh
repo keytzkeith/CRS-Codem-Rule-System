@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Build and publish TradeTally Docker image
+# Build and publish CRS Docker image
 # This script builds the Docker image with all latest features including:
 # - Trade chart visualization (Alpha Vantage + lightweight-charts)
 # - Short position P&L fixes
@@ -8,11 +8,11 @@
 
 set -e
 
-echo "[BUILD] Building TradeTally Docker image..."
+echo "[BUILD] Building CRS Docker image..."
 
 # Get version from package.json or use latest
 VERSION=${1:-latest}
-IMAGE_NAME="potentialmidas/tradetally"
+IMAGE_NAME="keytzkeith/crs-codem-system"
 
 echo "[INFO] Building image: ${IMAGE_NAME}:${VERSION}"
 

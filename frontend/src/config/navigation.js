@@ -9,7 +9,7 @@ export const CRS_NAV_ITEMS = [
     name: 'Trades',
     to: '/trades',
     route: 'trades',
-    activeRoutes: ['trades', 'trade-create', 'trade-detail', 'trade-edit']
+    activeRoutes: ['trades', 'trade-create', 'trade-detail', 'trade-edit', 'trade-import', 'trade-import-advanced']
   },
   {
     name: 'Journal',
@@ -27,7 +27,14 @@ export const CRS_NAV_ITEMS = [
     name: 'Settings',
     to: '/settings',
     route: 'settings',
-    activeRoutes: ['settings']
+    activeRoutes: ['settings', 'accounts']
+  },
+  {
+    name: 'Admin',
+    to: '/admin',
+    route: 'admin',
+    activeRoutes: ['admin'],
+    adminOnly: true
   }
 ]
 
@@ -58,7 +65,6 @@ export const CRS_ROUTE_REDIRECTS = [
   '/settings/broker-sync',
   '/calendar',
   '/import',
-  '/accounts',
   '/cashflow',
   '/equity-history',
   '/profile',

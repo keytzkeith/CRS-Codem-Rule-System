@@ -15,6 +15,12 @@
         description="These settings drive trade capture, risk calculations, and the live empty-state preview."
       >
         <form class="grid gap-5 md:grid-cols-2" @submit.prevent>
+          <div
+            v-if="saveError"
+            class="md:col-span-2 rounded-[18px] border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100"
+          >
+            {{ saveError }}
+          </div>
           <label class="crs-filter-field">
             <span class="flex items-center gap-2">Currency <InfoTip text="Controls how all PnL, risk, and account values are formatted throughout the CRS interface." /></span>
             <select v-model="localSettings.currency" class="crs-input">
@@ -63,15 +69,39 @@
             <p class="mt-2 text-xs text-slate-500">{{ activeAccount?.name || 'No active account selected' }}</p>
           </div>
           <div class="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm text-slate-300">
-            <p class="text-xs uppercase tracking-[0.14em] text-slate-500">Reusable setup stack</p>
+            <p class="text-xs tracking-[0.04em] text-slate-500">Reusable setup stack</p>
             <div class="mt-3 flex flex-wrap gap-2">
               <span v-for="setup in crsStore.availableSetupTypes" :key="setup" class="crs-tag-chip crs-tag-chip-idle">{{ setup }}</span>
             </div>
           </div>
           <div class="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm text-slate-300 md:col-span-2">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p class="text-xs tracking-[0.04em] text-slate-500">Rule validation items</p>
+                <p class="mt-1 text-sm text-slate-400">Add, remove, or rename the checklist items you actually use. These flow into trade review and checklist analytics.</p>
+              </div>
+              <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <input v-model="newChecklistLabel" type="text" class="crs-input min-w-[220px]" placeholder="Add a rule like Session liquidity sweep confirmed" />
+                <button type="button" class="crs-button-primary w-full sm:w-auto" @click="addChecklistItem">Add rule</button>
+              </div>
+            </div>
+            <div class="mt-4 grid gap-3">
+              <div
+                v-for="item in localSettings.checklistItems"
+                :key="item.id"
+                class="grid gap-3 rounded-[18px] border border-white/8 bg-slate-950/30 p-4 md:grid-cols-[1fr_auto]"
+              >
+                <input v-model="item.label" type="text" class="crs-input" placeholder="Rule label" />
+                <button type="button" class="crs-button crs-button-muted w-full sm:w-auto" :disabled="localSettings.checklistItems.length === 1" @click="removeChecklistItem(item.id)">
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm text-slate-300 md:col-span-2">
             <div class="flex items-center justify-between gap-3">
               <div>
-                <p class="text-xs uppercase tracking-[0.14em] text-slate-500">Dev preview</p>
+                <p class="text-xs tracking-[0.04em] text-slate-500">Dev preview</p>
                 <p class="mt-1 text-sm text-slate-400">Toggle a no-data mode to verify all empty states without deleting mock trades.</p>
               </div>
               <input v-model="localSettings.previewEmptyState" type="checkbox" class="h-4 w-4 rounded border-white/10 bg-transparent text-amber-200" />
@@ -82,7 +112,7 @@
             <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p class="text-xs uppercase tracking-[0.14em] text-slate-500">Accounts</p>
-                <p class="mt-1 text-sm text-slate-400">Up to 10 accounts. One account stays active and drives risk calculations.</p>
+                <p class="mt-1 text-sm text-slate-400">Up to 10 accounts. Leave this empty if you are not ready yet, but CRS will require one before trade capture or import.</p>
               </div>
               <button type="button" class="crs-button-primary w-full sm:w-auto" :disabled="accountLimitReached" @click="addAccount">
                 Add account
@@ -122,7 +152,6 @@
                   <button
                     type="button"
                     class="crs-button crs-button-muted w-full sm:w-auto"
-                    :disabled="localSettings.accounts.length === 1"
                     @click="removeAccount(account.id)"
                   >
                     Remove
@@ -137,8 +166,10 @@
           </div>
 
           <div class="md:col-span-2 flex flex-col gap-3 sm:flex-row">
-            <button type="button" class="crs-button-primary w-full sm:w-auto" @click="saveSettings">Save mock settings</button>
-            <button type="button" class="crs-button crs-button-muted w-full sm:w-auto" @click="resetSettings">Reset</button>
+            <button type="button" class="crs-button-primary w-full sm:w-auto" :disabled="crsStore.persistenceLoading" @click="saveSettings">
+              {{ crsStore.persistenceLoading ? 'Saving...' : 'Save settings' }}
+            </button>
+            <button type="button" class="crs-button crs-button-muted w-full sm:w-auto" :disabled="crsStore.persistenceLoading" @click="resetSettings">Reset</button>
           </div>
         </form>
       </ChartCard>
@@ -163,7 +194,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import ChartCard from '@/components/crs/ChartCard.vue'
 import InfoTip from '@/components/crs/InfoTip.vue'
 import SectionHeader from '@/components/crs/SectionHeader.vue'
@@ -173,6 +204,8 @@ import { calculateRiskAmount, getActiveAccount } from '@/utils/crsAnalytics'
 const crsStore = useCrsStore()
 
 const localSettings = reactive(cloneSettings(crsStore.settings))
+const saveError = computed(() => formatPersistenceError(crsStore.persistenceError))
+const newChecklistLabel = ref('')
 
 watch(
   () => crsStore.settings,
@@ -208,13 +241,13 @@ function addAccount() {
     name: `Account ${localSettings.accounts.length + 1}`,
     size: 10000
   })
+
+  if (!localSettings.activeAccountId) {
+    localSettings.activeAccountId = localSettings.accounts.at(-1)?.id || null
+  }
 }
 
 function removeAccount(accountId) {
-  if (localSettings.accounts.length === 1) {
-    return
-  }
-
   localSettings.accounts = localSettings.accounts.filter((account) => account.id !== accountId)
 
   if (localSettings.activeAccountId === accountId) {
@@ -222,8 +255,30 @@ function removeAccount(accountId) {
   }
 }
 
-function saveSettings() {
-  crsStore.updateSettings(cloneSettings(localSettings))
+function addChecklistItem() {
+  const label = newChecklistLabel.value.trim()
+  if (!label) {
+    return
+  }
+
+  localSettings.checklistItems.push({
+    id: slugifyChecklistLabel(label),
+    label
+  })
+  newChecklistLabel.value = ''
+}
+
+function removeChecklistItem(itemId) {
+  if (localSettings.checklistItems.length === 1) {
+    return
+  }
+
+  localSettings.checklistItems = localSettings.checklistItems.filter((item) => item.id !== itemId)
+}
+
+async function saveSettings() {
+  await crsStore.persistSettings(cloneSettings(localSettings))
+  Object.assign(localSettings, cloneSettings(crsStore.settings))
 }
 
 function resetSettings() {
@@ -240,5 +295,36 @@ function currency(value) {
 
 function cloneSettings(value) {
   return JSON.parse(JSON.stringify(value))
+}
+
+function slugifyChecklistLabel(label) {
+  const slug = String(label || '')
+    .trim()
+    .replace(/[^a-zA-Z0-9]+(.)/g, (_, chr) => chr.toUpperCase())
+    .replace(/^[A-Z]/, (value) => value.toLowerCase())
+
+  return slug || `rule${Date.now()}`
+}
+
+function formatPersistenceError(error) {
+  const backendMessage = error?.response?.data?.error
+
+  if (backendMessage) {
+    return backendMessage
+  }
+
+  if (!error) {
+    return ''
+  }
+
+  if (!error.response) {
+    return 'Unable to reach the backend. Check that the API server and database are running.'
+  }
+
+  if (error.response.status >= 500) {
+    return 'Server error while saving settings. Check the backend logs and try again.'
+  }
+
+  return 'Unable to save settings with the current values.'
 }
 </script>

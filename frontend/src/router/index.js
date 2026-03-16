@@ -63,6 +63,18 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/trades/import',
+    name: 'trade-import',
+    component: () => import('@/views/trades/TradeImportView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/trades/import/advanced',
+    name: 'trade-import-advanced',
+    component: () => import('@/views/trades/TradeImportAdvancedView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/trades/:id',
     name: 'trade-detail',
     component: () => import('@/views/trades/TradeDetailView.vue'),
@@ -116,6 +128,18 @@ const routes = [
     component: () => import('@/views/SettingsView.vue'),
     meta: { requiresAuth: true }
   },
+  {
+    path: '/accounts',
+    name: 'accounts',
+    component: () => import('@/views/SettingsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin',
+    name: 'admin',
+    component: () => import('@/views/admin/AdminDashboardView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
   ...CRS_ROUTE_REDIRECTS.map((path) => ({
     path,
     redirect: appRedirect
@@ -143,6 +167,8 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: 'login', query: { redirect: to.fullPath } })
+  } else if (to.meta.requiresAdmin && authStore.user?.role !== 'admin') {
+    next({ name: 'dashboard' })
   } else if (to.meta.guest && authStore.isAuthenticated) {
     next({ name: 'dashboard' })
   } else {
