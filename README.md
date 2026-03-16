@@ -1,6 +1,8 @@
 # CRS Codem System Rule
 
-CRS is a personal trading dashboard built around one workflow: record trades, review execution, measure discipline, and refine a rule-based system without the extra platform clutter.
+CRS is a personal trading dashboard built around one workflow: record trades, review execution, measure discipline, and refine a rule-based system without extra platform clutter.
+
+Created by Keith Odera, Founder & Developer of CRS.
 
 This repo is currently being refactored from the original TradeTally codebase into a narrower CRS product.
 
@@ -17,10 +19,13 @@ The active CRS experience is focused on five authenticated surfaces:
 Current implementation status:
 
 - frontend-first CRS shell and branding
-- mock-first CRS trade store and analytics
+- real CRS trade persistence wired into the backend
+- CRS import/export flows aligned around broker-style and CRS-native CSV layouts
+- backend can now detect and parse CRS CSV layouts directly for server-side imports
+- CRS import screens now submit to the backend import pipeline instead of looping row-by-row in the browser
 - add/edit trade flow in the frontend
 - local auth and backend running again
-- backend prepared for gradual CRS persistence wiring
+- backend normalization in progress for remaining legacy paths
 
 ## Stack
 
@@ -159,6 +164,7 @@ Current backend direction:
 - reuse `user_accounts`
 - extend settings for CRS preferences where needed
 - persist CRS trade fields directly on `trades` for setup stack, journal/checklist payloads, and risk metrics
+- default CSV export now uses the CRS contract; pass `profile=legacy` only if you explicitly need the older TradeTally-style export shape
 
 ## What Still Needs Work
 
@@ -178,6 +184,33 @@ Current useful documents:
 - [LOCAL_SETUP.md](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/docs/LOCAL_SETUP.md)
 - [CRS_DATA_MODEL.md](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/docs/CRS_DATA_MODEL.md)
 - [CRS_API_CONTRACT.md](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/docs/CRS_API_CONTRACT.md)
+
+## Docusaurus Docs
+
+A dedicated CRS docs site now lives in [docs-site/package.json](/home/kodemtrader/Keith/extracted/CODES/CRS/docs-site/package.json).
+
+Run it with:
+
+```bash
+cd docs-site
+npm install
+npm run start
+```
+
+Then open:
+
+- `http://localhost:3001`
+
+This is the preferred path for polished product documentation and deployment guidance going forward.
+
+## Developer
+
+- Name: Keith Odera
+- Role: Founder & Developer of CRS
+- Location: Kenya
+- Portfolio: https://keytz-portfolio.vercel.app/
+- Repository: https://github.com/keytzkeith/CRS-Codem-Rule-System/
+- Contact: codemtrader@gmail.com
 
 ## Project Intent
 

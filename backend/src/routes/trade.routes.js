@@ -24,9 +24,18 @@ const upload = multer({
       fieldname: file.fieldname
     });
     
-    const allowedTypes = /jpeg|jpg|png|gif|csv|text\/csv|application\/csv/;
-    const mimetype = allowedTypes.test(file.mimetype) || file.mimetype === 'text/csv' || file.mimetype === 'application/csv';
-    const extname = allowedTypes.test(file.originalname.toLowerCase()) || file.originalname.toLowerCase().endsWith('.csv');
+    const normalizedName = file.originalname.toLowerCase();
+    const normalizedMime = String(file.mimetype || '').toLowerCase();
+    const extname = /\.(jpe?g|png|gif|csv)$/.test(normalizedName);
+    const imageMime = /image\/(jpeg|jpg|png|gif)/.test(normalizedMime);
+    const csvMime = [
+      'text/csv',
+      'application/csv',
+      'text/plain',
+      'application/vnd.ms-excel',
+      'application/octet-stream'
+    ].includes(normalizedMime);
+    const mimetype = imageMime || (normalizedName.endsWith('.csv') && csvMime);
     
     console.log('File validation:', { mimetype, extname, actualMimetype: file.mimetype });
     
@@ -34,7 +43,9 @@ const upload = multer({
       return cb(null, true);
     }
     console.log('File rejected - invalid type');
-    cb(new Error('Invalid file type'));
+    const error = new Error('Invalid file type. Upload a CSV file.');
+    error.status = 400;
+    cb(error);
   }
 });
 
@@ -529,6 +540,7 @@ router.get('/import/requirements', authenticate, tradeController.checkImportRequ
  *                   type: integer
  */
 router.post('/import/validate', authenticate, upload.single('file'), tradeController.validateImportFile);
+router.post('/import/preview', authenticate, upload.single('file'), tradeController.previewImportFile);
 
 router.post('/import', authenticate, upload.single('file'), tradeController.importTrades);
 

@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 const TierService = require('../services/tierService');
 const YearWrappedService = require('../services/yearWrappedService');
 const refreshTokenService = require('../services/refreshToken.service');
+const adminSettingsService = require('../services/adminSettings');
 
 // Check if email configuration is available
 function isEmailConfigured() {
@@ -17,9 +18,10 @@ function useDetailedErrors() {
   return process.env.DETAILED_AUTH_ERRORS === 'true' || !isEmailConfigured();
 }
 
-// Get registration mode from environment
-function getRegistrationMode() {
-  const mode = process.env.REGISTRATION_MODE || 'open';
+// Get registration mode from admin settings first, then environment
+async function getRegistrationMode() {
+  const override = await adminSettingsService.getSetting('registration_mode');
+  const mode = override || process.env.REGISTRATION_MODE || 'open';
   const validModes = ['disabled', 'approval', 'open'];
   return validModes.includes(mode) ? mode : 'open';
 }
@@ -56,7 +58,7 @@ const authController = {
       const { email, username: providedUsername, password, fullName, marketing_consent } = req.body;
 
       // Check registration mode
-      const registrationMode = getRegistrationMode();
+      const registrationMode = await getRegistrationMode();
       if (registrationMode === 'disabled') {
         return res.status(403).json({
           error: 'User registration is currently disabled. Please contact an administrator.',
@@ -202,7 +204,7 @@ const authController = {
       }
 
       // Check if user is approved by admin (if approval mode is enabled)
-      const registrationMode = getRegistrationMode();
+      const registrationMode = await getRegistrationMode();
       if (registrationMode === 'approval' && !user.admin_approved) {
         return res.status(403).json({ 
           error: 'Your account is pending admin approval. Please wait for an administrator to approve your registration.',
@@ -533,12 +535,14 @@ const authController = {
 
   async getRegistrationConfig(req, res, next) {
     try {
-      const registrationMode = getRegistrationMode();
+      const registrationMode = await getRegistrationMode();
       const emailConfigured = isEmailConfigured();
       const billingEnabled = getBillingEnabled();
+      const configuredMode = process.env.REGISTRATION_MODE || 'open';
 
       res.json({
         registrationMode,
+        configuredMode,
         emailVerificationEnabled: emailConfigured,
         allowRegistration: registrationMode !== 'disabled',
         billingEnabled

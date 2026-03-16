@@ -1,5 +1,5 @@
 <template>
-    <div class="content-wrapper py-8">
+    <div class="content-wrapper crs-admin-surface py-8">
         <div class="mb-8">
             <h1 class="heading-page">User Management</h1>
             <p class="mt-2 text-gray-600 dark:text-gray-400">
@@ -27,7 +27,7 @@
         <!-- Users table -->
         <div
             v-else
-            class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg"
+            class="crs-admin-panel overflow-hidden"
         >
             <!-- Search bar -->
             <div
@@ -531,7 +531,7 @@
         <!-- Stats cards -->
         <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
             <div
-                class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg min-w-0"
+                class="crs-admin-stat-card min-w-0"
             >
                 <div class="p-5">
                     <div class="flex items-center min-w-0">
@@ -569,7 +569,7 @@
             </div>
 
             <div
-                class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg min-w-0"
+                class="crs-admin-stat-card min-w-0"
             >
                 <div class="p-5">
                     <div class="flex items-center min-w-0">
@@ -607,7 +607,7 @@
             </div>
 
             <div
-                class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg min-w-0"
+                class="crs-admin-stat-card min-w-0"
             >
                 <div class="p-5">
                     <div class="flex items-center min-w-0">
@@ -645,7 +645,7 @@
             </div>
 
             <div
-                class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg min-w-0"
+                class="crs-admin-stat-card min-w-0"
             >
                 <div class="p-5">
                     <div class="flex items-center min-w-0">
@@ -683,7 +683,7 @@
             </div>
 
             <div
-                class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg min-w-0"
+                class="crs-admin-stat-card min-w-0"
             >
                 <div class="p-5">
                     <div class="flex items-center min-w-0">
@@ -728,7 +728,7 @@
         class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
     >
         <div
-            class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800"
+            class="relative top-20 mx-auto crs-admin-modal p-5 border w-96"
         >
             <div class="mt-3 text-center">
                 <div
@@ -785,7 +785,7 @@
         class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
     >
         <div
-            class="relative top-20 mx-auto p-5 border w-[500px] shadow-lg rounded-md bg-white dark:bg-gray-800"
+            class="relative top-20 mx-auto crs-admin-modal p-5 border w-[500px]"
         >
             <div class="mt-3">
                 <div class="flex justify-between items-start mb-4">

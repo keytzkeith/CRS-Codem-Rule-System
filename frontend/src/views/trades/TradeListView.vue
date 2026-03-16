@@ -53,7 +53,7 @@
       <ChartCard
         eyebrow="Setup tags"
         title="Most common setups in view"
-        description="The page stays practical by surfacing what the current slice is actually made of."
+        description="A quick read on the setups represented in the current result set."
       >
         <div class="flex flex-wrap gap-3">
           <span

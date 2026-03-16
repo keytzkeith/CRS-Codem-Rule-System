@@ -6,7 +6,7 @@
         <p class="mt-8 text-[0.72rem] uppercase tracking-[0.24em] text-amber-200">CRS onboarding</p>
         <h1 class="mt-4 text-5xl font-semibold tracking-[-0.05em] text-white">Create an account and start logging with structure.</h1>
         <p class="mt-5 max-w-xl text-base leading-8 text-slate-300">
-          This is a personal trading workflow, not a social platform. Create the account, record the trades, and let the review process stay tight and intentional.
+          Create your account, record the trades, and build a review process around consistency instead of noise.
         </p>
       </section>
 

@@ -132,7 +132,7 @@ const securityMiddleware = () => {
       // Server information hiding (OWASP recommended) - CWE-693 mitigation
       res.removeHeader('X-Powered-By');
       res.removeHeader('Server');
-      res.setHeader('Server', 'TradeTally'); // Generic server name
+      res.setHeader('Server', 'CRS'); // Generic server name
       
       // API versioning and security confirmation
       res.setHeader('X-API-Version', '1.0');

@@ -5,11 +5,12 @@
         eyebrow="Advanced mapping"
         title="Map broker columns into CRS."
         description="Choose only the fields that matter to your workflow. Ignore the rest. No CUSIPs, expiry chains, or irrelevant platform baggage."
+        stacked
       >
-        <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+        <div class="flex w-full flex-col gap-3 lg:flex-row">
           <input ref="fileInput" type="file" accept=".csv,text/csv" class="hidden" @change="loadCsv" />
-          <button type="button" class="crs-button-primary w-full sm:w-auto" @click="fileInput?.click()">Select CSV</button>
-          <router-link to="/trades/import" class="crs-button crs-button-ghost w-full sm:w-auto">Back to import guide</router-link>
+          <button type="button" class="crs-button crs-button-ghost w-full lg:w-auto" @click="fileInput?.click()">Choose CSV file</button>
+          <router-link to="/trades/import" class="crs-button crs-button-muted w-full lg:w-auto">Back to import guide</router-link>
         </div>
       </SectionHeader>
     </section>
@@ -46,7 +47,7 @@
               <p class="text-sm font-medium text-white">{{ header }}</p>
               <p class="text-xs text-slate-500">{{ normalizedHeaders[header] }}</p>
             </div>
-            <select v-model="fieldMapping[header]" class="crs-input">
+            <select v-model="fieldMapping[header]" class="crs-input" @change="clearPreview">
               <option value="">Ignore this field</option>
               <option v-for="field in importFields" :key="field.key" :value="field.key">{{ field.label }}</option>
             </select>
@@ -81,8 +82,11 @@
         </div>
 
         <div class="mt-6 flex flex-col gap-3 sm:flex-row">
-          <button type="button" class="crs-button-primary w-full sm:w-auto" :disabled="!records.length || importing" @click="importMappedRows">
-            {{ importing ? 'Importing...' : 'Import mapped rows' }}
+          <button type="button" class="crs-button crs-button-muted w-full sm:w-auto" :disabled="!records.length || previewLoading" @click="previewMappedImport">
+            {{ previewLoading ? 'Previewing...' : 'Preview mapped rows' }}
+          </button>
+          <button type="button" class="crs-button-primary w-full sm:w-auto" :disabled="!records.length || importing || !importPreview" @click="importMappedRows">
+            {{ importing ? 'Importing...' : 'Start mapped import' }}
           </button>
           <button type="button" class="crs-button crs-button-ghost w-full sm:w-auto" :disabled="!headers.length" @click="resetMapping">
             Reset mapping
@@ -94,32 +98,63 @@
     <ImportReportCard
       :duplicates="duplicateRows"
       :invalid-rows="invalidRows"
+      :failed-rows="failedRows"
       file-name="crs-advanced-import-report.csv"
       title="Advanced import review"
       description="Skipped rows are listed here so you can inspect duplicates or incomplete mapped rows before adjusting the import."
+    />
+
+    <ImportPreviewCard :preview="importPreview" />
+    <ImportHistoryCard
+      :history="importHistory"
+      :loading="historyLoading"
+      :deleting="historyDeleting"
+      :deleting-id="historyDeletingId"
+      :deleting-all="historyClearingAll"
+      @refresh="loadImportHistory"
+      @delete-item="removeImportHistoryItem"
+      @clear-all="clearImportHistoryList"
     />
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import ChartCard from '@/components/crs/ChartCard.vue'
+import ImportHistoryCard from '@/components/crs/ImportHistoryCard.vue'
+import ImportPreviewCard from '@/components/crs/ImportPreviewCard.vue'
 import ImportReportCard from '@/components/crs/ImportReportCard.vue'
 import SectionHeader from '@/components/crs/SectionHeader.vue'
 import { useCrsStore } from '@/stores/crs'
-import { CRS_IMPORT_FIELDS, createDefaultFieldMapping, createTradeDraftFromRow, normalizeHeader, parseCsvText } from '@/utils/crsCsv'
+import { CRS_IMPORT_FIELDS, createDefaultFieldMapping, normalizeHeader, parseCsvText } from '@/utils/crsCsv'
 import { createImportIssue } from '@/utils/crsImportReport'
 
 const crsStore = useCrsStore()
 const fileInput = ref(null)
 const headers = ref([])
 const records = ref([])
+const csvFile = ref(null)
 const importing = ref(false)
+const previewLoading = ref(false)
 const error = ref('')
 const message = ref('')
+const importPreview = ref(null)
+const importHistory = ref([])
+const historyLoading = ref(false)
+const historyDeleting = ref(false)
+const historyDeletingId = ref('')
+const historyClearingAll = ref(false)
 const duplicateRows = ref([])
 const invalidRows = ref([])
+const failedRows = ref([])
 const fieldMapping = reactive({})
+let importCancelled = false
+
+onBeforeUnmount(() => {
+  importCancelled = true
+})
+
+loadImportHistory()
 
 const importFields = CRS_IMPORT_FIELDS
 const normalizedHeaders = computed(() =>
@@ -143,10 +178,12 @@ async function loadCsv(event) {
   message.value = ''
 
   try {
+    csvFile.value = file
     const csvText = await file.text()
     const parsed = parseCsvText(csvText)
     headers.value = parsed.headers
     records.value = parsed.records
+    importPreview.value = null
     resetMapping()
   } catch (parseError) {
     error.value = parseError.message || 'Unable to read that CSV file.'
@@ -163,6 +200,11 @@ function resetMapping() {
     delete fieldMapping[key]
   })
   Object.assign(fieldMapping, defaults)
+  importPreview.value = null
+}
+
+function clearPreview() {
+  importPreview.value = null
 }
 
 async function importMappedRows() {
@@ -171,6 +213,7 @@ async function importMappedRows() {
   message.value = ''
   duplicateRows.value = []
   invalidRows.value = []
+  failedRows.value = []
 
   try {
     if (!crsStore.settings.accounts.length) {
@@ -178,42 +221,48 @@ async function importMappedRows() {
       return
     }
 
-    let imported = 0
-    let duplicates = 0
-    let invalid = 0
-    for (const [index, row] of records.value.entries()) {
-      const tradeDraft = createTradeDraftFromRow(row, fieldMapping, crsStore.settings)
-      if (!tradeDraft.pair || !tradeDraft.entry || !tradeDraft.closePrice) {
-        invalid += 1
-        invalidRows.value.push(createImportIssue({
-          rowNumber: index + 2,
-          tradeDraft,
-          reason: 'Mapped row is missing one of the required fields: symbol, entry, or close price.'
-        }))
-        continue
-      }
-
-      try {
-        await crsStore.persistTrade(tradeDraft)
-        imported += 1
-      } catch (requestError) {
-        if (requestError?.code === 'DUPLICATE_TRADE') {
-          duplicates += 1
-          duplicateRows.value.push(createImportIssue({
-            rowNumber: index + 2,
-            tradeDraft,
-            reason: requestError.message,
-            duplicateTradeId: requestError.duplicateTradeId
-          }))
-          continue
-        }
-
-        throw requestError
-      }
+    if (!csvFile.value) {
+      error.value = 'Select a CSV file first.'
+      return
     }
 
+    if (!importPreview.value) {
+      error.value = 'Preview the mapped import first so CRS can validate the selected columns.'
+      return
+    }
+
+    message.value = 'Mapped import started. CRS is validating the selected columns on the backend.'
+    const result = await crsStore.startImport(csvFile.value, {
+      fieldMapping: { ...fieldMapping }
+    })
+    const importLog = await waitForImportCompletion(result.importId)
+
+    if (!importLog || importCancelled) {
+      return
+    }
+
+    const details = importLog.error_details || {}
+    duplicateRows.value = (details.duplicateRows || []).map(mapBackendIssue)
+    invalidRows.value = (details.invalidRows || []).map(mapBackendIssue)
+    failedRows.value = (details.failedTrades || []).map(mapBackendIssue)
+
+    if (importLog.status === 'failed') {
+      error.value = details.error || 'Mapped import failed on the backend.'
+      message.value = ''
+      await loadImportHistory()
+      return
+    }
+
+    await crsStore.hydrateTrades(true)
+    await loadImportHistory()
+
+    const imported = importLog.trades_imported || 0
+    const duplicates = details.duplicates || duplicateRows.value.length
+    const invalid = invalidRows.value.length
+    const failed = failedRows.value.length
+
     message.value = imported || duplicates
-      ? `Imported ${imported} mapped trade${imported === 1 ? '' : 's'} successfully.${duplicates ? ` Skipped ${duplicates} duplicate${duplicates === 1 ? '' : 's'}.` : ''}${invalid ? ` Ignored ${invalid} incomplete row${invalid === 1 ? '' : 's'}.` : ''}`
+      ? `Imported ${imported} mapped trade${imported === 1 ? '' : 's'} successfully.${duplicates ? ` Skipped ${duplicates} duplicate${duplicates === 1 ? '' : 's'}.` : ''}${invalid ? ` Ignored ${invalid} incomplete row${invalid === 1 ? '' : 's'}.` : ''}${failed ? ` ${failed} row${failed === 1 ? '' : 's'} failed during import.` : ''}`
       : 'No valid rows matched the current mapping.'
   } catch (requestError) {
     error.value = requestError.message || 'Unable to import the mapped rows.'
@@ -225,5 +274,124 @@ async function importMappedRows() {
 function resolvePreviewValue(row, fieldKey) {
   const header = Object.keys(fieldMapping).find((key) => fieldMapping[key] === fieldKey)
   return header ? row[header] || '—' : '—'
+}
+
+async function previewMappedImport() {
+  if (!csvFile.value) {
+    error.value = 'Select a CSV file first.'
+    return
+  }
+
+  previewLoading.value = true
+  error.value = ''
+  message.value = ''
+  importPreview.value = null
+  duplicateRows.value = []
+  invalidRows.value = []
+  failedRows.value = []
+
+  try {
+    importPreview.value = await crsStore.previewImport(csvFile.value, {
+      fieldMapping: { ...fieldMapping }
+    })
+    duplicateRows.value = (importPreview.value?.duplicates || []).map(mapBackendIssue)
+    invalidRows.value = (importPreview.value?.invalidRows || []).map(mapBackendIssue)
+    message.value = 'Preview ready. If the mapped rows look right, run the import.'
+  } catch (requestError) {
+    error.value = requestError.message || 'Unable to preview the mapped rows.'
+  } finally {
+    previewLoading.value = false
+  }
+}
+
+async function waitForImportCompletion(importId) {
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    if (importCancelled) {
+      return null
+    }
+
+    const importLog = await crsStore.getImportStatus(importId)
+    if (importLog?.status === 'completed' || importLog?.status === 'failed') {
+      return importLog
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+  }
+
+  throw new Error('Import is taking too long. Check import history and try again.')
+}
+
+function mapBackendIssue(issue = {}) {
+  const tradeDraft = {
+    pair: issue?.trade?.symbol || issue?.symbol || '',
+    direction: issue?.trade?.side || issue?.direction || '',
+    openTime: issue?.trade?.entryTime || issue?.entryTime || '',
+    entry: issue?.trade?.entryPrice || issue?.entryPrice || issue?.entry || '',
+    closePrice: issue?.trade?.exitPrice || issue?.exitPrice || issue?.closePrice || '',
+    volume: issue?.trade?.quantity || issue?.quantity || issue?.volume || ''
+  }
+
+  return createImportIssue({
+    rowNumber: issue.rowNumber,
+    tradeDraft,
+    reason: issue.reason || issue.message || 'Skipped during import.',
+    duplicateTradeId: issue.duplicateTradeId || ''
+  })
+}
+
+async function loadImportHistory() {
+  historyLoading.value = true
+  try {
+    importHistory.value = await crsStore.getImportHistory()
+  } catch {
+    importHistory.value = []
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+async function removeImportHistoryItem(item) {
+  historyDeleting.value = true
+  historyDeletingId.value = item.id
+  error.value = ''
+  message.value = ''
+
+  try {
+    const result = await crsStore.deleteImportHistoryItem(item.id)
+    await crsStore.hydrateTrades(true)
+    await loadImportHistory()
+    message.value = `${item.file_name} removed. ${result.deletedTrades || 0} imported trade${result.deletedTrades === 1 ? '' : 's'} were deleted.`
+  } catch (requestError) {
+    error.value = requestError?.message || 'Unable to remove that import.'
+  } finally {
+    historyDeleting.value = false
+    historyDeletingId.value = ''
+  }
+}
+
+async function clearImportHistoryList() {
+  if (!importHistory.value.length) {
+    return
+  }
+
+  historyDeleting.value = true
+  historyClearingAll.value = true
+  error.value = ''
+  message.value = ''
+
+  const importIds = importHistory.value.map((item) => item.id)
+  const importCount = importIds.length
+
+  try {
+    const result = await crsStore.clearImportHistory(importIds)
+    await crsStore.hydrateTrades(true)
+    await loadImportHistory()
+    message.value = `Cleared ${result.deletedImports || importCount} import run${(result.deletedImports || importCount) === 1 ? '' : 's'} and removed ${result.deletedTrades || 0} imported trade${(result.deletedTrades || 0) === 1 ? '' : 's'}.`
+  } catch (requestError) {
+    error.value = requestError?.message || 'Unable to clear import history.'
+  } finally {
+    historyDeleting.value = false
+    historyClearingAll.value = false
+  }
 }
 </script>

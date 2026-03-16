@@ -5,7 +5,7 @@
         <img src="/crs-main.png" alt="CRS Codem System Rule" class="h-24 w-auto max-w-[260px] object-contain" />
         <h1 class="mt-4 text-5xl font-semibold tracking-[-0.05em] text-white">Sign in and review the tape with intent.</h1>
         <p class="mt-5 max-w-xl text-base leading-8 text-slate-300">
-          Your rule system stays focused: record trades, review execution, study discipline, and cut the noise. The login flow should feel like the same product, not a generic auth page.
+          Sign in to review trades, inspect execution, and keep your journal centered on the work that matters.
         </p>
         <div class="mt-10 grid gap-4 sm:grid-cols-3">
           <div class="rounded-[22px] border border-white/8 bg-black/20 p-4">

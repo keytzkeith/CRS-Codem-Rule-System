@@ -19,6 +19,18 @@ function roundToDbPrecision(value, decimals = 8) {
   return Math.round(num * multiplier) / multiplier;
 }
 
+function formatDuplicateTradeTimestamp(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return 'unknown time';
+
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString();
+  }
+
+  return raw;
+}
+
 class Trade {
   static async findDuplicateBySignature(userId, tradeData, excludeTradeId = null) {
     const {
@@ -78,7 +90,7 @@ class Trade {
       return;
     }
 
-    const error = new Error(`Duplicate trade detected for ${String(symbol).toUpperCase()} on ${new Date(entryTime).toISOString()}`);
+    const error = new Error(`Duplicate trade detected for ${String(symbol).toUpperCase()} on ${formatDuplicateTradeTimestamp(entryTime)}`);
     error.status = 409;
     error.code = 'DUPLICATE_TRADE';
     error.duplicateTradeId = duplicateTrade.id;

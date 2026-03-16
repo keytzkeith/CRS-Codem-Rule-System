@@ -49,7 +49,7 @@ async function initializePostHogTelemetry() {
 
     loggerProvider = new LoggerProvider({
       resource: resourceFromAttributes({
-        'service.name': 'tradetally-backend',
+        'service.name': 'crs-backend',
         'service.version': process.env.npm_package_version || 'unknown',
         'host.name': os.hostname(),
         'process.pid': process.pid,
@@ -59,7 +59,7 @@ async function initializePostHogTelemetry() {
       processors: [new BatchLogRecordProcessor(exporter)],
     });
 
-    otelLogger = loggerProvider.getLogger('tradetally-backend');
+    otelLogger = loggerProvider.getLogger('crs-backend');
 
     isInitialized = true;
 

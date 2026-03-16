@@ -417,6 +417,114 @@ export const useCrsStore = defineStore('crs', () => {
     }
   }
 
+  async function startImport(file, options = {}) {
+    if (!file) {
+      throw new Error('No CSV file selected.')
+    }
+
+    const formData = new FormData()
+    formData.append('broker', 'crs')
+    formData.append('timezone', settings.value.timezone || DEFAULT_SESSION_TIMEZONE)
+
+    const accountId = options.accountId || settings.value.activeAccountId || settings.value.accounts[0]?.id
+    if (accountId) {
+      formData.append('accountId', accountId)
+    }
+
+    if (options.fieldMapping) {
+      formData.append('fieldMapping', JSON.stringify(options.fieldMapping))
+    }
+
+    formData.append('file', file)
+
+    try {
+      const response = await api.post('/trades/import', formData, {
+        timeout: 60000
+      })
+
+      return response.data
+    } catch (error) {
+      throw new Error(resolveApiErrorMessage(error, 'Unable to start the import.'))
+    }
+  }
+
+  async function getImportStatus(importId) {
+    try {
+      const response = await api.get(`/trades/import/status/${importId}`)
+      return response.data?.importLog || null
+    } catch (error) {
+      throw new Error(resolveApiErrorMessage(error, 'Unable to check import status.'))
+    }
+  }
+
+  async function previewImport(file, options = {}) {
+    if (!file) {
+      throw new Error('No CSV file selected.')
+    }
+
+    const formData = new FormData()
+    formData.append('broker', 'crs')
+    formData.append('timezone', settings.value.timezone || DEFAULT_SESSION_TIMEZONE)
+
+    const accountId = options.accountId || settings.value.activeAccountId || settings.value.accounts[0]?.id
+    if (accountId) {
+      formData.append('accountId', accountId)
+    }
+
+    if (options.fieldMapping) {
+      formData.append('fieldMapping', JSON.stringify(options.fieldMapping))
+    }
+
+    formData.append('file', file)
+
+    try {
+      const response = await api.post('/trades/import/preview', formData, {
+        timeout: 60000
+      })
+
+      return response.data
+    } catch (error) {
+      throw new Error(resolveApiErrorMessage(error, 'Unable to preview this CSV file.'))
+    }
+  }
+
+  async function getImportHistory() {
+    try {
+      const response = await api.get('/trades/import/history')
+      return response.data?.imports || []
+    } catch (error) {
+      throw new Error(resolveApiErrorMessage(error, 'Unable to load import history.'))
+    }
+  }
+
+  async function deleteImportHistoryItem(importId) {
+    if (!importId) {
+      throw new Error('Missing import id.')
+    }
+
+    try {
+      const response = await api.delete(`/trades/import/${importId}`)
+      return response.data
+    } catch (error) {
+      throw new Error(resolveApiErrorMessage(error, 'Unable to remove that import.'))
+    }
+  }
+
+  async function clearImportHistory(importIds) {
+    if (!Array.isArray(importIds) || !importIds.length) {
+      return { deletedImports: 0, deletedTrades: 0 }
+    }
+
+    try {
+      const response = await api.delete('/trades/import/bulk', {
+        data: { importIds }
+      })
+      return response.data
+    } catch (error) {
+      throw new Error(resolveApiErrorMessage(error, 'Unable to clear import history.'))
+    }
+  }
+
   async function persistSettings(nextSettings) {
     if (!localStorage.getItem('token')) {
       updateSettings(nextSettings)
@@ -548,7 +656,13 @@ export const useCrsStore = defineStore('crs', () => {
     saveTrade,
     persistTrade,
     deleteTrade,
-    deleteAllTrades
+    deleteAllTrades,
+    startImport,
+    getImportStatus,
+    previewImport,
+    getImportHistory,
+    deleteImportHistoryItem,
+    clearImportHistory
   }
 })
 
@@ -1030,6 +1144,19 @@ function resolveAccountName(accountId, accounts = []) {
 
 function resolveAccountSize(accountId, accounts = []) {
   return accounts.find((account) => account.id === accountId)?.size || 0
+}
+
+function resolveApiErrorMessage(error, fallback) {
+  const responseMessage = error?.response?.data?.message || error?.response?.data?.error
+  if (responseMessage) {
+    return responseMessage
+  }
+
+  if (error?.message) {
+    return error.message
+  }
+
+  return fallback
 }
 
 function isLegacyPlaceholderAccount(account) {

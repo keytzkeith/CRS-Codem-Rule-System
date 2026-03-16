@@ -140,6 +140,18 @@ const routes = [
     component: () => import('@/views/admin/AdminDashboardView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
+  {
+    path: '/admin/users',
+    name: 'admin-users',
+    component: () => import('@/views/admin/UserManagementView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/backups',
+    name: 'admin-backups',
+    component: () => import('@/views/admin/BackupManagementView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
   ...CRS_ROUTE_REDIRECTS.map((path) => ({
     path,
     redirect: appRedirect
@@ -162,8 +174,16 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+
+  if (!authStore.initialized && authStore.token) {
+    try {
+      await authStore.ensureInitialized()
+    } catch (error) {
+      console.error('Auth route initialization failed:', error)
+    }
+  }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: 'login', query: { redirect: to.fullPath } })

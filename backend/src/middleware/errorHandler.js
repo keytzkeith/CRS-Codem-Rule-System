@@ -18,6 +18,13 @@ const errorHandler = (err, req, res, next) => {
   }
 
   if (isV1Request(req)) {
+    if (err.name === 'MulterError') {
+      const message = err.code === 'LIMIT_FILE_SIZE'
+        ? 'Uploaded file is too large'
+        : err.message;
+      return sendV1Error(res, 400, 'BAD_REQUEST', message);
+    }
+
     if (err.status) {
       return sendV1Error(res, err.status, err.status === 409 ? 'CONFLICT' : 'BAD_REQUEST', err.message);
     }
@@ -47,6 +54,15 @@ const errorHandler = (err, req, res, next) => {
       'INTERNAL_ERROR',
       process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
     );
+  }
+
+  if (err.name === 'MulterError') {
+    return res.status(400).json({
+      error: 'Bad Request',
+      message: err.code === 'LIMIT_FILE_SIZE'
+        ? 'Uploaded file is too large'
+        : err.message
+    });
   }
 
   if (err.name === 'ValidationError') {

@@ -5,12 +5,13 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'TradeTally API',
+      title: 'CRS API',
       version: '1.0.0',
-      description: 'TradeTally trading journal and analytics API',
+      description: 'CRS Codem System Rule trading journal API',
       contact: {
-        name: 'TradeTally Support',
-        url: 'https://tradetally.com',
+        name: 'Keith Odera',
+        url: 'https://keytz-portfolio.vercel.app/',
+        email: 'codemtrader@gmail.com',
       },
     },
     servers: [

@@ -739,7 +739,7 @@ const settingsController = {
                   'Admin settings:', adminSettings ? Object.keys(adminSettings).length : 0);
 
       res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Content-Disposition', `attachment; filename=tradetally-export-${new Date().toISOString().split('T')[0]}.json`);
+      res.setHeader('Content-Disposition', `attachment; filename=crs-export-${new Date().toISOString().split('T')[0]}.json`);
       res.json(exportData);
     } catch (error) {
       console.error('[EXPORT] Export failed:', error);
@@ -783,13 +783,13 @@ const settingsController = {
           hasTrades: !!importData.trades,
           keys: Object.keys(importData)
         });
-        return res.status(400).json({ error: 'Invalid TradeTally export file' });
+        return res.status(400).json({ error: 'Invalid CRS export file' });
       }
 
-      // NOTE: No tier limit check for TradeTally export imports
+      // NOTE: No tier limit check for CRS export imports
       // This is for data portability - users should be able to restore their own exported data
       // The tier limit (100 trades per import for free tier) only applies to CSV broker imports
-      console.log(`[IMPORT] Processing TradeTally export with ${importData.trades?.length || 0} trades (no tier limit for exports)`);
+      console.log(`[IMPORT] Processing CRS export with ${importData.trades?.length || 0} trades (no tier limit for exports)`);
 
       // Ensure database schema is ready before import
       try {
@@ -1624,6 +1624,59 @@ const settingsController = {
   },
 
   // Admin Settings Endpoints
+  async getAdminRegistrationSettings(req, res, next) {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const effectiveMode = await adminSettingsService.getSetting('registration_mode');
+      const configuredMode = process.env.REGISTRATION_MODE || 'open';
+      const registrationMode = effectiveMode || configuredMode;
+
+      res.json({
+        registrationMode,
+        configuredMode,
+        overrideActive: Boolean(effectiveMode),
+        options: ['open', 'approval', 'disabled']
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateAdminRegistrationSettings(req, res, next) {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const { registrationMode } = req.body;
+      const validModes = ['open', 'approval', 'disabled'];
+
+      if (!validModes.includes(registrationMode)) {
+        return res.status(400).json({
+          error: `Invalid registration mode. Must be one of: ${validModes.join(', ')}`
+        });
+      }
+
+      const success = await adminSettingsService.updateSetting('registration_mode', registrationMode);
+
+      if (!success) {
+        return res.status(500).json({ error: 'Failed to update registration mode' });
+      }
+
+      res.json({
+        message: 'Registration mode updated successfully',
+        registrationMode,
+        configuredMode: process.env.REGISTRATION_MODE || 'open',
+        overrideActive: true
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getAdminAISettings(req, res, next) {
     try {
       // Check if user is admin

@@ -7,6 +7,29 @@ class SymbolCategoryManager {
     this.updateInterval = 24 * 60 * 60 * 1000; // Update categories older than 24 hours
   }
 
+  isMarketDataConfigured() {
+    return typeof finnhub.isConfigured === 'function' ? finnhub.isConfigured() : Boolean(process.env.FINNHUB_API_KEY);
+  }
+
+  isNonEquitySymbol(symbol) {
+    const value = String(symbol || '').trim().toUpperCase();
+
+    if (!value) {
+      return false;
+    }
+
+    // Common CRS imports are forex pairs, metals, and indices.
+    if (/^[A-Z]{6}$/.test(value)) {
+      return true;
+    }
+
+    if (/^(XAU|XAG|XAUEUR|XAGEUR|US30|NAS100|SPX500|GER40|UK100|JP225|USTEC|US500|DE40|FR40)/.test(value)) {
+      return true;
+    }
+
+    return false;
+  }
+
   /**
    * Get category for a single symbol from permanent storage or fetch if needed
    */
@@ -34,6 +57,16 @@ class SymbolCategoryManager {
         }
       }
       
+      if (this.isNonEquitySymbol(symbolUpper)) {
+        console.log(`[INFO] Skipping company-profile lookup for non-equity symbol ${symbolUpper}`);
+        return null;
+      }
+
+      if (!this.isMarketDataConfigured()) {
+        console.log(`[INFO] Finnhub not configured, skipping category lookup for ${symbolUpper}`);
+        return null;
+      }
+
       // If not found or stale, fetch from API
       console.log(`[CHECK] Fetching category for ${symbol} from API...`);
       const profile = await finnhub.getCompanyProfile(symbol);
@@ -177,6 +210,11 @@ class SymbolCategoryManager {
   async categorizeNewSymbols(userId = null) {
     try {
       console.log('[PROCESS] Starting background symbol categorization...');
+
+      if (!this.isMarketDataConfigured()) {
+        console.log('[INFO] Finnhub not configured, skipping background symbol categorization');
+        return { processed: 0, total: 0, skipped: true };
+      }
       
       // Find symbols in trades that don't have categories
       let query = `

@@ -6,8 +6,9 @@ function toDisplayValue(value) {
   return String(value)
 }
 
-export function createImportIssue({ rowNumber, tradeDraft, reason, duplicateTradeId = '' }) {
+export function createImportIssue({ rowNumber, tradeDraft, reason, duplicateTradeId = '', type = 'invalid' }) {
   return {
+    type,
     rowNumber,
     pair: toDisplayValue(tradeDraft?.pair),
     direction: toDisplayValue(tradeDraft?.direction),
@@ -20,11 +21,12 @@ export function createImportIssue({ rowNumber, tradeDraft, reason, duplicateTrad
   }
 }
 
-export function buildImportIssuesCsv(duplicates = [], invalidRows = []) {
+export function buildImportIssuesCsv(duplicates = [], invalidRows = [], failedRows = []) {
   const headers = ['type', 'row_number', 'pair', 'direction', 'open_time', 'entry', 'close_price', 'volume', 'reason', 'duplicate_trade_id']
   const rows = [
     ...duplicates.map((issue) => ['duplicate', issue.rowNumber, issue.pair, issue.direction, issue.openTime, issue.entry, issue.closePrice, issue.volume, issue.reason, issue.duplicateTradeId]),
-    ...invalidRows.map((issue) => ['invalid', issue.rowNumber, issue.pair, issue.direction, issue.openTime, issue.entry, issue.closePrice, issue.volume, issue.reason, issue.duplicateTradeId])
+    ...invalidRows.map((issue) => ['invalid', issue.rowNumber, issue.pair, issue.direction, issue.openTime, issue.entry, issue.closePrice, issue.volume, issue.reason, issue.duplicateTradeId]),
+    ...failedRows.map((issue) => ['failed', issue.rowNumber, issue.pair, issue.direction, issue.openTime, issue.entry, issue.closePrice, issue.volume, issue.reason, issue.duplicateTradeId])
   ]
 
   return [headers, ...rows]

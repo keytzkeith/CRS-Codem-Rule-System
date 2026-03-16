@@ -12,6 +12,8 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref(null)
   const registrationConfig = ref(null)
   const pendingOnboarding = ref(false)
+  const initialized = ref(false)
+  let authInitPromise = null
 
   const isAuthenticated = computed(() => !!token.value)
   const showOnboardingModal = computed(() => {
@@ -145,6 +147,7 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       user.value = null
       token.value = null
+      initialized.value = true
       localStorage.removeItem('token')
       localStorage.removeItem('mock_auth_user')
       router.push({ name: 'home' })
@@ -226,18 +229,32 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function checkAuth() {
-    if (token.value) {
-      if (token.value === 'mock-dev-token' && mockAuthMode) {
-        const storedUser = localStorage.getItem('mock_auth_user')
-        if (storedUser) {
-          user.value = JSON.parse(storedUser)
+    if (authInitPromise) {
+      return authInitPromise
+    }
+
+    authInitPromise = (async () => {
+      if (token.value) {
+        if (token.value === 'mock-dev-token' && mockAuthMode) {
+          const storedUser = localStorage.getItem('mock_auth_user')
+          if (storedUser) {
+            user.value = JSON.parse(storedUser)
+          }
+          initialized.value = true
+          return
         }
-        return
+
+        api.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
+        await fetchUser()
       }
 
-      // Set the authorization header for subsequent requests
-      api.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
-      await fetchUser()
+      initialized.value = true
+    })()
+
+    try {
+      await authInitPromise
+    } finally {
+      authInitPromise = null
     }
   }
 
@@ -316,6 +333,11 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
   }
 
+  async function ensureInitialized() {
+    if (initialized.value) return
+    await checkAuth()
+  }
+
   function completeMockAuth(email, returnUrl = null) {
     const mockUser = {
       id: 'crs-local-user',
@@ -386,6 +408,7 @@ export const useAuthStore = defineStore('auth', () => {
     error,
     registrationConfig,
     pendingOnboarding,
+    initialized,
     showOnboardingModal,
     isAuthenticated,
     clearError,
@@ -399,6 +422,7 @@ export const useAuthStore = defineStore('auth', () => {
     resetPassword,
     verify2FA,
     completeOnboarding,
-    getRegistrationConfig
+    getRegistrationConfig,
+    ensureInitialized
   }
 })

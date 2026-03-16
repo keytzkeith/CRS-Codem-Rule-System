@@ -65,6 +65,13 @@ cd backend
 npm run trades:repair -- --dry-run
 ```
 
+If you want to repair using a different session timezone:
+
+```bash
+cd backend
+npm run trades:repair -- --dry-run --timezone Africa/Nairobi
+```
+
 This script repairs derived CRS fields such as:
 - `setup_stack`
 - `journal_payload`
@@ -75,6 +82,7 @@ This script repairs derived CRS fields such as:
 - `actual_risk_amount`
 - `risk_percent_of_account`
 - `pips`
+- session labels stored in `strategy` when the trade is using CRS session semantics
 
 ## Admin Permissions
 

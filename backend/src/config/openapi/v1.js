@@ -1342,18 +1342,19 @@ function buildV1OpenApiSpec(origin = '') {
   return {
     openapi: '3.0.0',
     info: {
-      title: 'TradeTally Public API',
+      title: 'CRS Public API',
       version: packageInfo.version,
-      description: 'Stable public API for TradeTally. `/api/v1` is the supported public contract. `/api` and `/api/v2` remain compatibility surfaces.',
+      description: 'Stable public API for CRS. `/api/v1` is the supported public contract. `/api` and `/api/v2` remain compatibility surfaces.',
       contact: {
-        name: 'TradeTally Support',
-        url: 'https://docs.tradetally.io'
+        name: 'Keith Odera',
+        url: 'https://keytz-portfolio.vercel.app/',
+        email: 'codemtrader@gmail.com'
       }
     },
     servers: [
       {
         url: serverUrl,
-        description: 'TradeTally server root'
+        description: 'CRS server root'
       }
     ],
     tags: [

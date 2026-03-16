@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const settingsController = require('../controllers/settings.controller');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, requireAdmin } = require('../middleware/auth');
 const { validate, schemas } = require('../middleware/validation');
 
 // Configure multer for file uploads
@@ -36,6 +36,8 @@ router.get('/export', authenticate, settingsController.exportUserData);
 router.post('/import', authenticate, upload.single('file'), settingsController.importUserData);
 
 // Admin Settings Routes
+router.get('/admin/registration', requireAdmin, settingsController.getAdminRegistrationSettings);
+router.put('/admin/registration', requireAdmin, settingsController.updateAdminRegistrationSettings);
 router.get('/admin/ai', authenticate, settingsController.getAdminAISettings);
 router.put('/admin/ai', authenticate, settingsController.updateAdminAISettings);
 router.get('/admin/cusip-ai', authenticate, settingsController.getAdminCusipAISettings);

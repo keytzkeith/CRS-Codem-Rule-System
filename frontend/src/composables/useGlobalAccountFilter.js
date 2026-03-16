@@ -1,7 +1,9 @@
 import { ref, computed, watch } from 'vue'
 import api from '@/services/api'
 
-export const STORAGE_KEY = 'tradetally_global_account'
+export const STORAGE_KEY = 'crs_global_account'
+export const LEGACY_STORAGE_KEY = 'tradetally_global_account'
+export const CRS_STORAGE_KEY = 'crs_global_account'
 
 // Special filter value for trades without an account
 export const UNSORTED_ACCOUNT = '__unsorted__'
@@ -15,9 +17,12 @@ const initialized = ref(false)
 export function useGlobalAccountFilter() {
   // Initialize from localStorage on first use
   if (!initialized.value) {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = localStorage.getItem(CRS_STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY)
     if (stored) {
       selectedAccount.value = stored
+      if (!localStorage.getItem(CRS_STORAGE_KEY)) {
+        localStorage.setItem(CRS_STORAGE_KEY, stored)
+      }
     }
     initialized.value = true
   }
@@ -56,16 +61,19 @@ export function useGlobalAccountFilter() {
   function setAccount(accountId) {
     selectedAccount.value = accountId
     if (accountId) {
-      localStorage.setItem(STORAGE_KEY, accountId)
+      localStorage.setItem(CRS_STORAGE_KEY, accountId)
+      localStorage.removeItem(LEGACY_STORAGE_KEY)
     } else {
-      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(CRS_STORAGE_KEY)
+      localStorage.removeItem(LEGACY_STORAGE_KEY)
     }
     console.log('[GLOBAL ACCOUNT] Set to:', accountId || 'All Accounts')
   }
 
   function clearAccount() {
     selectedAccount.value = null
-    localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(CRS_STORAGE_KEY)
+    localStorage.removeItem(LEGACY_STORAGE_KEY)
     console.log('[GLOBAL ACCOUNT] Cleared - showing all accounts')
   }
 

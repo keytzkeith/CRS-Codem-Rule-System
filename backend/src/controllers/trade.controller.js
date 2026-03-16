@@ -1,6 +1,8 @@
 const Trade = require('../models/Trade');
 const User = require('../models/User');
+const Account = require('../models/Account');
 const { parseCSV, detectBrokerFormat, getCsvHeaderLine, getCsvSampleRows } = require('../utils/csvParser');
+const { detectCrsFormat, parseCrsCsv, DEFAULT_SESSION_TIMEZONE } = require('../utils/crsCsv');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../config/database');
 const logger = require('../utils/logger');
@@ -17,6 +19,30 @@ const ChartService = require('../services/chartService');
 const axios = require('axios');
 const { sendV1NotImplemented } = require('../utils/apiResponse');
 
+const CRS_META_MARKER = '[CRS_META]';
+const SESSION_LABELS = new Set(['Asia', 'London', 'New York']);
+const CRS_CSV_HEADERS = [
+  'id',
+  'symbol',
+  'direction',
+  'volume',
+  'open_price',
+  'close_price',
+  'open_time',
+  'close_time',
+  'profit',
+  'commission',
+  'swap',
+  'net_profit',
+  'sl',
+  'tp',
+  'session',
+  'setup',
+  'tags',
+  'notes',
+  'account_name'
+];
+
 // Helper function to invalidate analytics cache for a user
 function invalidateAnalyticsCache(userId) {
   // Clear all analytics cache entries for this user
@@ -27,6 +53,423 @@ function invalidateAnalyticsCache(userId) {
   );
   cacheKeys.forEach(key => cache.del(key));
   console.log(`[CACHE] Invalidated ${cacheKeys.length} analytics cache entries for user ${userId}`);
+}
+
+async function invalidateNamedCache(key) {
+  if (typeof cache.invalidate === 'function') {
+    await cache.invalidate(key);
+    return;
+  }
+
+  if (typeof cache.del === 'function') {
+    cache.del(key);
+  }
+}
+
+async function markStaleImportsFailed(userId = null, importId = null) {
+  const conditions = [`status = 'processing'`, `created_at < NOW() - INTERVAL '2 minutes'`];
+  const params = [];
+
+  if (userId) {
+    params.push(userId);
+    conditions.push(`user_id = $${params.length}`);
+  }
+
+  if (importId) {
+    params.push(importId);
+    conditions.push(`id = $${params.length}`);
+  }
+
+  const query = `
+    UPDATE import_logs
+    SET
+      status = 'failed',
+      completed_at = CURRENT_TIMESTAMP,
+      error_details = COALESCE(error_details, '{}'::jsonb) || '{"error":"Import interrupted before completion"}'::jsonb
+    WHERE ${conditions.join(' AND ')}
+  `;
+
+  await db.query(query, params);
+}
+
+async function persistImportProgress(importId, { imported = 0, failed = 0, duplicates = 0, detectedFormat = null } = {}) {
+  await db.query(`
+    UPDATE import_logs
+    SET
+      trades_imported = $1,
+      trades_failed = $2,
+      error_details = COALESCE(error_details, '{}'::jsonb) || $4::jsonb
+    WHERE id = $3
+  `, [
+    imported,
+    failed,
+    importId,
+    JSON.stringify({
+      duplicates,
+      detectedFormat,
+      progress: {
+        imported,
+        failed,
+        duplicates
+      }
+    })
+  ]);
+}
+
+function escapeCsvValue(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  const str = String(value);
+  if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+
+  return str;
+}
+
+function formatCsvNumber(value, digits) {
+  if (value === null || value === undefined || value === '') {
+    return '';
+  }
+
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return '';
+  }
+
+  return numeric.toFixed(digits);
+}
+
+function formatCsvDateTime(value) {
+  const raw = String(value || '').trim();
+  if (!raw) {
+    return '';
+  }
+
+  const direct = raw
+    .replace('T', ' ')
+    .replace(/\.\d+Z?$/, '')
+    .replace(/Z$/, '')
+    .trim();
+
+  if (/^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})?$/.test(direct)) {
+    return direct.length === 10 ? `${direct} 00:00:00` : direct;
+  }
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) {
+    return raw;
+  }
+
+  const pad = (part) => String(part).padStart(2, '0');
+  return [
+    parsed.getFullYear(),
+    pad(parsed.getMonth() + 1),
+    pad(parsed.getDate())
+  ].join('-') + ` ${pad(parsed.getHours())}:${pad(parsed.getMinutes())}:${pad(parsed.getSeconds())}`;
+}
+
+function parseJsonField(value, fallback) {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+
+  if (typeof value === 'object') {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
+function parseVisibleNotes(notes = '') {
+  const rawNotes = String(notes || '');
+  const markerIndex = rawNotes.lastIndexOf(CRS_META_MARKER);
+
+  if (markerIndex === -1) {
+    return rawNotes.trim();
+  }
+
+  return rawNotes.slice(0, markerIndex).trim();
+}
+
+function getTradeSetupValue(trade) {
+  const setupStack = parseJsonField(trade.setup_stack, null);
+  if (Array.isArray(setupStack) && setupStack.length) {
+    return setupStack.filter(Boolean).join(' | ');
+  }
+
+  return String(trade.setup || '').trim();
+}
+
+function getTradeSessionValue(trade) {
+  if (SESSION_LABELS.has(String(trade.strategy || '').trim())) {
+    return String(trade.strategy || '').trim();
+  }
+
+  const journalPayload = parseJsonField(trade.journal_payload, {});
+  if (journalPayload && typeof journalPayload === 'object' && SESSION_LABELS.has(String(journalPayload.session || '').trim())) {
+    return String(journalPayload.session).trim();
+  }
+
+  return '';
+}
+
+function buildCrsCsvRows(trades) {
+  return trades.map((trade) => {
+    const swapTotal = Math.abs(Number(trade.swap || 0)) + Math.abs(Number(trade.fees || 0));
+    const commission = Math.abs(Number(trade.commission || 0));
+    const netProfit = Number(trade.pnl || 0);
+    const grossProfit = netProfit + commission + swapTotal;
+
+    return [
+      escapeCsvValue(trade.id),
+      escapeCsvValue(trade.symbol),
+      escapeCsvValue(String(trade.side || '').toLowerCase()),
+      escapeCsvValue(formatCsvNumber(trade.quantity, 2)),
+      escapeCsvValue(formatCsvNumber(trade.entry_price, 4)),
+      escapeCsvValue(formatCsvNumber(trade.exit_price, 4)),
+      escapeCsvValue(formatCsvDateTime(trade.entry_time || trade.trade_date)),
+      escapeCsvValue(formatCsvDateTime(trade.exit_time)),
+      escapeCsvValue(formatCsvNumber(grossProfit, 2)),
+      escapeCsvValue(formatCsvNumber(commission, 2)),
+      escapeCsvValue(formatCsvNumber(swapTotal, 2)),
+      escapeCsvValue(formatCsvNumber(netProfit, 2)),
+      escapeCsvValue(formatCsvNumber(trade.stop_loss, 4)),
+      escapeCsvValue(formatCsvNumber(trade.take_profit, 4)),
+      escapeCsvValue(getTradeSessionValue(trade)),
+      escapeCsvValue(getTradeSetupValue(trade)),
+      escapeCsvValue(Array.isArray(trade.tags) ? trade.tags.join(' | ') : ''),
+      escapeCsvValue(parseVisibleNotes(trade.notes)),
+      escapeCsvValue(trade.account_identifier || '')
+    ].join(',');
+  });
+}
+
+function buildCrsCsvContent(trades) {
+  return [CRS_CSV_HEADERS.join(','), ...buildCrsCsvRows(trades)].join('\n');
+}
+
+function formatImportTimestamp(value) {
+  const raw = String(value || '').trim();
+  if (!raw) {
+    return 'unknown time';
+  }
+
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString();
+  }
+
+  return raw;
+}
+
+async function finalizeImportSideEffects(userId, imported, importId) {
+  try {
+    invalidateAnalyticsCache(userId);
+  } catch (cacheError) {
+    console.warn('[WARNING] Failed to invalidate analytics cache:', cacheError.message);
+  }
+
+  try {
+    await invalidateNamedCache('sector_performance');
+  } catch (cacheError) {
+    console.warn('[WARNING] Failed to invalidate sector performance cache:', cacheError.message);
+  }
+
+  try {
+    if (imported > 0) {
+      const newAchievements = await AchievementService.checkAndAwardAchievements(userId);
+      console.log(`[ACHIEVEMENT] Post-import achievements awarded: ${newAchievements.length}`);
+    }
+  } catch (achievementError) {
+    console.warn('[WARNING] Failed to check/award achievements after import:', achievementError.message);
+  }
+
+  try {
+    if (typeof symbolCategories.isMarketDataConfigured === 'function' && !symbolCategories.isMarketDataConfigured()) {
+      console.log('[INFO] Skipping background symbol categorization after import because Finnhub is not configured');
+    } else {
+      symbolCategories.categorizeNewSymbols(userId).then(result => {
+        console.log(`[SUCCESS] Background categorization complete: ${result.processed} of ${result.total} symbols categorized`);
+      }).catch(error => {
+        console.warn('[WARNING] Background symbol categorization failed:', error.message);
+      });
+    }
+  } catch (error) {
+    console.warn('[WARNING] Failed to start background symbol categorization:', error.message);
+  }
+
+  try {
+    if (imported > 0) {
+      const jobQueue = require('../utils/jobQueue');
+      await jobQueue.addJob('news_enrichment', {
+        userId,
+        importId,
+        tradeCount: imported
+      });
+    }
+  } catch (error) {
+    console.warn('[WARNING] Failed to queue news enrichment job:', error.message);
+  }
+}
+
+async function processCrsImportJob({ fileBuffer, fileName, importId, userId, accountId = null, timezone = DEFAULT_SESSION_TIMEZONE, fieldMapping = null }) {
+  const accounts = await Account.findByUser(userId);
+  const selectedAccount = accountId ? accounts.find((account) => String(account.id) === String(accountId)) : null;
+  const defaultAccount = selectedAccount || accounts.find((account) => account.is_primary) || null;
+  const parseResult = parseCrsCsv(fileBuffer, {
+    accounts,
+    defaultAccount,
+    timezone: timezone || DEFAULT_SESSION_TIMEZONE,
+    fieldMapping
+  });
+
+  if (!parseResult.detectedFormat) {
+    throw new Error('This CSV does not match a supported CRS import format.');
+  }
+
+  let imported = 0;
+  let duplicates = 0;
+  let failed = 0;
+  const failedTrades = [];
+  const duplicateRows = [];
+
+  for (const tradeData of parseResult.trades) {
+    try {
+      tradeData.importId = importId;
+      await Trade.create(userId, tradeData, { skipAchievements: true, skipApiCalls: true });
+      imported += 1;
+    } catch (error) {
+      const isDuplicateConflict =
+        error.code === 'DUPLICATE_TRADE' ||
+        error.status === 409 ||
+        (error.code === '23505' && error.constraint === 'trades_duplicate_signature_idx');
+
+      if (isDuplicateConflict) {
+        duplicates += 1;
+        duplicateRows.push({
+          rowNumber: tradeData.importRowNumber || null,
+          symbol: tradeData.symbol,
+          entryTime: tradeData.entryTime,
+          message: error.message || `Duplicate trade detected for ${tradeData.symbol} on ${formatImportTimestamp(tradeData.entryTime)}`,
+          duplicateTradeId: error.duplicateTradeId || null
+        });
+        continue;
+      }
+
+      failed += 1;
+      failedTrades.push({
+        rowNumber: tradeData.importRowNumber || null,
+        trade: {
+          symbol: tradeData.symbol,
+          entryTime: tradeData.entryTime,
+          exitTime: tradeData.exitTime,
+          quantity: tradeData.quantity
+        },
+        error: error.message
+      });
+    }
+
+    await persistImportProgress(importId, {
+      imported,
+      failed: failed + parseResult.invalidRows.length,
+      duplicates,
+      detectedFormat: parseResult.detectedFormat
+    });
+  }
+
+  const errorDetails = {
+    duplicates,
+    invalidRows: parseResult.invalidRows.slice(0, 100),
+    duplicateRows: duplicateRows.slice(0, 100),
+    detectedFormat: parseResult.detectedFormat,
+    failedTrades: failedTrades.slice(0, 100)
+  };
+
+  await db.query(`
+    UPDATE import_logs
+    SET status = 'completed', trades_imported = $1, trades_failed = $2, completed_at = CURRENT_TIMESTAMP, error_details = $4
+    WHERE id = $3
+  `, [imported, failed + parseResult.invalidRows.length, importId, errorDetails]);
+
+  await finalizeImportSideEffects(userId, imported, importId);
+}
+
+async function previewCrsImport({ fileBuffer, userId, accountId = null, timezone = DEFAULT_SESSION_TIMEZONE, fieldMapping = null }) {
+  const accounts = await Account.findByUser(userId);
+  const selectedAccount = accountId ? accounts.find((account) => String(account.id) === String(accountId)) : null;
+  const defaultAccount = selectedAccount || accounts.find((account) => account.is_primary) || null;
+  const parseResult = parseCrsCsv(fileBuffer, {
+    accounts,
+    defaultAccount,
+    timezone: timezone || DEFAULT_SESSION_TIMEZONE,
+    fieldMapping
+  });
+
+  if (!parseResult.detectedFormat) {
+    const error = new Error('This CSV does not match a supported CRS import format.');
+    error.status = 400;
+    throw error;
+  }
+
+  const duplicateRows = [];
+  const previewRows = [];
+
+  for (const tradeData of parseResult.trades) {
+    const duplicateTrade = await Trade.findDuplicateBySignature(userId, {
+      symbol: tradeData.symbol,
+      side: tradeData.side,
+      entryTime: tradeData.entryTime,
+      entryPrice: tradeData.entryPrice,
+      exitPrice: tradeData.exitPrice,
+      quantity: tradeData.quantity,
+      account_identifier: tradeData.accountIdentifier || ''
+    });
+
+    if (duplicateTrade) {
+      duplicateRows.push({
+        rowNumber: tradeData.importRowNumber || null,
+        symbol: tradeData.symbol,
+        direction: tradeData.side,
+        entryTime: tradeData.entryTime,
+        entryPrice: tradeData.entryPrice,
+        exitPrice: tradeData.exitPrice,
+        quantity: tradeData.quantity,
+        reason: `Duplicate trade detected for ${tradeData.symbol} on ${formatImportTimestamp(tradeData.entryTime)}`,
+        duplicateTradeId: duplicateTrade.id
+      });
+      continue;
+    }
+
+    if (previewRows.length < 8) {
+      previewRows.push({
+        rowNumber: tradeData.importRowNumber || null,
+        symbol: tradeData.symbol,
+        direction: tradeData.side,
+        entryTime: tradeData.entryTime,
+        exitTime: tradeData.exitTime,
+        entryPrice: tradeData.entryPrice,
+        exitPrice: tradeData.exitPrice,
+        quantity: tradeData.quantity,
+        pnl: tradeData.pnl
+      });
+    }
+  }
+
+  return {
+    detectedFormat: parseResult.detectedFormat,
+    totalRows: parseResult.trades.length + parseResult.invalidRows.length,
+    wouldImport: parseResult.trades.length - duplicateRows.length,
+    duplicates: duplicateRows,
+    invalidRows: parseResult.invalidRows,
+    previewRows
+  };
 }
 
 const tradeController = {
@@ -200,6 +643,7 @@ const tradeController = {
 
   async exportTradesToCSV(req, res, next) {
     try {
+      const { profile = 'crs' } = req.query;
       const {
         symbol, startDate, endDate, tags, strategy, sector,
         strategies, sectors, hasNews, daysOfWeek, instrumentTypes, optionTypes, qualityGrades,
@@ -239,86 +683,79 @@ const tradeController = {
 
       const trades = await Trade.findByUser(req.user.id, filters);
 
-      // Convert trades to CSV format with generic headers
-      const csvHeaders = [
-        'Symbol',
-        'Side',
-        'Quantity',
-        'Entry Price',
-        'Exit Price',
-        'Entry Date',
-        'Exit Date',
-        'P&L',
-        'Fees',
-        'Commission',
-        'Notes',
-        'Strategy',
-        'Setup',
-        'Tags',
-        'Broker',
-        'Status',
-        'Instrument Type',
-        'Option Type',
-        'Strike Price',
-        'Expiration Date',
-        'Quality Grade'
-      ].join(',');
-
-      const csvRows = trades.map(trade => {
-        // Helper function to escape CSV values
-        const escapeCsv = (value) => {
-          if (value === null || value === undefined) return '';
-          const str = String(value);
-          // If the value contains comma, newline, or quotes, wrap in quotes and escape quotes
-          if (str.includes(',') || str.includes('\n') || str.includes('"')) {
-            return `"${str.replace(/"/g, '""')}"`;
-          }
-          return str;
-        };
-
-        // Format dates
-        const formatDate = (date) => {
-          if (!date) return '';
-          return new Date(date).toISOString().split('T')[0]; // YYYY-MM-DD
-        };
-
-        return [
-          escapeCsv(trade.symbol),
-          escapeCsv(trade.side),
-          escapeCsv(trade.quantity),
-          escapeCsv(trade.entry_price),
-          escapeCsv(trade.exit_price),
-          formatDate(trade.entry_date),
-          formatDate(trade.exit_date),
-          escapeCsv(trade.pnl),
-          escapeCsv(trade.fees),
-          escapeCsv(trade.commission),
-          escapeCsv(trade.notes),
-          escapeCsv(trade.strategy),
-          escapeCsv(trade.setup),
-          escapeCsv(trade.tags ? trade.tags.join('; ') : ''),
-          escapeCsv(trade.broker),
-          escapeCsv(trade.status || (trade.exit_price ? 'Closed' : 'Open')),
-          escapeCsv(trade.instrument_type),
-          escapeCsv(trade.option_type),
-          escapeCsv(trade.strike_price),
-          formatDate(trade.expiration_date),
-          escapeCsv(trade.quality_grade)
-        ].join(',');
-      });
-
-      const csv = [csvHeaders, ...csvRows].join('\n');
-
-      // Generate filename with date
       const timestamp = new Date().toISOString().split('T')[0];
-      const filename = `tradetally-export-${timestamp}.csv`;
+      const filename = profile === 'legacy'
+        ? `crs-legacy-export-${timestamp}.csv`
+        : `crs-export-${timestamp}.csv`;
 
-      // Set headers for CSV download
+      let csv;
+
+      if (profile === 'legacy') {
+        const csvHeaders = [
+          'Symbol',
+          'Side',
+          'Quantity',
+          'Entry Price',
+          'Exit Price',
+          'Entry Date',
+          'Exit Date',
+          'P&L',
+          'Fees',
+          'Commission',
+          'Notes',
+          'Strategy',
+          'Setup',
+          'Tags',
+          'Broker',
+          'Status',
+          'Instrument Type',
+          'Option Type',
+          'Strike Price',
+          'Expiration Date',
+          'Quality Grade'
+        ].join(',');
+
+        const csvRows = trades.map(trade => {
+          const formatDate = (date) => {
+            if (!date) return '';
+            return new Date(date).toISOString().split('T')[0];
+          };
+
+          return [
+            escapeCsvValue(trade.symbol),
+            escapeCsvValue(trade.side),
+            escapeCsvValue(trade.quantity),
+            escapeCsvValue(trade.entry_price),
+            escapeCsvValue(trade.exit_price),
+            formatDate(trade.entry_date),
+            formatDate(trade.exit_date),
+            escapeCsvValue(trade.pnl),
+            escapeCsvValue(trade.fees),
+            escapeCsvValue(trade.commission),
+            escapeCsvValue(trade.notes),
+            escapeCsvValue(trade.strategy),
+            escapeCsvValue(trade.setup),
+            escapeCsvValue(trade.tags ? trade.tags.join('; ') : ''),
+            escapeCsvValue(trade.broker),
+            escapeCsvValue(trade.status || (trade.exit_price ? 'Closed' : 'Open')),
+            escapeCsvValue(trade.instrument_type),
+            escapeCsvValue(trade.option_type),
+            escapeCsvValue(trade.strike_price),
+            formatDate(trade.expiration_date),
+            escapeCsvValue(trade.quality_grade)
+          ].join(',');
+        });
+
+        csv = [csvHeaders, ...csvRows].join('\n');
+      } else {
+        csv = buildCrsCsvContent(trades);
+      }
+
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(csv);
 
-      logger.info(`Exported ${trades.length} trades to CSV for user ${req.user.id}`);
+      logger.info(`Exported ${trades.length} trades to ${profile} CSV for user ${req.user.id}`);
     } catch (error) {
       logger.logError('Error exporting trades to CSV:', error);
       next(error);
@@ -430,7 +867,7 @@ const tradeController = {
       
       // Invalidate sector performance cache for this user since new trade was added
       try {
-        await cache.invalidate('sector_performance');
+        await invalidateNamedCache('sector_performance');
         console.log('[SUCCESS] Sector performance cache invalidated after trade creation');
       } catch (cacheError) {
         console.warn('[WARNING] Failed to invalidate sector performance cache:', cacheError.message);
@@ -641,7 +1078,7 @@ const tradeController = {
 
       // Invalidate sector performance cache for this user since trade data changed
       try {
-        await cache.invalidate('sector_performance');
+        await invalidateNamedCache('sector_performance');
         console.log('[SUCCESS] Sector performance cache invalidated after trade update');
       } catch (cacheError) {
         console.warn('[WARNING] Failed to invalidate sector performance cache:', cacheError.message);
@@ -674,7 +1111,7 @@ const tradeController = {
 
       // Invalidate sector performance cache for this user
       try {
-        await cache.invalidate('sector_performance');
+        await invalidateNamedCache('sector_performance');
         console.log('[SUCCESS] Sector performance cache invalidated after trade deletion');
       } catch (cacheError) {
         console.warn('[WARNING] Failed to invalidate sector performance cache:', cacheError.message);
@@ -920,7 +1357,7 @@ const tradeController = {
 
       // Invalidate sector performance cache
       try {
-        await cache.invalidate('sector_performance');
+        await invalidateNamedCache('sector_performance');
         console.log('[SUCCESS] Sector performance cache invalidated after bulk trade deletion');
       } catch (cacheError) {
         console.warn('[WARNING] Failed to invalidate sector performance cache:', cacheError.message);
@@ -1265,13 +1702,11 @@ const tradeController = {
       console.log('File name:', req.file.originalname);
       console.log('File size:', req.file.size);
 
-      // Detect broker format
-      const detectedBroker = detectBrokerFormat(fileBuffer);
-      console.log('Detected broker:', detectedBroker);
-
       // Extract headers from CSV
       const headerLine = getCsvHeaderLine(fileBuffer);
       const detectedHeaders = headerLine ? headerLine.split(',').map(h => h.trim().replace(/^"|"$/g, '')) : [];
+      const detectedBroker = detectCrsFormat(detectedHeaders) || detectBrokerFormat(fileBuffer);
+      console.log('Detected broker:', detectedBroker);
 
       // Count rows (excluding header)
       let csvString = fileBuffer.toString('utf-8');
@@ -1281,11 +1716,12 @@ const tradeController = {
       const lines = csvString.split('\n').filter(line => line.trim() !== '');
       const rowCount = Math.max(0, lines.length - 1); // Exclude header
 
-      // Determine if there's a mismatch
-      // Mismatch only applies if user selected a specific broker (not 'auto' or 'generic')
+      const selectedIsCrs = ['crs', 'crs-native', 'crs-broker'].includes(broker);
+      const detectedIsCrs = ['crs-native', 'crs-broker'].includes(detectedBroker);
       const isMismatch = broker !== 'auto' &&
                          broker !== 'generic' &&
                          detectedBroker !== 'generic' &&
+                         !(selectedIsCrs && detectedIsCrs) &&
                          broker !== detectedBroker;
 
       const result = {
@@ -1295,7 +1731,23 @@ const tradeController = {
         detectedHeaders: detectedHeaders.slice(0, 30), // Limit headers to first 30
         rowCount,
         fileName: req.file.originalname,
-        fileSize: req.file.size
+        fileSize: req.file.size,
+        supportedFormats: [
+          {
+            id: 'crs-broker',
+            label: 'Broker-style CRS import',
+            headers: ['id', 'symbol', 'direction', 'volume', 'open_price', 'close_price', 'open_time', 'close_time', 'profit', 'commission', 'swap', 'net_profit', 'sl', 'tp'],
+            required: ['symbol', 'direction', 'open_price', 'close_price', 'open_time'],
+            optional: ['id', 'volume', 'close_time', 'profit', 'commission', 'swap', 'net_profit', 'sl', 'tp']
+          },
+          {
+            id: 'crs-native',
+            label: 'CRS-native import',
+            headers: CRS_CSV_HEADERS,
+            required: ['symbol', 'direction', 'open_price', 'close_price', 'open_time'],
+            optional: ['id', 'volume', 'close_time', 'profit', 'commission', 'swap', 'net_profit', 'sl', 'tp', 'session', 'setup', 'tags', 'notes', 'account_name']
+          }
+        ]
       };
 
       console.log('Validation result:', result);
@@ -1303,6 +1755,37 @@ const tradeController = {
       res.json(result);
     } catch (error) {
       console.error('Validation error:', error);
+      next(error);
+    }
+  },
+
+  async previewImportFile(req, res, next) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      const { accountId = null, fieldMapping: fieldMappingRaw = null, timezone = DEFAULT_SESSION_TIMEZONE } = req.body;
+      let fieldMapping = null;
+
+      if (fieldMappingRaw) {
+        try {
+          fieldMapping = typeof fieldMappingRaw === 'string' ? JSON.parse(fieldMappingRaw) : fieldMappingRaw;
+        } catch {
+          return res.status(400).json({ error: 'Invalid field mapping payload' });
+        }
+      }
+
+      const preview = await previewCrsImport({
+        fileBuffer: req.file.buffer,
+        userId: req.user.id,
+        accountId,
+        timezone,
+        fieldMapping
+      });
+
+      res.json(preview);
+    } catch (error) {
       next(error);
     }
   },
@@ -1328,9 +1811,27 @@ const tradeController = {
       }
 
       const importId = uuidv4();
-      const { broker = 'generic', mappingId = null, accountId = null } = req.body;
+      const { broker = 'generic', mappingId = null, accountId = null, fieldMapping: fieldMappingRaw = null } = req.body;
+      let fieldMapping = null;
+
+      if (fieldMappingRaw) {
+        try {
+          fieldMapping = typeof fieldMappingRaw === 'string' ? JSON.parse(fieldMappingRaw) : fieldMappingRaw;
+        } catch {
+          return res.status(400).json({ error: 'Invalid field mapping payload' });
+        }
+      }
+
+      const headerLine = getCsvHeaderLine(req.file.buffer);
+      const detectedHeaders = headerLine ? headerLine.split(',').map(h => h.trim().replace(/^"|"$/g, '')) : [];
+      const detectedCrsImport = detectCrsFormat(detectedHeaders);
+      const normalizedBroker =
+        broker === 'auto' || broker === 'generic'
+          ? (detectedCrsImport || broker)
+          : broker;
 
       console.log('Selected broker:', broker);
+      console.log('Normalized broker:', normalizedBroker);
       console.log('Mapping ID:', mappingId);
       console.log('Account ID:', accountId);
       console.log('Import ID:', importId);
@@ -1344,7 +1845,7 @@ const tradeController = {
       const importLog = await db.query(insertQuery, [
         importId,
         req.user.id,
-        broker,
+        normalizedBroker,
         req.file.originalname
       ]);
 
@@ -1352,6 +1853,10 @@ const tradeController = {
       const fileBuffer = Buffer.from(req.file.buffer);
       const fileName = req.file.originalname;
       const fileUserId = req.user.id;
+      const importTimezone = req.body.timezone || DEFAULT_SESSION_TIMEZONE;
+      const isCrsImport = normalizedBroker === 'crs' ||
+        normalizedBroker === 'crs-native' ||
+        normalizedBroker === 'crs-broker';
 
       // Ensure import continues in background regardless of client connection
       process.nextTick(async () => {
@@ -1366,7 +1871,22 @@ const tradeController = {
         }, 10 * 60 * 1000); // 10 minutes
         
         try {
-          logger.logImport(`Starting import for user ${fileUserId}, broker: ${broker}, file: ${fileName}`);
+          logger.logImport(`Starting import for user ${fileUserId}, broker: ${normalizedBroker}, file: ${fileName}`);
+
+          if (isCrsImport) {
+            logger.logImport(`Processing CRS import with format ${detectedCrsImport || normalizedBroker}`);
+            await processCrsImportJob({
+              fileBuffer,
+              fileName,
+              importId,
+              userId: fileUserId,
+              accountId,
+              timezone: importTimezone,
+              fieldMapping
+            });
+            clearTimeout(importTimeout);
+            return;
+          }
           
           // Fetch existing open positions for context-aware parsing
           // Include option fields to properly distinguish different option contracts
@@ -2304,7 +2824,7 @@ const tradeController = {
           
           // Invalidate sector performance cache after successful import
           try {
-            await cache.invalidate('sector_performance');
+            await invalidateNamedCache('sector_performance');
             console.log('[SUCCESS] Sector performance cache invalidated after import completion');
           } catch (cacheError) {
             console.warn('[WARNING] Failed to invalidate sector performance cache:', cacheError.message);
@@ -2356,7 +2876,8 @@ const tradeController = {
           if (headerLine) {
             try {
               // Attempt to detect broker even though parsing failed
-              const detectedBroker = detectBrokerFormat(fileBuffer);
+              const detectedHeaders = headerLine.split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+              const detectedBroker = detectCrsFormat(detectedHeaders) || detectBrokerFormat(fileBuffer);
               const sampleData = getCsvSampleRows(fileBuffer);
               await db.query(`
                 INSERT INTO unknown_csv_headers (user_id, header_line, broker_attempted, outcome, file_name, detected_broker, selected_broker, diagnostics_json, sample_data)
@@ -2364,10 +2885,10 @@ const tradeController = {
               `, [
                 fileUserId,
                 headerLine.substring(0, 10000),
-                broker,
+                normalizedBroker,
                 fileName,
                 detectedBroker,
-                broker,
+                normalizedBroker,
                 JSON.stringify({ error: error.message }),
                 sampleData?.substring(0, 10000) || null
               ]);
@@ -2397,6 +2918,8 @@ const tradeController = {
 
   async getImportStatus(req, res, next) {
     try {
+      await markStaleImportsFailed(req.user.id, req.params.importId);
+
       const query = `
         SELECT * FROM import_logs
         WHERE id = $1 AND user_id = $2
@@ -2416,6 +2939,8 @@ const tradeController = {
 
   async getImportHistory(req, res, next) {
     try {
+      await markStaleImportsFailed(req.user.id);
+
       const query = `
         SELECT * FROM import_logs
         WHERE user_id = $1
@@ -2820,7 +3345,7 @@ const tradeController = {
 
       // Invalidate sector performance cache for this user
       try {
-        await cache.invalidate('sector_performance');
+        await invalidateNamedCache('sector_performance');
         console.log('[SUCCESS] Sector performance cache invalidated after import deletion');
       } catch (cacheError) {
         console.warn('[WARNING] Failed to invalidate sector performance cache:', cacheError.message);
@@ -2850,8 +3375,10 @@ const tradeController = {
         return res.status(400).json({ error: 'Cannot delete more than 50 imports at once' });
       }
 
-      // Validate all IDs are integers to prevent SQL injection
-      const safeImportIds = importIds.map(id => parseInt(id, 10)).filter(id => Number.isFinite(id));
+      // Import ids are UUIDs, so validate them as strings instead of coercing to integers.
+      const safeImportIds = importIds
+        .map((id) => String(id || '').trim())
+        .filter((id) => /^[0-9a-f-]{36}$/i.test(id));
       if (safeImportIds.length === 0) {
         return res.status(400).json({ error: 'No valid import IDs provided' });
       }
@@ -2887,7 +3414,7 @@ const tradeController = {
       // Invalidate caches
       invalidateAnalyticsCache(req.user.id);
       try {
-        await cache.invalidate('sector_performance');
+        await invalidateNamedCache('sector_performance');
         console.log('[SUCCESS] Sector performance cache invalidated after bulk import deletion');
       } catch (cacheError) {
         console.warn('[WARNING] Failed to invalidate sector performance cache:', cacheError.message);
@@ -3393,7 +3920,7 @@ const tradeController = {
 
   async exportTrades(req, res, next) {
     try {
-      const { startDate, endDate, format = 'csv' } = req.query;
+      const { startDate, endDate, format = 'csv', profile = 'crs' } = req.query;
 
       // Build filters
       const filters = {};
@@ -3404,115 +3931,70 @@ const tradeController = {
       const trades = await Trade.findByUser(req.user.id, filters);
 
       if (format === 'csv') {
-        // Define CSV headers - include ALL fields
-        const headers = [
-          'Symbol',
-          'Entry Time',
-          'Exit Time',
-          'Entry Price',
-          'Exit Price',
-          'Quantity',
-          'Side',
-          'Instrument Type',
-          'P&L',
-          'P&L %',
-          'Commission',
-          'Entry Commission',
-          'Exit Commission',
-          'Fees',
-          'Broker',
-          'Strategy',
-          'Setup',
-          'Notes',
-          'MAE',
-          'MFE',
-          'Confidence',
-          'Tags',
-          'Trade Date',
-          'Hold Time (minutes)',
-          // Options fields
-          'Underlying Symbol',
-          'Option Type',
-          'Strike Price',
-          'Expiration Date',
-          'Contract Size',
-          // Futures fields
-          'Underlying Asset',
-          'Contract Month',
-          'Contract Year',
-          'Tick Size',
-          'Point Value',
-          // Currency fields
-          'Currency',
-          'Exchange Rate',
-          'Original Entry Price (Currency)',
-          'Original Exit Price (Currency)',
-          'Original P&L (Currency)',
-          'Original Commission (Currency)',
-          'Original Fees (Currency)'
-        ];
+        const csvContent = profile === 'legacy'
+          ? [
+              [
+                'Symbol', 'Entry Time', 'Exit Time', 'Entry Price', 'Exit Price', 'Quantity', 'Side',
+                'Instrument Type', 'P&L', 'P&L %', 'Commission', 'Entry Commission', 'Exit Commission',
+                'Fees', 'Broker', 'Strategy', 'Setup', 'Notes', 'MAE', 'MFE', 'Confidence', 'Tags',
+                'Trade Date', 'Hold Time (minutes)', 'Underlying Symbol', 'Option Type', 'Strike Price',
+                'Expiration Date', 'Contract Size', 'Underlying Asset', 'Contract Month', 'Contract Year',
+                'Tick Size', 'Point Value', 'Currency', 'Exchange Rate', 'Original Entry Price (Currency)',
+                'Original Exit Price (Currency)', 'Original P&L (Currency)', 'Original Commission (Currency)',
+                'Original Fees (Currency)'
+              ].map(h => `"${h}"`).join(','),
+              ...trades.map(trade => [
+                trade.symbol,
+                trade.entry_time,
+                trade.exit_time || '',
+                trade.entry_price,
+                trade.exit_price || '',
+                trade.quantity,
+                trade.side,
+                trade.instrument_type || 'stock',
+                trade.pnl || '',
+                trade.pnl_percent || '',
+                trade.commission || 0,
+                trade.entry_commission || 0,
+                trade.exit_commission || 0,
+                trade.fees || 0,
+                trade.broker || '',
+                trade.strategy || '',
+                trade.setup || '',
+                (trade.notes || '').replace(/"/g, '""'),
+                trade.mae || '',
+                trade.mfe || '',
+                trade.confidence || '',
+                Array.isArray(trade.tags) ? trade.tags.join(';') : '',
+                trade.trade_date || '',
+                trade.hold_time_minutes || '',
+                trade.underlying_symbol || '',
+                trade.option_type || '',
+                trade.strike_price || '',
+                trade.expiration_date || '',
+                trade.contract_size || '',
+                trade.underlying_asset || '',
+                trade.contract_month || '',
+                trade.contract_year || '',
+                trade.tick_size || '',
+                trade.point_value || '',
+                trade.currency || 'USD',
+                trade.exchange_rate || 1,
+                trade.original_entry_price_currency || '',
+                trade.original_exit_price_currency || '',
+                trade.original_pnl_currency || '',
+                trade.original_commission_currency || '',
+                trade.original_fees_currency || ''
+              ].map(cell => {
+                if (cell === null || cell === undefined) return '';
+                return `"${String(cell).replace(/"/g, '""')}"`;
+              }).join(','))
+            ].join('\n')
+          : buildCrsCsvContent(trades);
 
-        // Convert trades to CSV rows
-        const rows = trades.map(trade => [
-          trade.symbol,
-          trade.entry_time,
-          trade.exit_time || '',
-          trade.entry_price,
-          trade.exit_price || '',
-          trade.quantity,
-          trade.side,
-          trade.instrument_type || 'stock',
-          trade.pnl || '',
-          trade.pnl_percent || '',
-          trade.commission || 0,
-          trade.entry_commission || 0,
-          trade.exit_commission || 0,
-          trade.fees || 0,
-          trade.broker || '',
-          trade.strategy || '',
-          trade.setup || '',
-          (trade.notes || '').replace(/"/g, '""'), // Escape quotes in notes
-          trade.mae || '',
-          trade.mfe || '',
-          trade.confidence || '',
-          Array.isArray(trade.tags) ? trade.tags.join(';') : '',
-          trade.trade_date || '',
-          trade.hold_time_minutes || '',
-          // Options fields
-          trade.underlying_symbol || '',
-          trade.option_type || '',
-          trade.strike_price || '',
-          trade.expiration_date || '',
-          trade.contract_size || '',
-          // Futures fields
-          trade.underlying_asset || '',
-          trade.contract_month || '',
-          trade.contract_year || '',
-          trade.tick_size || '',
-          trade.point_value || '',
-          // Currency fields
-          trade.currency || 'USD',
-          trade.exchange_rate || 1,
-          trade.original_entry_price_currency || '',
-          trade.original_exit_price_currency || '',
-          trade.original_pnl_currency || '',
-          trade.original_commission_currency || '',
-          trade.original_fees_currency || ''
-        ]);
-
-        // Build CSV content
-        const csvContent = [
-          headers.map(h => `"${h}"`).join(','),
-          ...rows.map(row => row.map(cell => {
-            // Handle null/undefined
-            if (cell === null || cell === undefined) return '';
-            // Wrap in quotes and escape existing quotes
-            return `"${String(cell).replace(/"/g, '""')}"`;
-          }).join(','))
-        ].join('\n');
-
-        // Set headers for file download
-        const filename = `tradetally_export_${new Date().toISOString().split('T')[0]}.csv`;
+        const filename = profile === 'legacy'
+          ? `crs_legacy_export_${new Date().toISOString().split('T')[0]}.csv`
+          : `crs-export-${new Date().toISOString().split('T')[0]}.csv`;
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         res.send(csvContent);
@@ -4132,7 +4614,7 @@ const tradeController = {
         const pageResponse = await axios.get(`https://www.tradingview.com/x/${snapshotId}/`, {
           timeout: 10000,
           headers: {
-            'User-Agent': 'TradeTallySnapshotProxy/1.0'
+            'User-Agent': 'CRSSnapshotProxy/1.0'
           },
           validateStatus: status => status >= 200 && status < 400
         });
@@ -4947,6 +5429,11 @@ const tradeController = {
       next(error);
     }
   }
+};
+
+tradeController.__testables = {
+  markStaleImportsFailed,
+  persistImportProgress
 };
 
 module.exports = tradeController;

@@ -1,5 +1,5 @@
 <template>
-    <div class="content-wrapper py-8">
+    <div class="content-wrapper crs-admin-surface py-8">
         <div class="mb-8">
             <h1 class="heading-page">Backup Management</h1>
             <p class="mt-2 text-gray-600 dark:text-gray-400">
@@ -16,7 +16,7 @@
 
         <div v-else class="space-y-6">
             <!-- Settings Card -->
-            <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg">
+            <div class="crs-admin-panel">
                 <div class="px-4 py-5 sm:p-6">
                     <h3
                         class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4"
@@ -147,7 +147,7 @@
             </div>
 
             <!-- Manual Backup Card -->
-            <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg">
+            <div class="crs-admin-panel">
                 <div class="px-4 py-5 sm:p-6">
                     <div class="flex items-center justify-between">
                         <div class="flex-1">
@@ -199,7 +199,7 @@
             </div>
 
             <!-- Backup History -->
-            <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg">
+            <div class="crs-admin-panel">
                 <div class="px-4 py-5 sm:p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3
@@ -368,7 +368,7 @@
 
             <!-- Restore from Backup Card -->
             <div
-                class="bg-white dark:bg-gray-800 shadow sm:rounded-lg border-2 border-amber-200 dark:border-amber-800"
+                class="crs-admin-panel crs-admin-panel-warning"
             >
                 <div class="px-4 py-5 sm:p-6">
                     <div class="flex items-start">
@@ -448,7 +448,7 @@
             </div>
 
             <!-- Cleanup Section -->
-            <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg">
+            <div class="crs-admin-panel">
                 <div class="px-4 py-5 sm:p-6">
                     <div class="flex items-center justify-between">
                         <div class="flex-1">
@@ -517,7 +517,7 @@
 
             <!-- Modal panel -->
             <div
-                class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6"
+                class="inline-block align-bottom crs-admin-modal px-4 pt-5 pb-4 text-left overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6"
             >
                 <div class="sm:flex sm:items-start">
                     <div

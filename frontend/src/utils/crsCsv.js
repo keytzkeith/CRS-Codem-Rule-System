@@ -214,7 +214,8 @@ export function exportTradesToCsv(trades) {
     'session',
     'setup',
     'tags',
-    'notes'
+    'notes',
+    'account_name'
   ]
 
   const rows = trades.map((trade) => [
@@ -235,7 +236,8 @@ export function exportTradesToCsv(trades) {
     trade.session || '',
     trade.setupType || '',
     (trade.tags || []).join(' | '),
-    trade.journal?.notes || ''
+    trade.journal?.notes || '',
+    trade.accountName || ''
   ])
 
   return [headers, ...rows]

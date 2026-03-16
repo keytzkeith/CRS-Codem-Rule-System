@@ -4,6 +4,8 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const db = require('../src/config/database');
 
 const CRS_META_MARKER = '[CRS_META]';
+const DEFAULT_SESSION_TIMEZONE = 'Africa/Nairobi';
+const SESSION_LABELS = new Set(['Asia', 'London', 'New York']);
 
 function round(value, digits = 8) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) {
@@ -89,6 +91,57 @@ function parseCrsNotes(notes = '') {
   } catch {
     return { visibleNotes: rawNotes.trim() };
   }
+}
+
+function deriveSessionLabel(value, fallback = 'London', timezone = DEFAULT_SESSION_TIMEZONE) {
+  const hour = extractSessionHour(value, timezone);
+
+  if (hour === null) {
+    return fallback;
+  }
+
+  if (hour < 10) {
+    return 'Asia';
+  }
+
+  if (hour < 16) {
+    return 'London';
+  }
+
+  return 'New York';
+}
+
+function extractSessionHour(value, timezone) {
+  const text = String(value || '').trim();
+
+  if (!text) {
+    return null;
+  }
+
+  const normalized = text.replace(' ', 'T');
+  const localMatch = normalized.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+
+  if (localMatch) {
+    return Number(localMatch[2]);
+  }
+
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone || DEFAULT_SESSION_TIMEZONE,
+    hour: '2-digit',
+    hourCycle: 'h23'
+  });
+
+  const hourPart = formatter.formatToParts(parsed).find((part) => part.type === 'hour');
+  if (!hourPart) {
+    return null;
+  }
+
+  return Number(hourPart.value);
 }
 
 function calculateActualRiskAmount(trade) {
@@ -187,13 +240,16 @@ function changed(currentValue, nextValue) {
   return String(currentValue) !== String(nextValue);
 }
 
-async function repairTrades({ dryRun = false, limit = null } = {}) {
+async function repairTrades({ dryRun = false, limit = null, timezone = DEFAULT_SESSION_TIMEZONE } = {}) {
   const query = `
     SELECT
       t.id,
       t.user_id,
       t.symbol,
       t.side,
+      t.strategy,
+      t.entry_time,
+      t.exit_time,
       t.account_identifier,
       t.entry_price,
       t.exit_price,
@@ -232,6 +288,9 @@ async function repairTrades({ dryRun = false, limit = null } = {}) {
     const nextSetupStack = buildSetupStack(trade, meta);
     const nextJournalPayload = buildJournalPayload(trade, meta);
     const nextChecklistPayload = buildChecklistPayload(trade, meta);
+    const sessionSeed = trade.entry_time || trade.exit_time || meta.openTime || meta.closeTime || null;
+    const currentStrategy = String(trade.strategy || '').trim();
+    const nextSession = deriveSessionLabel(sessionSeed, SESSION_LABELS.has(currentStrategy) ? currentStrategy : 'London', timezone);
     const nextActualRiskAmount = calculateActualRiskAmount({
       ...trade,
       contract_multiplier: nextContractMultiplier
@@ -266,6 +325,10 @@ async function repairTrades({ dryRun = false, limit = null } = {}) {
 
     if (changed(trade.swap, nextSwap)) {
       patch.swap = nextSwap;
+    }
+
+    if ((!currentStrategy || SESSION_LABELS.has(currentStrategy)) && changed(trade.strategy, nextSession)) {
+      patch.strategy = nextSession;
     }
 
     if (nextActualRiskAmount !== null && changed(trade.actual_risk_amount, nextActualRiskAmount)) {
@@ -309,6 +372,7 @@ async function repairTrades({ dryRun = false, limit = null } = {}) {
     );
   }
 
+  console.log(`Timezone: ${timezone}`);
   console.log(`Scanned ${scanned} trades.`);
   console.log(`${dryRun ? 'Would update' : 'Updated'} ${touched} trades.`);
 }
@@ -323,8 +387,12 @@ function parseArgs(argv) {
       acc.limit = all[index + 1] || null;
     }
 
+    if (arg === '--timezone') {
+      acc.timezone = all[index + 1] || DEFAULT_SESSION_TIMEZONE;
+    }
+
     return acc;
-  }, { dryRun: false, limit: null });
+  }, { dryRun: false, limit: null, timezone: DEFAULT_SESSION_TIMEZONE });
 }
 
 (async () => {
