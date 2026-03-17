@@ -6,7 +6,7 @@
 export default {
   "title": "CRS Docs",
   "tagline": "Setup, import, deploy, and operate CRS cleanly.",
-  "favicon": "img/crs-main.png",
+  "favicon": "img/crs-logo.png",
   "url": "https://docs.your-domain.com",
   "baseUrl": "/",
   "organizationName": "keytzkeith",
@@ -90,7 +90,7 @@ export default {
     "navbar": {
       "title": "",
       "logo": {
-        "alt": "CRS Codem System Rule",
+        "alt": "CRS Codem Rule System",
         "src": "img/crs-main.png"
       },
       "items": [

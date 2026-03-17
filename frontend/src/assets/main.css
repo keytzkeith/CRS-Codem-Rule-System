@@ -1,6 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap");
-@import './ai-report.css';
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -1890,5 +1887,187 @@ body.landing-scroll-mode .landing-page > * {
   .aurora-hero__grid {
     mask-image: none;
     -webkit-mask-image: none;
+  }
+}
+
+@layer components {
+  .ai-report {
+    @apply space-y-6;
+  }
+
+  .ai-report-card {
+    @apply overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow duration-200 dark:border-gray-700 dark:bg-gray-800;
+  }
+
+  .ai-report-card:hover {
+    @apply shadow-md;
+  }
+
+  .ai-report-card-header {
+    @apply border-b border-gray-100 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800/50;
+  }
+
+  .ai-report-card-header-content {
+    @apply flex items-center gap-3;
+  }
+
+  .ai-report-icon-wrapper {
+    @apply flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/30;
+  }
+
+  .ai-report-icon {
+    @apply h-5 w-5 text-primary-600 dark:text-primary-400;
+  }
+
+  .ai-report-card-title {
+    @apply m-0 text-xl font-semibold text-gray-900 dark:text-white;
+  }
+
+  .ai-report-card-body {
+    @apply px-6 py-5;
+  }
+
+  .ai-subsection-header {
+    @apply mb-3 mt-6 border-b border-gray-200 pb-2 text-lg font-semibold text-gray-800 dark:border-gray-700 dark:text-gray-100;
+  }
+
+  .ai-subsection-header:first-child {
+    @apply mt-0;
+  }
+
+  .ai-sub-subsection-header {
+    @apply mb-2 mt-4 text-base font-medium text-gray-700 dark:text-gray-200;
+  }
+
+  .ai-paragraph {
+    @apply mb-4 leading-relaxed text-gray-700 dark:text-gray-300;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .ai-paragraph:last-child {
+    @apply mb-0;
+  }
+
+  .ai-list {
+    @apply mb-4 space-y-2;
+    list-style: none;
+  }
+
+  .ai-list:last-child {
+    @apply mb-0;
+  }
+
+  .ai-list-unordered {
+    @apply pl-0;
+  }
+
+  .ai-list-ordered {
+    @apply pl-5;
+    list-style: decimal;
+  }
+
+  .ai-list-ordered .ai-list-item {
+    @apply pl-2;
+  }
+
+  .ai-list-item {
+    @apply relative leading-relaxed text-gray-700 dark:text-gray-300;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .ai-list-unordered > .ai-list-item {
+    @apply pl-6;
+  }
+
+  .ai-list-unordered > .ai-list-item::before {
+    content: "";
+    @apply absolute left-0 top-2.5 h-2 w-2 rounded-full bg-primary-500 dark:bg-primary-400;
+  }
+
+  .ai-list .ai-list {
+    @apply mb-0 mt-2;
+  }
+
+  .ai-emphasis {
+    @apply font-semibold text-gray-900 dark:text-white;
+  }
+
+  .ai-section-content {
+    @apply text-gray-700 dark:text-gray-300;
+    line-height: 1.7;
+  }
+
+  .ai-section-content code {
+    @apply rounded bg-gray-100 px-1.5 py-0.5 text-sm font-mono dark:bg-gray-700;
+  }
+
+  .ai-section-content pre {
+    @apply mb-4 overflow-x-auto rounded-lg bg-gray-100 p-4 dark:bg-gray-700;
+  }
+
+  .ai-section-content pre code {
+    @apply bg-transparent p-0;
+  }
+
+  .ai-section-content blockquote {
+    @apply my-4 border-l-4 border-primary-300 pl-4 italic text-gray-600 dark:border-primary-600 dark:text-gray-400;
+  }
+
+  .ai-section-content table {
+    @apply mb-4 w-full border-collapse;
+  }
+
+  .ai-section-content th,
+  .ai-section-content td {
+    @apply border border-gray-200 px-3 py-2 text-left dark:border-gray-700;
+  }
+
+  .ai-section-content th {
+    @apply bg-gray-50 font-semibold dark:bg-gray-700;
+  }
+
+  .ai-report-loading {
+    @apply flex items-center justify-center py-12;
+  }
+
+  .ai-report-loading-spinner {
+    @apply h-8 w-8 animate-spin text-primary-600 dark:text-primary-400;
+  }
+
+  .ai-report-empty {
+    @apply py-12 text-center text-gray-500 dark:text-gray-400;
+  }
+
+  @media (max-width: 640px) {
+    .ai-report-card-header {
+      @apply px-4 py-3;
+    }
+
+    .ai-report-card-body {
+      @apply px-4 py-4;
+    }
+
+    .ai-report-icon-wrapper {
+      @apply h-8 w-8;
+    }
+
+    .ai-report-icon {
+      @apply h-4 w-4;
+    }
+
+    .ai-report-card-title {
+      @apply text-lg;
+    }
+
+    .ai-subsection-header {
+      @apply text-base;
+    }
+
+    .ai-paragraph,
+    .ai-list-item {
+      font-size: 14px;
+    }
   }
 }

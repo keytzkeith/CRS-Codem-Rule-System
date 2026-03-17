@@ -3,7 +3,7 @@ const siteIdentity = require('../config/siteIdentity.json');
 const config = {
   title: 'CRS Docs',
   tagline: 'Setup, import, deploy, and operate CRS cleanly.',
-  favicon: 'img/crs-main.png',
+  favicon: 'img/crs-logo.png',
   url: process.env.DOCS_SITE_URL || siteIdentity.urls.docs,
   baseUrl: '/',
   organizationName: 'keytzkeith',
@@ -42,7 +42,7 @@ const config = {
     navbar: {
       title: '',
       logo: {
-        alt: 'CRS Codem System Rule',
+        alt: 'CRS Codem Rule System',
         src: 'img/crs-main.png',
       },
       items: [

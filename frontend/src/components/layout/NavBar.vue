@@ -5,7 +5,8 @@
   >
     <nav class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
       <router-link :to="authStore.isAuthenticated ? '/dashboard' : '/'" class="flex items-center">
-        <img src="/crs-main.png" alt="CRS Codem System Rule" class="h-14 w-auto max-w-[180px] object-contain drop-shadow-[0_12px_32px_rgba(0,0,0,0.28)] sm:h-16 sm:max-w-[220px]" />
+        <img src="/crs-logo.png" :alt="siteIdentity.productName" class="h-11 w-11 object-contain drop-shadow-[0_12px_32px_rgba(0,0,0,0.28)] md:hidden" />
+        <img src="/crs-main.png" :alt="siteIdentity.productName" class="hidden h-12 w-auto max-w-[240px] object-contain drop-shadow-[0_12px_32px_rgba(0,0,0,0.28)] md:block" />
       </router-link>
 
       <div v-if="authStore.isAuthenticated" class="hidden items-center gap-2 md:flex">
