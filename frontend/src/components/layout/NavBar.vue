@@ -5,8 +5,8 @@
   >
     <nav class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
       <router-link :to="authStore.isAuthenticated ? '/dashboard' : '/'" class="flex items-center">
-        <img src="/crs-logo.png" :alt="siteIdentity.productName" class="h-11 w-11 object-contain drop-shadow-[0_12px_32px_rgba(0,0,0,0.28)] md:hidden" />
-        <img src="/crs-main.png" :alt="siteIdentity.productName" class="hidden h-12 w-auto max-w-[240px] object-contain drop-shadow-[0_12px_32px_rgba(0,0,0,0.28)] md:block" />
+        <img src="/crs-logo.png" :alt="siteIdentity.productName" class="h-11 w-11 shrink-0 object-contain drop-shadow-[0_12px_32px_rgba(0,0,0,0.28)] md:hidden" />
+        <img src="/crs-main.png" :alt="siteIdentity.productName" class="hidden h-12 w-auto max-w-[240px] shrink-0 object-contain drop-shadow-[0_12px_32px_rgba(0,0,0,0.28)] md:block" />
       </router-link>
 
       <div v-if="authStore.isAuthenticated" class="hidden items-center gap-2 md:flex">
@@ -25,12 +25,14 @@
 
       <div class="flex items-center gap-3">
         <button
-          v-if="authStore.isAuthenticated"
           type="button"
-          class="rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:border-white/20 hover:text-white md:hidden"
+          class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-slate-300 transition hover:border-white/20 hover:text-white md:hidden"
+          :aria-expanded="isMobileMenuOpen ? 'true' : 'false'"
+          :aria-label="isMobileMenuOpen ? 'Close menu' : 'Open menu'"
           @click="toggleMobileMenu"
         >
-          Menu
+          <XMarkIcon v-if="isMobileMenuOpen" class="h-5 w-5" />
+          <Bars3Icon v-else class="h-5 w-5" />
         </button>
 
         <template v-if="authStore.isAuthenticated">
@@ -39,34 +41,61 @@
           </button>
         </template>
         <template v-else>
-          <a :href="docsUrl" target="_blank" rel="noreferrer" class="rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:border-white/20 hover:text-white">
+          <a :href="docsUrl" target="_blank" rel="noreferrer" class="hidden rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:border-white/20 hover:text-white md:inline-flex">
             Docs
           </a>
-          <router-link to="/login" class="crs-button crs-button-ghost text-white">Login</router-link>
-          <router-link to="/register" class="crs-button-primary">Start journaling</router-link>
+          <router-link to="/login" class="hidden md:inline-flex crs-button crs-button-ghost text-white">Login</router-link>
+          <router-link to="/register" class="hidden md:inline-flex crs-button-primary">Start journaling</router-link>
         </template>
       </div>
     </nav>
 
-    <div v-if="authStore.isAuthenticated && isMobileMenuOpen" class="border-t border-white/5 px-4 pb-4 md:hidden">
+    <div v-if="isMobileMenuOpen" class="border-t border-white/5 px-4 pb-4 md:hidden">
       <div class="mt-4 grid gap-2">
-        <router-link
-          v-for="item in navigation"
-          :key="item.route"
-          :to="item.to"
-          class="rounded-xl px-4 py-3 text-sm transition"
-          :class="isActiveRoute(item) ? 'bg-amber-200/12 text-amber-100' : 'bg-white/5 text-slate-300'"
-          @click="isMobileMenuOpen = false"
-        >
-          {{ item.name }}
-        </router-link>
-        <button
-          type="button"
-          class="rounded-2xl bg-white/5 px-4 py-3 text-left text-sm text-slate-300"
-          @click="authStore.logout(); isMobileMenuOpen = false"
-        >
-          Logout
-        </button>
+        <template v-if="authStore.isAuthenticated">
+          <router-link
+            v-for="item in navigation"
+            :key="item.route"
+            :to="item.to"
+            class="rounded-xl px-4 py-3 text-sm transition"
+            :class="isActiveRoute(item) ? 'bg-amber-200/12 text-amber-100' : 'bg-white/5 text-slate-300'"
+            @click="isMobileMenuOpen = false"
+          >
+            {{ item.name }}
+          </router-link>
+          <button
+            type="button"
+            class="rounded-2xl bg-white/5 px-4 py-3 text-left text-sm text-slate-300"
+            @click="authStore.logout(); isMobileMenuOpen = false"
+          >
+            Logout
+          </button>
+        </template>
+        <template v-else>
+          <a
+            :href="docsUrl"
+            target="_blank"
+            rel="noreferrer"
+            class="rounded-xl bg-white/5 px-4 py-3 text-sm text-slate-300 transition hover:bg-white/10"
+            @click="isMobileMenuOpen = false"
+          >
+            Docs
+          </a>
+          <router-link
+            to="/login"
+            class="rounded-xl bg-white/5 px-4 py-3 text-sm text-slate-300 transition hover:bg-white/10"
+            @click="isMobileMenuOpen = false"
+          >
+            Login
+          </router-link>
+          <router-link
+            to="/register"
+            class="rounded-xl bg-amber-300 px-4 py-3 text-sm font-medium text-slate-950 transition hover:bg-amber-200"
+            @click="isMobileMenuOpen = false"
+          >
+            Start journaling
+          </router-link>
+        </template>
       </div>
     </div>
   </header>
@@ -74,6 +103,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { Bars3Icon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { CRS_NAV_ITEMS } from '@/config/navigation'

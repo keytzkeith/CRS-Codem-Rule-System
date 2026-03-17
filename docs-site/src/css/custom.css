@@ -189,6 +189,8 @@ body {
 .navbar__logo img {
   height: 2.2rem;
   width: auto;
+  max-width: none;
+  flex-shrink: 0;
   object-fit: contain;
 }
 
@@ -205,6 +207,7 @@ body {
   .navbar__logo img {
     content: url("/img/crs-logo.png");
     height: 2.5rem;
+    width: 2.5rem;
   }
 }
 
@@ -212,6 +215,7 @@ body {
   .navbar__logo img {
     content: url("/img/crs-main.png");
     height: 2.45rem;
+    width: auto;
   }
 }
 
