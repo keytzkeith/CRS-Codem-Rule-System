@@ -9,7 +9,7 @@ on:
     build:
       runs-on: ubuntu-latest
       env:
-        IMAGE_NAME: keytzkeith/crs-codem-system
+        IMAGE_NAME: keytz34/crs-codem-system
       steps:
         - uses: actions/checkout@v4
 
