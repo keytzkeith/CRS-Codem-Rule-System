@@ -1,8 +1,8 @@
 module.exports = {
   apps: [
     {
-      name: 'tradetally-backend-native',
-      cwd: '/home/docker-admin/tradetally/backend',
+      name: 'crs-backend-native',
+      cwd: '/home/docker-admin/crs/backend',
       script: 'src/server.js',
       instances: 1,
       exec_mode: 'fork',
@@ -17,9 +17,9 @@ module.exports = {
         POSTHOG_LOG_LEVEL: 'info',
         DEBUG_POSTHOG: 'true'
       },
-      error_file: '/home/docker-admin/tradetally/backend/logs/pm2-error.log',
-      out_file: '/home/docker-admin/tradetally/backend/logs/pm2-out.log',
-      log_file: '/home/docker-admin/tradetally/backend/logs/pm2-combined.log',
+      error_file: '/home/docker-admin/crs/backend/logs/pm2-error.log',
+      out_file: '/home/docker-admin/crs/backend/logs/pm2-out.log',
+      log_file: '/home/docker-admin/crs/backend/logs/pm2-combined.log',
       time: true
     }
   ]

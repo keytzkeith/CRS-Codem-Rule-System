@@ -38,8 +38,11 @@
           </button>
         </template>
         <template v-else>
+          <a :href="docsUrl" target="_blank" rel="noreferrer" class="rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:border-white/20 hover:text-white">
+            Docs
+          </a>
           <router-link to="/login" class="crs-button crs-button-ghost text-white">Login</router-link>
-          <router-link to="/register" class="crs-button-primary">Sign Up</router-link>
+          <router-link to="/register" class="crs-button-primary">Start journaling</router-link>
         </template>
       </div>
     </nav>
@@ -73,6 +76,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { CRS_NAV_ITEMS } from '@/config/navigation'
+import siteIdentity from '../../../../config/siteIdentity.json'
 
 const authStore = useAuthStore()
 const route = useRoute()
@@ -84,6 +88,7 @@ const navigation = computed(() =>
   CRS_NAV_ITEMS.filter((item) => !item.adminOnly || authStore.user?.role === 'admin')
 )
 const headerClass = computed(() => (isMobileHeaderHidden.value ? '-translate-y-full md:translate-y-0' : 'translate-y-0'))
+const docsUrl = import.meta.env.DEV ? 'http://localhost:3001' : siteIdentity.urls.docs
 
 function isActiveRoute(item) {
   if (!item.activeRoutes?.length) {

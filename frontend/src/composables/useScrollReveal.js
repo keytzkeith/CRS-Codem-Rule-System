@@ -18,11 +18,15 @@ export function useScrollReveal() {
   let observer = null
   let rafId = null
   let parallaxElements = []
+  const reduceMotion = typeof window !== 'undefined'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false
+  const mobileLikeViewport = typeof window !== 'undefined'
+    ? window.matchMedia('(max-width: 960px), (hover: none), (pointer: coarse)').matches
+    : false
 
   function onScroll() {
     rafId = requestAnimationFrame(() => {
-      const scrollY = window.scrollY
-
       for (let i = 0; i < parallaxElements.length; i++) {
         const { el, speed } = parallaxElements[i]
         const rect = el.getBoundingClientRect()
@@ -44,12 +48,16 @@ export function useScrollReveal() {
     // Set up reveal observer (toggles both directions)
     const revealEls = document.querySelectorAll('[data-reveal]')
     if (revealEls.length) {
+      if (reduceMotion || mobileLikeViewport) {
+        revealEls.forEach((el) => {
+          el.classList.remove('reveal-hidden')
+          el.classList.add('revealed')
+        })
+      } else {
       observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('revealed')
-          } else {
-            entry.target.classList.remove('revealed')
           }
         })
       }, {
@@ -66,11 +74,12 @@ export function useScrollReveal() {
         }
         observer.observe(el)
       })
+      }
     }
 
     // Set up parallax
     const pEls = document.querySelectorAll('[data-parallax]')
-    if (pEls.length) {
+    if (pEls.length && !reduceMotion && !mobileLikeViewport) {
       parallaxElements = Array.from(pEls).map((el) => ({
         el,
         speed: parseFloat(el.getAttribute('data-parallax')) || -0.08

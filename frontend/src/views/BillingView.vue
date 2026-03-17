@@ -28,11 +28,10 @@
                 <h3
                     class="text-lg font-medium text-gray-900 dark:text-white mb-2"
                 >
-                    Self-Hosted Instance
+                    Billing not active yet
                 </h3>
                 <p class="text-gray-600 dark:text-gray-400">
-                    This is a self-hosted instance of TradeTally. Billing and
-                    subscriptions are not applicable.
+                    CRS is currently in beta. Premium billing is planned for a later release, so subscriptions are not active in this build.
                 </p>
             </div>
         </div>
@@ -243,7 +242,7 @@
                             </h4>
                             <p class="text-green-700 dark:text-green-300">
                                 Your subscription has been successfully
-                                activated. Welcome to TradeTally Pro!
+                                activated. Welcome to CRS premium access.
                             </p>
                             <p
                                 v-if="redirectMessage"

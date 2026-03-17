@@ -1,5 +1,6 @@
 module.exports = {
   docsSidebar: [
+    'index',
     {
       type: 'category',
       label: 'Getting started',
@@ -29,6 +30,8 @@ module.exports = {
       label: 'Operations',
       items: [
         'operations/deployment',
+        'operations/go-live-checklist',
+        'operations/release-process',
         'operations/troubleshooting',
       ],
     },

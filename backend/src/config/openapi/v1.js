@@ -1335,6 +1335,8 @@ function buildPaths(baseUrl) {
   };
 }
 
+const siteIdentity = require('../../../../config/siteIdentity.json');
+
 function buildV1OpenApiSpec(origin = '') {
   const baseUrl = '/api/v1';
   const serverUrl = origin || 'http://localhost:5001';
@@ -1346,9 +1348,9 @@ function buildV1OpenApiSpec(origin = '') {
       version: packageInfo.version,
       description: 'Stable public API for CRS. `/api/v1` is the supported public contract. `/api` and `/api/v2` remain compatibility surfaces.',
       contact: {
-        name: 'Keith Odera',
-        url: 'https://keytz-portfolio.vercel.app/',
-        email: 'codemtrader@gmail.com'
+        name: siteIdentity.creator.name,
+        url: siteIdentity.contact.portfolioUrl,
+        email: siteIdentity.contact.supportEmail
       }
     },
     servers: [

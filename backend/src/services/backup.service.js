@@ -42,7 +42,7 @@ class BackupService {
     console.log(`[BACKUP] Starting full site backup (type: ${type})`);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupFileName = `tradetally-backup-${timestamp}.json`;
+    const backupFileName = `crs-backup-${timestamp}.json`;
     const backupFilePath = path.join(this.backupDir, backupFileName);
 
     try {

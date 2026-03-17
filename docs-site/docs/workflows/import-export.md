@@ -3,9 +3,9 @@ title: Import and export
 sidebar_position: 1
 ---
 
-# Import and export workflow
+# Import and export
 
-CRS now has a dedicated import path instead of leaning on the older generic pipeline.
+CRS now has a dedicated import path instead of leaning on the older generic flow.
 
 ## Supported CSV styles
 
@@ -22,19 +22,6 @@ id,symbol,direction,volume,open_price,close_price,open_time,close_time,profit,co
 ```
 
 That format is recognized directly by the backend CRS parser.
-
-## Screenshot slots
-
-If you want visual walkthroughs in these docs, place screenshots in:
-
-```text
-docs-site/static/shots/
-```
-
-Recommended examples:
-
-- `/shots/trades-import-preview.png`
-- `/shots/trades-import-report.png`
 
 ## Visual reference
 
@@ -86,5 +73,5 @@ Default CSV export now uses the CRS contract. Legacy export is still available o
 Settings export/import is separate from the trade CSV flow. It is used for broader account data backup and restore.
 
 :::note
-The older markdown at `documentation/EXPORT_IMPORT_README.md` still contains useful history, but the active in-app and backend behavior follows the CRS-native path described here.
+The older markdown at `documentation/EXPORT_IMPORT_README.md` still contains historical context, but the active in-app and backend behavior follows the CRS-native path described here.
 :::

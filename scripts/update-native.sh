@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# TradeTally Native Update Script
+# CRS Native Update Script
 # Usage: ./update-native.sh
 
 set -e

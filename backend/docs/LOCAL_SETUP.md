@@ -1,6 +1,6 @@
 # CRS Local Setup
 
-This is the current recommended local workflow for CRS.
+This is the recommended local workflow for CRS.
 
 ## Ports
 
@@ -31,14 +31,14 @@ Create:
 
 - `backend/.env`
 
-The current local configuration uses:
+The current local configuration usually looks like this:
 
 ```env
 DB_HOST=localhost
 DB_PORT=5433
 DB_USER=trader
 DB_PASSWORD=trader_password
-DB_NAME=tradetally
+DB_NAME=crs_db
 
 JWT_SECRET=crs_local_dev_jwt_secret_replace_before_production
 JWT_EXPIRES_IN=7d
@@ -101,7 +101,7 @@ Suggested login values:
 - Password: value of `DB_PASSWORD`
 - Database: value of `DB_NAME`
 
-### 2. Start backend
+### 2. Start the backend
 
 ```bash
 cd backend
@@ -111,9 +111,9 @@ npm run dev
 Notes:
 
 - migrations run automatically on startup
-- first registered user becomes admin
+- the first registered user becomes admin
 
-### 3. Start frontend
+### 3. Start the frontend
 
 ```bash
 cd frontend
@@ -147,7 +147,7 @@ pkill -f 'vite'
 
 Then restart one backend and one frontend only.
 
-### Auth returns 500
+### Auth returns `500`
 
 Usually one of these:
 
@@ -156,7 +156,7 @@ Usually one of these:
 - `backend/.env` is missing
 - database has not been initialized
 
-### Docker Postgres is healthy but app still fails
+### Docker Postgres is healthy but the app still fails
 
 Check:
 
@@ -172,12 +172,12 @@ Use Adminer on `http://localhost:8080`. It is the fastest local way to:
 - confirm migrations applied
 - inspect CRS trade fields such as `setup_stack`, `journal_payload`, and `checklist_payload`
 
-## Current Recommendation
+## Recommendation
 
-Stay with this local setup until CRS persistence is more complete.
+Stay with this local setup unless you have a specific reason to mirror production more closely.
 
 Later, for live deployment:
 
 - reuse the same app code
 - use different production env values
-- optionally move to fuller Docker deployment
+- optionally move to a fuller Docker deployment

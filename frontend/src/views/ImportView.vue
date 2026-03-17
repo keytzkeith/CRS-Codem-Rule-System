@@ -1058,6 +1058,7 @@ import { formatTradeDate } from '@/utils/date'
 import { useUserTimezone } from '@/composables/useUserTimezone'
 import { ArrowUpTrayIcon, XMarkIcon, ExclamationTriangleIcon, Cog6ToothIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import api from '@/services/api'
+import siteIdentity from '../../../config/siteIdentity.json'
 
 const { formatDateTime: formatDateTimeTz } = useUserTimezone()
 import UnmappedCusipsModal from '@/components/cusip/UnmappedCusipsModal.vue'
@@ -1072,6 +1073,11 @@ const tradesStore = useTradesStore()
 const authStore = useAuthStore()
 const { showSuccess, showError, showImportantWarning, showSuccessModal, clearModalAlert } = useNotification()
 const { celebrationQueue } = usePriceAlertNotifications()
+const importDocsUrl = computed(() =>
+  import.meta.env.DEV
+    ? 'http://localhost:3001/docs/workflows/import-export'
+    : `${siteIdentity.urls.docs.replace(/\/$/, '')}/docs/workflows/import-export`
+)
 
 const loading = ref(false)
 const error = ref(null)
@@ -2293,7 +2299,7 @@ function pollImportStatus(importId) {
             `The import completed but no trades were found.\n\nSuggestions:\n${suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')}`,
             {
               confirmText: 'OK',
-              linkUrl: 'https://docs.tradetally.io/usage/importing-trades/#supported-brokers',
+              linkUrl: importDocsUrl.value,
               linkText: 'View Documentation'
             }
           )

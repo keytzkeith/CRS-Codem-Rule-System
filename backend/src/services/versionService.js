@@ -7,7 +7,7 @@ const logger = require('../utils/logger');
  */
 class VersionService {
   constructor() {
-    this.githubRepo = 'GeneBO98/tradetally';
+    this.githubRepo = 'keytzkeith/CRS-Codem-Rule-System';
     this.cacheKey = 'github_latest_release';
     this.cacheTTL = 60 * 60 * 1000; // 1 hour in ms
   }
@@ -40,7 +40,7 @@ class VersionService {
         {
           headers: {
             'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'TradeTally-Backend'
+            'User-Agent': 'CRS-Backend'
           },
           timeout: 10000
         }

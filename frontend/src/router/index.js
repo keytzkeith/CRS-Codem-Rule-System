@@ -12,7 +12,7 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    redirect: appRedirect
+    component: () => import('@/views/LandingView.vue')
   },
   {
     path: '/login',
@@ -25,6 +25,16 @@ const routes = [
     name: 'register',
     component: () => import('@/views/auth/RegisterView.vue'),
     meta: { guest: true }
+  },
+  {
+    path: '/privacy',
+    name: 'privacy',
+    component: () => import('@/views/PrivacyPolicyView.vue')
+  },
+  {
+    path: '/terms',
+    name: 'terms',
+    component: () => import('@/views/TermsOfServiceView.vue')
   },
   {
     path: '/verify-email/:token',
@@ -151,6 +161,30 @@ const routes = [
     name: 'admin-backups',
     component: () => import('@/views/admin/BackupManagementView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/features',
+    redirect: '/'
+  },
+  {
+    path: '/pricing',
+    redirect: '/'
+  },
+  {
+    path: '/compare',
+    redirect: '/'
+  },
+  {
+    path: '/compare/tradervue',
+    redirect: '/'
+  },
+  {
+    path: '/faq',
+    redirect: '/'
+  },
+  {
+    path: '/public',
+    redirect: '/'
   },
   ...CRS_ROUTE_REDIRECTS.map((path) => ({
     path,

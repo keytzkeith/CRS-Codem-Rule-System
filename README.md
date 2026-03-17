@@ -1,47 +1,106 @@
-# CRS Codem System Rule
+<p align="center">
+  <img src="frontend/public/crs-main.png" alt="CRS Codem System Rule" width="520" />
+</p>
 
-CRS is a personal trading dashboard built around one workflow: record trades, review execution, measure discipline, and refine a rule-based system without extra platform clutter.
+<p align="center">
+  A focused trading journal for execution review, disciplined trade logging, and practical analytics.
+</p>
+
+<p align="center">
+  <a href="docs-site/docs/index.md">Docs</a> ·
+  <a href="backend/docs/LOCAL_SETUP.md">Local Setup</a> ·
+  <a href="docs-site/docs/operations/deployment.md">Deployment</a> ·
+  <a href="config/siteIdentity.json">Site Identity</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Vue-3-42b883?style=flat-square&logo=vuedotjs&logoColor=white" alt="Vue 3" />
+  <img src="https://img.shields.io/badge/Vite-5-646cff?style=flat-square&logo=vite&logoColor=white" alt="Vite 5" />
+  <img src="https://img.shields.io/badge/Node.js-Express-3c873a?style=flat-square&logo=node.js&logoColor=white" alt="Node and Express" />
+  <img src="https://img.shields.io/badge/PostgreSQL-Database-336791?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Docusaurus-Docs-2e8555?style=flat-square&logo=docusaurus&logoColor=white" alt="Docusaurus" />
+</p>
+
+## Overview
+
+CRS Codem System Rule is a personal trading dashboard built around one workflow:
+
+- record trades
+- review execution
+- measure discipline
+- refine a rule-based system without platform clutter
 
 Created by Keith Odera, Founder & Developer of CRS.
 
-This repo is currently being refactored from the original TradeTally codebase into a narrower CRS product.
+Current release:
 
-## Current Product Direction
+- Version `2.2.0`
+- Stage `Beta`
+- Premium billing is planned for a later v2 release
 
-The active CRS experience is focused on five authenticated surfaces:
+Shared public identity values live here:
+
+- [`config/siteIdentity.json`](config/siteIdentity.json)
+- [`config/release.json`](config/release.json)
+- [`config/README.md`](config/README.md)
+
+## Product Surfaces
+
+The active CRS product is intentionally narrow:
 
 - Dashboard
 - Trades
 - Journal
 - Analytics
 - Settings
+- Admin Center
 
-Current implementation status:
+## Product Preview
 
-- frontend-first CRS shell and branding
-- real CRS trade persistence wired into the backend
-- CRS import/export flows aligned around broker-style and CRS-native CSV layouts
-- backend can now detect and parse CRS CSV layouts directly for server-side imports
-- CRS import screens now submit to the backend import pipeline instead of looping row-by-row in the browser
-- add/edit trade flow in the frontend
-- local auth and backend running again
-- backend normalization in progress for remaining legacy paths
+<p align="center">
+  <img src="frontend/public/images/sample-images-data/dashboard-overview.png" alt="CRS dashboard" width="860" />
+</p>
+
+<p align="center">
+  <img src="frontend/public/images/sample-images-data/journal-overview.png" alt="CRS journal view" width="860" />
+</p>
+
+## Current Direction
+
+What is already in place:
+
+- CRS-first app shell and branding
+- real trade persistence wired into the backend
+- CRS-native and broker-style CSV import/export
+- duplicate protection across frontend, backend, and database
+- admin controls for users, backups, and registration mode
+- branded Docusaurus docs site
+
+What still remains:
+
+- deeper cleanup of remaining legacy-branding pages and services
+- broader backend test coverage and final hardening
+- final live deployment wiring and domain setup
+- premium billing and subscription flow in a later v2 pass
 
 ## Stack
 
-- Frontend: Vue 3, Vite, Pinia, Vue Router, Tailwind
-- Backend: Node.js, Express
-- Database: PostgreSQL
-- Local database workflow: Docker Postgres
+| Layer | Tools |
+| --- | --- |
+| Frontend | Vue 3, Vite, Pinia, Vue Router, Tailwind |
+| Backend | Node.js, Express |
+| Database | PostgreSQL |
+| Docs | Docusaurus |
+| Local DB workflow | Docker Postgres |
 
-## Local Development
+## Local Setup
 
-The clean local setup for this repo is:
+The clean local CRS layout is:
 
-- frontend running natively on `5173`
-- backend running natively on `3000`
-- Postgres running in Docker on `5433`
-- optional Adminer database dashboard on `8080`
+- frontend on `5173`
+- backend on `3000`
+- Postgres in Docker on `5433`
+- Adminer on `8080`
 
 ### 1. Start Postgres
 
@@ -56,10 +115,6 @@ cd backend
 npm run dev
 ```
 
-The local backend environment is expected at:
-
-- [backend/.env](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/.env)
-
 ### 3. Start the frontend
 
 ```bash
@@ -67,129 +122,21 @@ cd frontend
 npm run dev -- --host 0.0.0.0
 ```
 
-Then open:
+Open:
 
-- `http://localhost:5173`
+- app: `http://localhost:5173`
+- docs: `http://localhost:3001`
 
-## Local Ports
+For the complete setup flow, use:
 
-- Frontend: `5173`
-- Backend API: `3000`
-- Postgres: `5433`
-- Adminer: `8080`
+- [`backend/docs/LOCAL_SETUP.md`](backend/docs/LOCAL_SETUP.md)
+- [`docs-site/docs/getting-started/local-setup.md`](docs-site/docs/getting-started/local-setup.md)
 
-## Database Dashboard
+## Documentation
 
-You can browse the local PostgreSQL database in the browser with Adminer:
+A dedicated docs site lives in [`docs-site`](docs-site).
 
-```bash
-docker compose -f docker-compose.dev.yaml up -d postgres adminer
-```
-
-Then open:
-
-- `http://localhost:8080`
-
-Use the database credentials from [backend/.env](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/.env), typically:
-
-- system: `PostgreSQL`
-- server: `postgres` when using Docker network, or `host.docker.internal` / `localhost` depending on how you connect
-- username: value of `DB_USER`
-- password: value of `DB_PASSWORD`
-- database: value of `DB_NAME`
-
-If you hit `address already in use`, it usually means an old dev process is still running. Clean up with:
-
-```bash
-pkill -f 'nodemon src/server.js'
-pkill -f 'vite'
-```
-
-Then start one backend and one frontend only.
-
-## Authentication
-
-Registration is enabled in local development.
-
-Notes:
-
-- the first registered user becomes admin
-- email verification is currently off in the lean local setup
-- auth errors are now isolated per form so login and signup do not leak stale messages into each other
-
-## Environment Files
-
-There are multiple `.env.example` files in the repo, but they serve different scopes:
-
-- [backend/.env.example](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/.env.example): backend/API/database template
-- [frontend/.env.example](/home/kodemtrader/Keith/extracted/CODES/CRS/frontend/.env.example): frontend/Vite template
-- [.env.example](/home/kodemtrader/Keith/extracted/CODES/CRS/.env.example): broader deployment or Docker-oriented template
-
-For day-to-day local CRS work, the important one is `backend/.env`.
-
-## Docker
-
-Docker files are kept because they are useful for:
-
-- local Postgres
-- future deployment
-- reproducible environments
-
-Current recommendation:
-
-- use Docker for Postgres only during development
-- keep frontend/backend native for easier debugging
-- use Docker more fully later when preparing the live deployment
-
-Relevant files:
-
-- [docker-compose.dev.yaml](/home/kodemtrader/Keith/extracted/CODES/CRS/docker-compose.dev.yaml)
-- [docker-compose.yaml](/home/kodemtrader/Keith/extracted/CODES/CRS/docker-compose.yaml)
-- [Dockerfile](/home/kodemtrader/Keith/extracted/CODES/CRS/Dockerfile)
-
-## CRS Backend Wiring
-
-CRS persistence is being wired incrementally onto the existing backend rather than creating a second backend.
-
-Reference:
-
-- [CRS_API_CONTRACT.md](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/docs/CRS_API_CONTRACT.md)
-- [CRS_DATA_MODEL.md](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/docs/CRS_DATA_MODEL.md)
-- [LOCAL_SETUP.md](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/docs/LOCAL_SETUP.md)
-
-Current backend direction:
-
-- reuse `trades`
-- reuse `diary_entries`
-- reuse `user_accounts`
-- extend settings for CRS preferences where needed
-- persist CRS trade fields directly on `trades` for setup stack, journal/checklist payloads, and risk metrics
-- default CSV export now uses the CRS contract; pass `profile=legacy` only if you explicitly need the older TradeTally-style export shape
-
-## What Still Needs Work
-
-- deeper removal of legacy TradeTally public/marketing/community surfaces
-- full CRS persistence from frontend store to backend APIs
-- broader README/docs updates in backend docs where legacy naming still exists
-- tests for analytics calculations, filters, and persistence flows
-- final deployment documentation for the live CRS site
-
-## Documentation Notes
-
-The repo documentation is now being updated alongside implementation work.
-
-Current useful documents:
-
-- [README.md](/home/kodemtrader/Keith/extracted/CODES/CRS/README.md)
-- [LOCAL_SETUP.md](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/docs/LOCAL_SETUP.md)
-- [CRS_DATA_MODEL.md](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/docs/CRS_DATA_MODEL.md)
-- [CRS_API_CONTRACT.md](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/docs/CRS_API_CONTRACT.md)
-
-## Docusaurus Docs
-
-A dedicated CRS docs site now lives in [docs-site/package.json](/home/kodemtrader/Keith/extracted/CODES/CRS/docs-site/package.json).
-
-Run it with:
+Run it locally:
 
 ```bash
 cd docs-site
@@ -197,24 +144,55 @@ npm install
 npm run start
 ```
 
-Then open:
+Key docs:
 
-- `http://localhost:3001`
+- [`docs-site/docs/index.md`](docs-site/docs/index.md)
+- [`docs-site/docs/workflows/import-export.md`](docs-site/docs/workflows/import-export.md)
+- [`docs-site/docs/operations/deployment.md`](docs-site/docs/operations/deployment.md)
+- [`docs-site/docs/operations/go-live-checklist.md`](docs-site/docs/operations/go-live-checklist.md)
+- [`docs-site/docs/operations/release-process.md`](docs-site/docs/operations/release-process.md)
 
-This is the preferred path for polished product documentation and deployment guidance going forward.
+Release workflow:
 
-## Developer
+```bash
+node scripts/sync-release-version.js
+```
 
-- Name: Keith Odera
-- Role: Founder & Developer of CRS
-- Location: Kenya
-- Portfolio: https://keytz-portfolio.vercel.app/
-- Repository: https://github.com/keytzkeith/CRS-Codem-Rule-System/
-- Contact: codemtrader@gmail.com
+## Identity, Domains, and Contact
+
+Update these before public launch:
+
+- support email
+- app domain
+- docs domain
+- privacy URL
+- terms URL
+
+Main files:
+
+- [`config/siteIdentity.json`](config/siteIdentity.json)
+- [`backend/.env.production.example`](backend/.env.production.example)
+
+Current support contact:
+
+- `oderakeith@gmail.com`
+
+## Deployment Notes
+
+The recommended live layout for the current repo is:
+
+- frontend on Vercel
+- docs site on Vercel as a separate project
+- backend and Postgres on a VPS or another Node-friendly host
+
+Deployment guidance:
+
+- [`docs-site/docs/operations/deployment.md`](docs-site/docs/operations/deployment.md)
+- [`docs-site/docs/operations/go-live-checklist.md`](docs-site/docs/operations/go-live-checklist.md)
 
 ## Project Intent
 
-The target product is not a broad social trading platform. It is a personal rule-based journaling and analytics system centered on:
+CRS is not meant to remain a broad social trading platform. The target product is a personal, rule-based journaling and analytics system centered on:
 
 - execution quality
 - discipline tracking
@@ -222,4 +200,4 @@ The target product is not a broad social trading platform. It is a personal rule
 - account-aware risk
 - clean trade logging
 
-That direction should guide further refactors.
+That direction should guide the remaining refactor work.

@@ -95,7 +95,7 @@
               <div>
                 <p class="crs-eyebrow">Data controls</p>
                 <p class="mt-2 text-2xl font-semibold text-white">Operate the CRS ledger directly</p>
-                <p class="mt-2 text-sm text-slate-300">Jump into user approvals, backups, and trade import review without moving through old TradeTally-style admin pages.</p>
+                <p class="mt-2 text-sm text-slate-300">Jump into user approvals, backups, and trade import review from one CRS control surface.</p>
               </div>
               <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                 <router-link to="/admin/users" class="crs-button-primary w-full sm:w-auto">

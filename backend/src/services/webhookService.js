@@ -163,7 +163,7 @@ class WebhookService {
       type: 'webhook.test',
       occurredAt: new Date().toISOString(),
       payload: {
-        message: 'This is a webhook test delivery from TradeTally.',
+        message: 'This is a webhook test delivery from CRS.',
         webhookId: webhook.id
       },
       metadata: {
@@ -225,10 +225,10 @@ class WebhookService {
 
     const requestHeaders = {
       'Content-Type': 'application/json',
-      'User-Agent': 'TradeTally-Webhooks/1.0',
-      'X-TradeTally-Event': event.type,
-      'X-TradeTally-Timestamp': timestamp,
-      'X-TradeTally-Signature': `sha256=${signature}`,
+      'User-Agent': 'CRS-Webhooks/1.0',
+      'X-CRS-Event': event.type,
+      'X-CRS-Timestamp': timestamp,
+      'X-CRS-Signature': `sha256=${signature}`,
       ...(webhook.custom_headers || {})
     };
 

@@ -39,10 +39,10 @@ const serverController = {
 
       res.json({
         server: {
-          name: flat.instance_name || 'TradeTally',
+          name: flat.instance_name || 'CRS',
           version: 'v1',
           url: flat.instance_url || origin,
-          isCloud: req.get('host')?.includes('tradetally.io') || false,
+          isCloud: false,
           timestamp: new Date().toISOString()
         },
         api: {
@@ -229,7 +229,7 @@ const serverController = {
       const origin = `${req.protocol}://${req.get('host')}`;
 
       res.json({
-        name: flat.instance_name || 'TradeTally',
+        name: flat.instance_name || 'CRS',
         api: {
           version: 'v1',
           base_url: '/api/v1',
@@ -238,9 +238,9 @@ const serverController = {
         },
         features: getPublicFeatures(),
         server: {
-          name: flat.instance_name || 'TradeTally',
+          name: flat.instance_name || 'CRS',
           url: flat.instance_url || origin,
-          isCloud: req.get('host')?.includes('tradetally.io') || false,
+          isCloud: false,
           discovery_version: '2.0'
         },
         discovery: {

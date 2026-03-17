@@ -9,6 +9,13 @@ function maskEmail(email) {
   return `${localPart.slice(0, 2)}***@${domain}`;
 }
 
+const APP_NAME = process.env.INSTANCE_NAME || 'CRS';
+const EMAIL_DOMAIN = process.env.EMAIL_DOMAIN || 'crs.local';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const PRODUCT_URL = process.env.PUBLIC_APP_URL || process.env.FRONTEND_URL || 'https://your-domain.com';
+const PRIVACY_URL = process.env.PRIVACY_URL || `${PRODUCT_URL}/privacy`;
+const TERMS_URL = process.env.TERMS_URL || `${PRODUCT_URL}/terms`;
+
 class EmailService {
   static createTransporter() {
     const port = parseInt(process.env.EMAIL_PORT) || 587;
@@ -21,12 +28,12 @@ class EmailService {
         pass: process.env.EMAIL_PASS
       },
       dkim: process.env.DKIM_PRIVATE_KEY ? {
-        domainName: process.env.EMAIL_DOMAIN || 'tradetally.io',
+        domainName: EMAIL_DOMAIN,
         keySelector: process.env.DKIM_SELECTOR || 'default',
         privateKey: process.env.DKIM_PRIVATE_KEY
       } : undefined,
       headers: {
-        'X-Mailer': 'TradeTally Email Service',
+        'X-Mailer': `${APP_NAME} Email Service`,
         'X-Priority': '3',
         'X-MSMail-Priority': 'Normal',
         'Importance': 'Normal'
@@ -65,7 +72,7 @@ class EmailService {
                 <!-- Logo -->
                 <tr>
                   <td style="padding: 0 0 32px 0; text-align: center;">
-                    <span style="font-size: 22px; font-weight: 700; color: #18181b; letter-spacing: -0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">TradeTally</span>
+                    <span style="font-size: 22px; font-weight: 700; color: #18181b; letter-spacing: -0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">${APP_NAME}</span>
                   </td>
                 </tr>
                 <!-- Card -->
@@ -78,14 +85,14 @@ class EmailService {
                 <tr>
                   <td style="padding: 28px 0 0 0; text-align: center;">
                     <p style="color: #a1a1aa; font-size: 12px; line-height: 1.6; margin: 0 0 8px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-                      <a href="https://tradetally.io" style="color: #a1a1aa; text-decoration: none;">TradeTally</a>
+                      <a href="${PRODUCT_URL}" style="color: #a1a1aa; text-decoration: none;">${APP_NAME}</a>
                       &nbsp;&middot;&nbsp;
-                      <a href="https://tradetally.io/privacy" style="color: #a1a1aa; text-decoration: none;">Privacy</a>
+                      <a href="${PRIVACY_URL}" style="color: #a1a1aa; text-decoration: none;">Privacy</a>
                       &nbsp;&middot;&nbsp;
-                      <a href="https://tradetally.io/terms" style="color: #a1a1aa; text-decoration: none;">Terms</a>
+                      <a href="${TERMS_URL}" style="color: #a1a1aa; text-decoration: none;">Terms</a>
                     </p>
                     <p style="color: #d4d4d8; font-size: 11px; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-                      You received this email because you have a TradeTally account.
+                      You received this email because you have a ${APP_NAME} account.
                     </p>
                   </td>
                 </tr>
@@ -137,7 +144,7 @@ class EmailService {
    */
   static getUnsubscribeUrl(userId) {
     const token = unsubscribeService.generateToken(userId);
-    const baseUrl = process.env.FRONTEND_URL || 'https://tradetally.io';
+    const baseUrl = FRONTEND_URL;
     return `${baseUrl}/unsubscribe?token=${token}`;
   }
 
@@ -161,14 +168,14 @@ class EmailService {
       return;
     }
 
-    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email/${token}`;
+    const verificationUrl = `${FRONTEND_URL}/verify-email/${token}`;
 
     const content = `
       <h1 style="color: #18181b; font-size: 22px; margin: 0 0 8px 0; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         Verify your email
       </h1>
       <p style="color: #71717a; font-size: 15px; line-height: 1.6; margin: 0 0 28px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-        Welcome to TradeTally. Confirm your email address to get started with your trading journal.
+        Welcome to ${APP_NAME}. Confirm your email address to get started.
       </p>
 
       <div style="text-align: center; margin: 0 0 28px 0;">
@@ -187,16 +194,16 @@ class EmailService {
 
     const mailOptions = {
       from: {
-        name: 'TradeTally',
+        name: APP_NAME,
         address: process.env.EMAIL_FROM || 'noreply@crs.local'
       },
       to: email,
-      subject: 'Verify your email - TradeTally',
-      html: this.getBaseTemplate('Verify Your TradeTally Account', content),
-      text: `Welcome to TradeTally! Please verify your email address by visiting: ${verificationUrl}`,
+      subject: `Verify your email - ${APP_NAME}`,
+      html: this.getBaseTemplate(`Verify your ${APP_NAME} account`, content),
+      text: `Welcome to ${APP_NAME}. Please verify your email address by visiting: ${verificationUrl}`,
       headers: {
         'X-Entity-Ref-ID': `verify-${Date.now()}`,
-        'Message-ID': `<verify-${Date.now()}@tradetally.io>`
+        'Message-ID': `<verify-${Date.now()}@${EMAIL_DOMAIN}>`
       }
     };
 
@@ -215,14 +222,14 @@ class EmailService {
       return;
     }
 
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${token}`;
+    const resetUrl = `${FRONTEND_URL}/reset-password/${token}`;
 
     const content = `
       <h1 style="color: #18181b; font-size: 22px; margin: 0 0 8px 0; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         Reset your password
       </h1>
       <p style="color: #71717a; font-size: 15px; line-height: 1.6; margin: 0 0 28px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-        We received a request to reset the password for your TradeTally account.
+        We received a request to reset the password for your ${APP_NAME} account.
       </p>
 
       <div style="text-align: center; margin: 0 0 28px 0;">
@@ -241,16 +248,16 @@ class EmailService {
 
     const mailOptions = {
       from: {
-        name: 'TradeTally',
+        name: APP_NAME,
         address: process.env.EMAIL_FROM || 'noreply@crs.local'
       },
       to: email,
-      subject: 'Reset your password - TradeTally',
-      html: this.getBaseTemplate('Reset Your TradeTally Password', content),
-      text: `Reset your TradeTally password by visiting: ${resetUrl}`,
+      subject: `Reset your password - ${APP_NAME}`,
+      html: this.getBaseTemplate(`Reset your ${APP_NAME} password`, content),
+      text: `Reset your ${APP_NAME} password by visiting: ${resetUrl}`,
       headers: {
         'X-Entity-Ref-ID': `reset-${Date.now()}`,
-        'Message-ID': `<reset-${Date.now()}@tradetally.io>`
+        'Message-ID': `<reset-${Date.now()}@${EMAIL_DOMAIN}>`
       }
     };
 
@@ -269,14 +276,14 @@ class EmailService {
       return;
     }
 
-    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email/${token}`;
+    const verificationUrl = `${FRONTEND_URL}/verify-email/${token}`;
 
     const content = `
       <h1 style="color: #18181b; font-size: 22px; margin: 0 0 8px 0; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         Confirm your new email
       </h1>
       <p style="color: #71717a; font-size: 15px; line-height: 1.6; margin: 0 0 28px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-        You requested to change the email address on your TradeTally account. Confirm this is your new address.
+        You requested to change the email address on your ${APP_NAME} account. Confirm this is your new address.
       </p>
 
       <div style="text-align: center; margin: 0 0 28px 0;">
@@ -295,16 +302,16 @@ class EmailService {
 
     const mailOptions = {
       from: {
-        name: 'TradeTally',
+        name: APP_NAME,
         address: process.env.EMAIL_FROM || 'noreply@crs.local'
       },
       to: email,
-      subject: 'Confirm your new email - TradeTally',
+      subject: `Confirm your new email - ${APP_NAME}`,
       html: this.getBaseTemplate('Verify Your New Email Address', content),
-      text: `Verify your new TradeTally email address by visiting: ${verificationUrl}`,
+      text: `Verify your new ${APP_NAME} email address by visiting: ${verificationUrl}`,
       headers: {
         'X-Entity-Ref-ID': `email-change-${Date.now()}`,
-        'Message-ID': `<email-change-${Date.now()}@tradetally.io>`
+        'Message-ID': `<email-change-${Date.now()}@${EMAIL_DOMAIN}>`
       }
     };
 
@@ -337,7 +344,7 @@ class EmailService {
       </p>
       <p style="color: #52525b; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         ${isExpired
-          ? 'Your 14-day Pro trial has ended. You can continue using TradeTally on the free plan, or upgrade to keep Pro features like behavioral analytics, price alerts, and enhanced charts.'
+          ? `Your 14-day Pro trial has ended. You can continue using ${APP_NAME} on the free plan, or upgrade to keep Pro features like behavioral analytics, price alerts, and enhanced charts.`
           : `Your Pro trial expires in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}. Upgrade to keep access to behavioral analytics, price alerts, and enhanced charts.`
         }
       </p>
@@ -358,19 +365,19 @@ class EmailService {
 
     const mailOptions = {
       from: {
-        name: 'TradeTally',
+        name: APP_NAME,
         address: process.env.EMAIL_FROM || 'noreply@crs.local'
       },
       to: email,
-      subject: `${isExpired ? 'Your Pro trial ended' : `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} left on your trial`} - TradeTally`,
+      subject: `${isExpired ? 'Your Pro trial ended' : `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} left on your trial`} - ${APP_NAME}`,
       html: this.getBaseTemplate(
-        `${isExpired ? 'Trial Ended' : 'Trial Expiring'} - TradeTally`,
+        `${isExpired ? 'Trial Ended' : 'Trial Expiring'} - ${APP_NAME}`,
         content
       ),
-      text: `${isExpired ? 'Your TradeTally trial has ended.' : `Your TradeTally trial expires in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}.`} Visit ${pricingUrl} to continue with Pro features.`,
+      text: `${isExpired ? `Your ${APP_NAME} trial has ended.` : `Your ${APP_NAME} trial expires in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}.`} Visit ${pricingUrl} to continue with Pro features.`,
       headers: {
         'X-Entity-Ref-ID': `trial-${isExpired ? 'expired' : 'reminder'}-${Date.now()}`,
-        'Message-ID': `<trial-${isExpired ? 'expired' : 'reminder'}-${Date.now()}@tradetally.io>`
+        'Message-ID': `<trial-${isExpired ? 'expired' : 'reminder'}-${Date.now()}@${EMAIL_DOMAIN}>`
       }
     };
 
@@ -399,7 +406,7 @@ class EmailService {
     const url = dashboardUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard`;
     const pnlFormatted = totalPnL != null ? `$${Number(totalPnL).toFixed(2)}` : '$0.00';
     const pnlColor = totalPnL >= 0 ? '#16a34a' : '#dc2626';
-    const unsubscribeUrl = userId ? this.getUnsubscribeUrl(userId) : `${process.env.FRONTEND_URL || 'https://tradetally.io'}/settings`;
+    const unsubscribeUrl = userId ? this.getUnsubscribeUrl(userId) : `${FRONTEND_URL}/settings`;
     const safeUsername = escapeHtml(username);
     const content = `
       <h1 style="color: #18181b; font-size: 22px; margin: 0 0 8px 0; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
@@ -428,16 +435,16 @@ class EmailService {
       ${this.getMarketingFooter(unsubscribeUrl)}
     `;
     const mailOptions = {
-      from: { name: 'CRS', address: process.env.EMAIL_FROM || 'noreply@crs.local' },
+      from: { name: APP_NAME, address: process.env.EMAIL_FROM || 'noreply@crs.local' },
       to: email,
-      subject: `${tradeCount} trades this week - TradeTally`,
+      subject: `${tradeCount} trades this week - ${APP_NAME}`,
       html: this.getBaseTemplate('Your Week in Trades', content),
       text: `Your week: ${tradeCount} trades, P&L ${pnlFormatted}. View dashboard: ${url}. Unsubscribe: ${unsubscribeUrl}`,
       headers: {
         'List-Unsubscribe': `<${unsubscribeUrl}>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         'X-Entity-Ref-ID': `weekly-digest-${Date.now()}`,
-        'Message-ID': `<weekly-digest-${Date.now()}@tradetally.io>`
+        'Message-ID': `<weekly-digest-${Date.now()}@${EMAIL_DOMAIN}>`
       }
     };
     try {
@@ -462,8 +469,8 @@ class EmailService {
       console.log('Email not configured, skipping re-engagement email');
       return;
     }
-    const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
-    const unsubscribeUrl = userId ? this.getUnsubscribeUrl(userId) : `${process.env.FRONTEND_URL || 'https://tradetally.io'}/settings`;
+    const loginUrl = `${FRONTEND_URL}/login`;
+    const unsubscribeUrl = userId ? this.getUnsubscribeUrl(userId) : `${FRONTEND_URL}/settings`;
     const safeUsername = escapeHtml(username);
     const content = `
       <h1 style="color: #18181b; font-size: 22px; margin: 0 0 8px 0; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
@@ -479,16 +486,16 @@ class EmailService {
       ${this.getMarketingFooter(unsubscribeUrl)}
     `;
     const mailOptions = {
-      from: { name: 'CRS', address: process.env.EMAIL_FROM || 'noreply@crs.local' },
+      from: { name: APP_NAME, address: process.env.EMAIL_FROM || 'noreply@crs.local' },
       to: email,
-      subject: `Your journal is waiting - TradeTally`,
+      subject: `Your journal is waiting - ${APP_NAME}`,
       html: this.getBaseTemplate('Your journal is waiting', content),
       text: `You haven't logged in for ${daysInactive} days. Log in: ${loginUrl}. Unsubscribe: ${unsubscribeUrl}`,
       headers: {
         'List-Unsubscribe': `<${unsubscribeUrl}>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         'X-Entity-Ref-ID': `reengagement-${Date.now()}`,
-        'Message-ID': `<reengagement-${Date.now()}@tradetally.io>`
+        'Message-ID': `<reengagement-${Date.now()}@${EMAIL_DOMAIN}>`
       }
     };
     try {

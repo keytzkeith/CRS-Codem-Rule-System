@@ -1,7 +1,7 @@
 {
-  "name": "tradetally-backend",
+  "name": "crs-backend",
   "version": "2.2.0",
-  "description": "Backend API for TradeTally trade journaling platform",
+  "description": "Backend API for CRS trade journaling platform",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

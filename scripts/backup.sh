@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# TradeTally Complete Backup Script
+# CRS Complete Backup Script
 # Creates a full backup of all user data including:
 #   - PostgreSQL database (all tables)
 #   - Trade images/attachments
@@ -27,7 +27,7 @@ NC='\033[0m' # No Color
 # Default configuration
 BACKUP_DIR="${BACKUP_OUTPUT:-./backups}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_NAME="tradetally_backup_${TIMESTAMP}"
+BACKUP_NAME="crs_backup_${TIMESTAMP}"
 TEMP_DIR="/tmp/${BACKUP_NAME}"
 MODE="auto"
 
@@ -40,7 +40,7 @@ DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
 DB_USER="${DB_USER:-trader}"
 DB_PASSWORD="${DB_PASSWORD:-}"
-DB_NAME="${DB_NAME:-tradetally}"
+DB_NAME="${DB_NAME:-crs}"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -58,7 +58,7 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --help|-h)
-            echo "TradeTally Backup Script"
+            echo "CRS Backup Script"
             echo ""
             echo "Usage: $0 [options]"
             echo ""
@@ -73,7 +73,7 @@ while [[ $# -gt 0 ]]; do
             echo "  DB_PORT        Database port (default: 5432)"
             echo "  DB_USER        Database user (default: trader)"
             echo "  DB_PASSWORD    Database password"
-            echo "  DB_NAME        Database name (default: tradetally)"
+            echo "  DB_NAME        Database name (default: crs)"
             exit 0
             ;;
         *)
@@ -175,7 +175,7 @@ create_backup_dirs() {
 backup_database() {
     log_info "Backing up PostgreSQL database..."
 
-    local dump_file="$TEMP_DIR/database/tradetally.sql"
+    local dump_file="$TEMP_DIR/database/crs.sql"
 
     if [ "$MODE" == "docker" ]; then
         # Docker mode: use docker exec
@@ -427,7 +427,7 @@ cleanup() {
 main() {
     echo ""
     echo "=========================================="
-    echo "TradeTally Complete Backup"
+    echo "CRS Complete Backup"
     echo "=========================================="
     echo ""
 

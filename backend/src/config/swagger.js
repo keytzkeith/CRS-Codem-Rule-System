@@ -1,5 +1,6 @@
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+const siteIdentity = require('../../../config/siteIdentity.json');
 
 const options = {
   definition: {
@@ -9,9 +10,9 @@ const options = {
       version: '1.0.0',
       description: 'CRS Codem System Rule trading journal API',
       contact: {
-        name: 'Keith Odera',
-        url: 'https://keytz-portfolio.vercel.app/',
-        email: 'codemtrader@gmail.com',
+        name: siteIdentity.creator.name,
+        url: siteIdentity.contact.portfolioUrl,
+        email: siteIdentity.contact.supportEmail,
       },
     },
     servers: [

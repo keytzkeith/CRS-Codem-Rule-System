@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Migration script for existing TradeTally deployments
+# Migration script for existing CRS deployments
 # This script can be run on existing Docker deployments to add mobile support
 
 set -e
@@ -15,7 +15,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}[MIGRATE] TradeTally Mobile Support Migration${NC}"
+echo -e "${BLUE}[MIGRATE] CRS Mobile Support Migration${NC}"
 echo -e "${BLUE}======================================${NC}"
 echo ""
 
@@ -35,8 +35,8 @@ check_container() {
     fi
 }
 
-# Check for existing TradeTally containers
-echo -e "${YELLOW}[INFO] Checking for existing TradeTally containers...${NC}"
+# Check for existing CRS containers
+echo -e "${YELLOW}[INFO] Checking for existing CRS containers...${NC}"
 
 DB_CONTAINER=""
 APP_CONTAINER=""
@@ -62,8 +62,8 @@ for name in "${POSSIBLE_APP_NAMES[@]}"; do
 done
 
 if [[ -z "$DB_CONTAINER" ]]; then
-    echo -e "${RED}[ERROR] No TradeTally database container found.${NC}"
-    echo -e "${YELLOW}   Please make sure your TradeTally instance is running.${NC}"
+    echo -e "${RED}[ERROR] No CRS database container found.${NC}"
+    echo -e "${YELLOW}   Please make sure your CRS instance is running.${NC}"
     echo -e "${YELLOW}   Looking for containers with these names: ${POSSIBLE_DB_NAMES[*]}${NC}"
     exit 1
 fi
@@ -71,7 +71,7 @@ fi
 # Backup database
 echo ""
 echo -e "${YELLOW}[BACKUP] Creating database backup...${NC}"
-BACKUP_FILE="tradetally_backup_$(date +%Y%m%d_%H%M%S).sql"
+BACKUP_FILE="crs_backup_$(date +%Y%m%d_%H%M%S).sql"
 docker exec "$DB_CONTAINER" pg_dump -U trader -d tradetally > "$BACKUP_FILE"
 echo -e "${GREEN}[OK] Database backup created: $BACKUP_FILE${NC}"
 
@@ -148,7 +148,7 @@ cat > "$PROJECT_ROOT/.env.mobile" << 'EOF'
 # Copy these variables to your main .env file
 
 # Instance configuration
-INSTANCE_NAME=TradeTally
+INSTANCE_NAME=CRS
 INSTANCE_URL=https://your-domain.com
 
 # Mobile authentication
@@ -197,4 +197,4 @@ echo -e "${YELLOW}  POST /api/v1/auth/refresh - Refresh tokens${NC}"
 echo -e "${YELLOW}  GET /api/v1/devices - Device management${NC}"
 echo -e "${YELLOW}  POST /api/v1/sync/full - Full sync${NC}"
 echo ""
-echo -e "${GREEN}Your TradeTally instance is now ready for mobile app support!${NC}"
+echo -e "${GREEN}Your CRS instance is now ready for mobile app support!${NC}"

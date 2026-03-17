@@ -45,7 +45,7 @@ export default defineConfig(({ command, mode }) => {
   server: {
     port: 5173,
     host: true,
-    allowedHosts: process.env.NODE_ENV === 'development' ? ['dev.tradetally.io'] : 'auto',
+    allowedHosts: process.env.NODE_ENV === 'development' ? ['dev.crs.local', 'localhost'] : 'auto',
     proxy: {
       '/api': {
         // Extract base URL from VITE_API_URL (remove /api suffix if present)

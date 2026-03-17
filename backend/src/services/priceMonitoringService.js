@@ -443,7 +443,7 @@ class PriceMonitoringService {
           ${alert.change_percent ? `<li><strong>Target Change:</strong> ${escapeHtml(alert.change_percent)}%</li>` : ''}
           <li><strong>Time:</strong> ${new Date().toLocaleString()}</li>
         </ul>
-        <p><em>This alert was sent from your TradeTally Pro account.</em></p>
+        <p><em>This alert was sent from your CRS account.</em></p>
       `;
 
       await this.emailTransporter.sendMail({

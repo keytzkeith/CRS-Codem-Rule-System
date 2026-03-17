@@ -3,21 +3,21 @@ import ComponentCreator from '@docusaurus/ComponentCreator';
 
 export default [
   {
-    path: '/',
-    component: ComponentCreator('/', '2e1'),
+    path: '/about',
+    component: ComponentCreator('/about', 'c49'),
     exact: true
   },
   {
     path: '/',
-    component: ComponentCreator('/', '5f2'),
+    component: ComponentCreator('/', '1f7'),
     routes: [
       {
         path: '/',
-        component: ComponentCreator('/', '959'),
+        component: ComponentCreator('/', '530'),
         routes: [
           {
             path: '/',
-            component: ComponentCreator('/', '50c'),
+            component: ComponentCreator('/', '409'),
             routes: [
               {
                 path: '/getting-started/local-setup',
@@ -34,6 +34,18 @@ export default [
               {
                 path: '/operations/deployment',
                 component: ComponentCreator('/operations/deployment', '161'),
+                exact: true,
+                sidebar: "docsSidebar"
+              },
+              {
+                path: '/operations/go-live-checklist',
+                component: ComponentCreator('/operations/go-live-checklist', 'e73'),
+                exact: true,
+                sidebar: "docsSidebar"
+              },
+              {
+                path: '/operations/release-process',
+                component: ComponentCreator('/operations/release-process', 'd73'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
@@ -64,6 +76,12 @@ export default [
               {
                 path: '/workflows/trade-capture',
                 component: ComponentCreator('/workflows/trade-capture', '5aa'),
+                exact: true,
+                sidebar: "docsSidebar"
+              },
+              {
+                path: '/',
+                component: ComponentCreator('/', '682'),
                 exact: true,
                 sidebar: "docsSidebar"
               }

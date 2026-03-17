@@ -1,11 +1,13 @@
+const siteIdentity = require('../config/siteIdentity.json');
+
 const config = {
   title: 'CRS Docs',
   tagline: 'Setup, import, deploy, and operate CRS cleanly.',
-  favicon: 'img/favicon.svg',
-  url: 'https://docs.crs.local',
+  favicon: 'img/crs-main.png',
+  url: process.env.DOCS_SITE_URL || siteIdentity.urls.docs,
   baseUrl: '/',
-  organizationName: 'crs',
-  projectName: 'crs-docs',
+  organizationName: 'keytzkeith',
+  projectName: 'CRS-Codem-Rule-System',
   onBrokenLinks: 'throw',
   markdown: {
     hooks: {
@@ -32,26 +34,30 @@ const config = {
       },
     ],
   ],
+  customFields: {
+    siteIdentity,
+  },
   themeConfig: {
-    image: 'img/favicon.svg',
+    image: 'img/crs-main.png',
     navbar: {
-      title: 'CRS Docs',
+      title: '',
       logo: {
-        alt: 'CRS',
-        src: 'img/favicon.svg',
+        alt: 'CRS Codem System Rule',
+        src: 'img/crs-main.png',
       },
       items: [
         { to: '/getting-started/overview', label: 'Overview', position: 'left' },
         { to: '/getting-started/local-setup', label: 'Local setup', position: 'left' },
         { to: '/workflows/import-export', label: 'Import/export', position: 'left' },
         { to: '/operations/deployment', label: 'Deployment', position: 'left' },
+        { to: '/operations/go-live-checklist', label: 'Go live', position: 'left' },
         {
-          href: 'https://keytz-portfolio.vercel.app/',
+          href: siteIdentity.contact.portfolioUrl,
           label: 'Portfolio',
           position: 'right',
         },
         {
-          href: 'https://github.com/keytzkeith/CRS-Codem-Rule-System/',
+          href: siteIdentity.contact.repositoryUrl,
           label: 'Repo',
           position: 'right',
         },
@@ -77,13 +83,13 @@ const config = {
         {
           title: 'Creator',
           items: [
-            { label: 'Keith Odera', href: 'https://keytz-portfolio.vercel.app/' },
-            { label: 'GitHub', href: 'https://github.com/keytzkeith/CRS-Codem-Rule-System/' },
-            { label: 'codemtrader@gmail.com', href: 'mailto:codemtrader@gmail.com' },
+            { label: siteIdentity.creator.name, href: siteIdentity.contact.portfolioUrl },
+            { label: 'GitHub', href: siteIdentity.contact.repositoryUrl },
+            { label: siteIdentity.contact.supportEmail, href: `mailto:${siteIdentity.contact.supportEmail}` },
           ],
         },
       ],
-      copyright: `© ${new Date().getFullYear()} Keith Odera. Created by Keith Odera.`,
+      copyright: `© ${new Date().getFullYear()} ${siteIdentity.creator.name}. Created by ${siteIdentity.creator.name}.`,
     },
     docs: {
       sidebar: {

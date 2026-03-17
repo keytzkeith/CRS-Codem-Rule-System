@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "[DEPLOY] Deploying TradeTally..."
+echo "[DEPLOY] Deploying CRS..."
 
 # Build only the app service (not the database)
 echo "[BUILD] Building app container..."

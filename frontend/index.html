@@ -37,14 +37,24 @@
 
     <!-- Loader is shown for JS-enabled browsers until Vue mounts -->
     <style>
-      /* Loading spinner while Vue bootstraps */
-      #app-loading{display:none;justify-content:center;align-items:center;min-height:100vh;background:#fff}
-      #app-loading .spinner{width:3rem;height:3rem;border:3px solid #e5e7eb;border-top-color:#2563eb;border-radius:50%;animation:tt-spin 0.7s linear infinite}
-      @keyframes tt-spin{to{transform:rotate(360deg)}}
-      @media(prefers-color-scheme:dark){#app-loading{background:#111827}#app-loading .spinner{border-color:#374151;border-top-color:#3b82f6}}
-      /* If JS is enabled, hide static fallback and show loader immediately */
-      .tt-js #app-loading{display:flex}
-      .tt-js #app-fallback{display:none}
+      #app-loading{display:none;align-items:center;justify-content:center;min-height:100vh;padding:2rem;background:
+      radial-gradient(circle at 18% 18%, rgba(21,49,88,.34), transparent 0 28%),
+      radial-gradient(circle at 82% 0%, rgba(197,154,83,.16), transparent 0 20%),
+      linear-gradient(180deg, #07111f 0%, #050c17 100%)}
+      #app-loading .crs-loader{display:grid;gap:1rem;justify-items:center;text-align:center}
+      #app-loading .crs-loader__graph{display:flex;align-items:flex-end;gap:.45rem;height:3.6rem}
+      #app-loading .crs-loader__bar{width:.42rem;height:1rem;border-radius:999px;background:linear-gradient(180deg, rgba(115,226,167,.92), rgba(215,183,122,.92));box-shadow:0 0 16px rgba(115,226,167,.16);animation:crs-oscillate 1.15s ease-in-out infinite}
+      #app-loading .crs-loader__bar:nth-child(2){animation-delay:.08s}
+      #app-loading .crs-loader__bar:nth-child(3){animation-delay:.16s}
+      #app-loading .crs-loader__bar:nth-child(4){animation-delay:.24s}
+      #app-loading .crs-loader__bar:nth-child(5){animation-delay:.32s}
+      #app-loading .crs-loader__bar:nth-child(6){animation-delay:.4s}
+      #app-loading .crs-loader__bar:nth-child(7){animation-delay:.48s}
+      #app-loading .crs-loader__title{margin:0;font:700 1.02rem/1.1 "IBM Plex Sans","Segoe UI",sans-serif;color:#e8eef9;letter-spacing:-.02em}
+      #app-loading .crs-loader__text{margin:0;font:400 .92rem/1.55 "IBM Plex Sans","Segoe UI",sans-serif;color:#93a4bd}
+      @keyframes crs-oscillate{0%,100%{height:.9rem;opacity:.5}50%{height:2.8rem;opacity:1}}
+      .crs-js #app-loading{display:flex}
+      .crs-js #app-fallback{display:none}
 
       #app-fallback{max-width:72rem;margin:0 auto;padding:4rem 1rem;text-align:center;font-family:system-ui,-apple-system,sans-serif}
       #app-fallback h1{font-size:2.25rem;font-weight:800;color:#111827;line-height:1.2;margin:0 0 1.25rem}
@@ -64,19 +74,33 @@
     <!-- Mark JS-enabled clients before body paint -->
     <script>
       try {
-        document.documentElement.classList.add('tt-js')
+        document.documentElement.classList.add('crs-js')
         if (localStorage.getItem('token')) {
-          document.documentElement.classList.add('tt-has-token')
+          document.documentElement.classList.add('crs-has-token')
         }
       } catch (e) {
-        document.documentElement.classList.add('tt-js')
+        document.documentElement.classList.add('crs-js')
       }
     </script>
   </head>
   <body>
     <div id="app">
       <!-- Loading spinner for JS clients until Vue replaces this container -->
-      <div id="app-loading"><div class="spinner"></div></div>
+      <div id="app-loading">
+        <div class="crs-loader">
+          <div class="crs-loader__graph" aria-hidden="true">
+            <span class="crs-loader__bar"></span>
+            <span class="crs-loader__bar"></span>
+            <span class="crs-loader__bar"></span>
+            <span class="crs-loader__bar"></span>
+            <span class="crs-loader__bar"></span>
+            <span class="crs-loader__bar"></span>
+            <span class="crs-loader__bar"></span>
+          </div>
+          <h1 class="crs-loader__title">Loading your workspace</h1>
+          <p class="crs-loader__text">Bringing in your journal, accounts, and review data.</p>
+        </div>
+      </div>
       <!-- Static fallback content for non-JS clients/crawlers. Vue replaces this on mount. -->
       <div id="app-fallback">
       <main>

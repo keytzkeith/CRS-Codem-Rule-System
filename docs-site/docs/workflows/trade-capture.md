@@ -3,7 +3,7 @@ title: Trade capture
 sidebar_position: 2
 ---
 
-# Trade capture workflow
+# Trade capture
 
 CRS trade capture is built around execution review, not just storing a broker fill.
 

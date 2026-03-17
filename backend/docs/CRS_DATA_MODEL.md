@@ -1,20 +1,16 @@
 # CRS Data Model
 
-This document summarizes the frontend-first CRS model currently driving the app.
+This document summarizes the CRS model that currently drives the app.
 
-## Core Types
+## Core types
 
-The mock-first CRS flow is centered on these shapes:
+CRS is centered on these shapes:
 
 - `TradeRecord`
 - `TradeJournal`
 - `TradeChecklist`
 - `DashboardMetrics`
 - `CrsSettings`
-
-Reference mock definitions:
-
-- [crsMockData.js](/home/kodemtrader/Keith/extracted/CODES/CRS/frontend/src/data/crsMockData.js)
 
 ## TradeRecord
 
@@ -43,7 +39,7 @@ Current CRS trade records include:
 Important behavior:
 
 - `status` is derived from `resultR`
-- `resultAmount` is derived from `resultR` and current risk settings in the form flow
+- `resultAmount` is derived from price movement, size, and costs in the current form flow
 - `setupStack` allows multiple setup conditions, not just one primary setup
 
 ## TradeJournal
@@ -57,7 +53,7 @@ Current journal payload includes fields such as:
 - `mistakes`
 - `emotions`
 
-The CRS direction is to keep journaling compact and execution-focused.
+The journaling model is intentionally compact and execution-focused.
 
 ## TradeChecklist
 
@@ -69,7 +65,7 @@ Checklist fields capture rule compliance, for example:
 - minimum reward-to-risk
 - bias alignment
 
-Exact prompts can evolve, but the intent remains the same:
+The exact prompts can evolve, but the intent remains the same:
 
 - make discipline visible
 - make rule-following measurable
@@ -106,11 +102,9 @@ Current CRS settings include:
 - reusable tags
 - account list
 - active account
-- empty-state preview toggle
-
 ## Accounts
 
-CRS now supports multiple accounts in the frontend with a practical cap of 10.
+CRS supports multiple accounts in the frontend with a practical cap of 10.
 
 Account-aware behavior currently affects:
 
@@ -118,7 +112,7 @@ Account-aware behavior currently affects:
 - trade account selection
 - settings management
 
-## Persistence Direction
+## Persistence direction
 
 CRS is not meant to create a parallel backend product.
 
@@ -143,9 +137,9 @@ Current backend trade table now has first-class CRS fields for:
 
 Reference:
 
-- [CRS_API_CONTRACT.md](/home/kodemtrader/Keith/extracted/CODES/CRS/backend/docs/CRS_API_CONTRACT.md)
+- [`CRS_API_CONTRACT.md`](CRS_API_CONTRACT.md)
 
-## Design Constraint
+## Design constraint
 
 The CRS data model should stay optimized for:
 

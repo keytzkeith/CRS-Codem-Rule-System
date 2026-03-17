@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# TradeTally Native Deployment Script
+# CRS Native Deployment Script
 # Usage: ./deploy-native.sh
 
 set -e

@@ -186,7 +186,7 @@ export function usePriceAlertNotifications() {
     
     // Show browser notification if permitted
     if ('Notification' in window && Notification.permission === 'granted') {
-      const notification = new Notification(`TradeTally Alert: ${alert.symbol}`, {
+      const notification = new Notification(`CRS Alert: ${alert.symbol}`, {
         body: alert.message,
         icon: '/favicon.ico',
         tag: alert.id,

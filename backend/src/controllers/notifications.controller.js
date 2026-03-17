@@ -640,7 +640,7 @@ const notificationsController = {
       const testNotification = {
         id: 'test',
         symbol: 'TEST',
-        message: 'This is a test notification from TradeTally Pro',
+        message: 'This is a test notification from CRS',
         trigger_price: 100.00,
         alert_type: 'test'
       };

@@ -18,8 +18,8 @@ const twoFactorController = {
 
       // Generate secret
       const secret = speakeasy.generateSecret({
-        name: `TradeTally (${userEmail})`,
-        issuer: 'TradeTally'
+        name: `CRS (${userEmail})`,
+        issuer: 'CRS'
       });
 
       // Generate QR code

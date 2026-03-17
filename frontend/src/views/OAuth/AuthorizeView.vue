@@ -1,9 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
-      <!-- TradeTally Logo -->
       <div class="flex justify-center">
-        <div class="text-4xl font-bold text-primary-600">TradeTally</div>
+        <img src="/crs-main.png" alt="CRS" class="h-12 w-auto object-contain" />
       </div>
     </div>
 
@@ -43,7 +42,7 @@
               {{ consentData.client.name }}
             </h2>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              wants to access your TradeTally account
+              wants to access your CRS account
             </p>
 
             <a
@@ -111,7 +110,7 @@
 
           <!-- Trust Info -->
           <p class="mt-4 text-xs text-gray-500 dark:text-gray-400 text-center">
-            By authorizing, you allow {{ consentData.client.name }} to access your TradeTally data as described above. You can revoke this access at any time from your account settings.
+            By authorizing, you allow {{ consentData.client.name }} to access your CRS data as described above. You can revoke this access at any time from your account settings.
           </p>
         </div>
 

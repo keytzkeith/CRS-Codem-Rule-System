@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# TradeTally Complete Restore Script
+# CRS Complete Restore Script
 # Restores a full backup created by backup.sh including:
 #   - PostgreSQL database (all tables)
 #   - Trade images/attachments
@@ -40,7 +40,7 @@ DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
 DB_USER="${DB_USER:-trader}"
 DB_PASSWORD="${DB_PASSWORD:-}"
-DB_NAME="${DB_NAME:-tradetally}"
+DB_NAME="${DB_NAME:-crs}"
 
 # Parse command line arguments
 parse_args() {
@@ -75,7 +75,7 @@ parse_args() {
                 shift
                 ;;
             --help|-h)
-                echo "TradeTally Restore Script"
+                echo "CRS Restore Script"
                 echo ""
                 echo "Usage: $0 backup_file.tar.gz [options]"
                 echo ""
@@ -91,7 +91,7 @@ parse_args() {
                 echo "  DB_PORT        Database port (default: 5432)"
                 echo "  DB_USER        Database user (default: trader)"
                 echo "  DB_PASSWORD    Database password"
-                echo "  DB_NAME        Database name (default: tradetally)"
+                echo "  DB_NAME        Database name (default: crs)"
                 exit 0
                 ;;
             -*)
@@ -434,7 +434,7 @@ cleanup() {
 main() {
     echo ""
     echo "=========================================="
-    echo "TradeTally Complete Restore"
+    echo "CRS Complete Restore"
     echo "=========================================="
     echo ""
 

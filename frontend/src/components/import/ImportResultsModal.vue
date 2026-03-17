@@ -155,7 +155,7 @@
                 </p>
                 <div class="mt-3 flex flex-col sm:flex-row gap-2">
                   <a
-                    href="https://docs.tradetally.io/usage/importing-trades/#supported-brokers"
+                    :href="importDocsUrl"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium text-primary-700 dark:text-primary-300 bg-white dark:bg-gray-800 border border-primary-300 dark:border-primary-600 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/30"
@@ -198,6 +198,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { CheckCircleIcon, ExclamationTriangleIcon, XCircleIcon, InformationCircleIcon } from '@heroicons/vue/24/outline'
+import siteIdentity from '../../../../config/siteIdentity.json'
 
 const props = defineProps({
   isOpen: {
@@ -339,6 +340,10 @@ const showNeedHelp = computed(() => {
   return props.tradesImported === 0 && isSupportedBroker.value
 })
 
+const importDocsUrl = import.meta.env.DEV
+  ? 'http://localhost:3001/docs/workflows/import-export'
+  : `${siteIdentity.urls.docs.replace(/\/$/, '')}/docs/workflows/import-export`
+
 const supportMailtoLink = computed(() => {
   const broker = effectiveBroker.value
   const brokerDisplay = formatBrokerName(broker)
@@ -359,6 +364,6 @@ const supportMailtoLink = computed(() => {
     `Please describe the issue:\n\n`
   )
 
-  return `mailto:support@tradetally.io?subject=${subject}&body=${body}`
+  return `mailto:${siteIdentity.contact.supportEmail}?subject=${subject}&body=${body}`
 })
 </script>

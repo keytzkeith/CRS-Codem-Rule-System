@@ -3,7 +3,7 @@ title: Overview
 sidebar_position: 1
 ---
 
-# CRS docs overview
+# Overview
 
 CRS is a focused personal trading journal. The active product surface is intentionally narrow:
 
@@ -13,15 +13,15 @@ CRS is a focused personal trading journal. The active product surface is intenti
 - analytics
 - settings
 
-These docs follow that shape. They are not meant to preserve every feature from the broader legacy codebase.
+These docs follow that product shape. They are not trying to preserve every feature from the broader legacy codebase.
 
-## What this documentation covers
+## What these docs cover
 
 - local setup with frontend, backend, Postgres, and Adminer
 - CRS import and export workflows
 - the current CRS data model and API contract
-- deployment guidance for moving from local to a live server
-- troubleshooting around import, backend processes, and environment setup
+- deployment guidance for moving from local development to a live environment
+- troubleshooting around imports, backend processes, and environment setup
 
 ## Product assumptions
 
@@ -61,9 +61,9 @@ documentation/  older markdown and migration notes
   </figure>
 </div>
 
-## Current recommendation
+## Recommendation
 
-Use these docs as the primary operator guide. The markdown files in `backend/docs/` and `documentation/` still matter, but this site is the better day-to-day reference for CRS.
+Use this docs site as the primary day-to-day reference. The markdown files in `backend/docs/` and `documentation/` still matter, but they are better treated as supporting material.
 
 :::tip
 If you are just getting started, go straight to [Local setup](/getting-started/local-setup).

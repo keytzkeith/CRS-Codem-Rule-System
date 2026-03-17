@@ -5,7 +5,7 @@ sidebar_position: 2
 
 # Local setup
 
-The clean local CRS layout is:
+Use this as the clean local CRS layout:
 
 - frontend on `5173`
 - backend on `3000`
@@ -57,9 +57,10 @@ npm install
 npm run dev -- --host 0.0.0.0
 ```
 
-## 5. Open the app
+## 5. Open the app and docs
 
 - app: `http://localhost:5173`
+- docs: `http://localhost:3001`
 - database browser: `http://localhost:8080`
 
 ## First-user behavior
@@ -84,4 +85,4 @@ This was previously tied to dev-watch restarts interrupting long-running imports
 
 ### Finnhub warnings during import
 
-CRS does not require Finnhub for forex, metals, or index-style imports. If `FINNHUB_API_KEY` is missing, the current build skips those enrichment calls.
+CRS does not require Finnhub for forex, metals, or index-style imports. If `FINNHUB_API_KEY` is missing, the current build skips those enrichment calls cleanly.

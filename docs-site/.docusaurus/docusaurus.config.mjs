@@ -6,11 +6,11 @@
 export default {
   "title": "CRS Docs",
   "tagline": "Setup, import, deploy, and operate CRS cleanly.",
-  "favicon": "img/favicon.svg",
-  "url": "https://docs.crs.local",
+  "favicon": "img/crs-main.png",
+  "url": "https://docs.your-domain.com",
   "baseUrl": "/",
-  "organizationName": "crs",
-  "projectName": "crs-docs",
+  "organizationName": "keytzkeith",
+  "projectName": "CRS-Codem-Rule-System",
   "onBrokenLinks": "throw",
   "markdown": {
     "hooks": {
@@ -53,13 +53,45 @@ export default {
       }
     ]
   ],
+  "customFields": {
+    "siteIdentity": {
+      "productName": "CRS Codem System Rule",
+      "shortProductName": "CRS",
+      "tagline": "A focused personal trading journal for disciplined execution review.",
+      "release": {
+        "version": "2.2.0",
+        "stage": "Beta",
+        "billing": "Planned for v2"
+      },
+      "creator": {
+        "name": "Keith Odera",
+        "title": "Founder & Developer of CRS",
+        "location": "Kenya"
+      },
+      "contact": {
+        "supportEmail": "oderakeith@gmail.com",
+        "portfolioUrl": "https://keytz-portfolio.vercel.app/",
+        "repositoryUrl": "https://github.com/keytzkeith/CRS-Codem-Rule-System/"
+      },
+      "urls": {
+        "app": "https://your-domain.com",
+        "docs": "https://docs.your-domain.com",
+        "privacy": "https://your-domain.com/privacy",
+        "terms": "https://your-domain.com/terms"
+      },
+      "mobile": {
+        "appleBundleId": "",
+        "androidPackageId": ""
+      }
+    }
+  },
   "themeConfig": {
-    "image": "img/favicon.svg",
+    "image": "img/crs-main.png",
     "navbar": {
-      "title": "CRS Docs",
+      "title": "",
       "logo": {
-        "alt": "CRS",
-        "src": "img/favicon.svg"
+        "alt": "CRS Codem System Rule",
+        "src": "img/crs-main.png"
       },
       "items": [
         {
@@ -80,6 +112,11 @@ export default {
         {
           "to": "/operations/deployment",
           "label": "Deployment",
+          "position": "left"
+        },
+        {
+          "to": "/operations/go-live-checklist",
+          "label": "Go live",
           "position": "left"
         },
         {
@@ -136,8 +173,8 @@ export default {
               "href": "https://github.com/keytzkeith/CRS-Codem-Rule-System/"
             },
             {
-              "label": "codemtrader@gmail.com",
-              "href": "mailto:codemtrader@gmail.com"
+              "label": "oderakeith@gmail.com",
+              "href": "mailto:oderakeith@gmail.com"
             }
           ]
         }
@@ -336,7 +373,6 @@ export default {
   "staticDirectories": [
     "static"
   ],
-  "customFields": {},
   "plugins": [],
   "scripts": [],
   "headTags": [],

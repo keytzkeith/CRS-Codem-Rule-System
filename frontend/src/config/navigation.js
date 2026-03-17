@@ -39,13 +39,8 @@ export const CRS_NAV_ITEMS = [
 ]
 
 export const CRS_ROUTE_REDIRECTS = [
-  '/pricing',
-  '/features',
-  '/compare',
-  '/compare/tradervue',
   '/leaderboard',
   '/gamification',
-  '/public',
   '/markets',
   '/watchlists',
   '/watchlists/:id',
@@ -69,8 +64,6 @@ export const CRS_ROUTE_REDIRECTS = [
   '/equity-history',
   '/profile',
   '/u/:username',
-  '/privacy',
-  '/faq',
   '/unsubscribe'
 ]
 
