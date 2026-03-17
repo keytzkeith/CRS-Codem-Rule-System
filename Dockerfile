@@ -12,6 +12,7 @@ COPY frontend/package*.json ./
 # Use lockfile-based installs for deterministic CI builds.
 RUN npm ci --no-audit --no-fund
 COPY frontend/ ./
+COPY config/siteIdentity.json /app/config/siteIdentity.json
 
 # Set VITE_API_URL to use relative path for Nginx proxy
 ARG VITE_API_URL=/api
