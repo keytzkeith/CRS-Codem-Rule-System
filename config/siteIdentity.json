@@ -1,0 +1,30 @@
+{
+  "productName": "CRS Codem System Rule",
+  "shortProductName": "CRS",
+  "tagline": "A focused personal trading journal for disciplined execution review.",
+  "release": {
+    "version": "2.2.0",
+    "stage": "Beta",
+    "billing": "Planned for v2"
+  },
+  "creator": {
+    "name": "Keith Odera",
+    "title": "Founder & Developer of CRS",
+    "location": "Kenya"
+  },
+  "contact": {
+    "supportEmail": "oderakeith@gmail.com",
+    "portfolioUrl": "https://keytz-portfolio.vercel.app/",
+    "repositoryUrl": "https://github.com/keytzkeith/CRS-Codem-Rule-System/"
+  },
+  "urls": {
+    "app": "https://your-domain.com",
+    "docs": "https://docs.your-domain.com",
+    "privacy": "https://your-domain.com/privacy",
+    "terms": "https://your-domain.com/terms"
+  },
+  "mobile": {
+    "appleBundleId": "",
+    "androidPackageId": ""
+  }
+}

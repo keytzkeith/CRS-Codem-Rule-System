@@ -19,6 +19,8 @@ config/secrets/
 *dev2.yaml
 *dev.yaml
 *.json
+!config/siteIdentity.json
+!config/release.json
 # OS-specific files
 .DS_Store
 .DS_Store?

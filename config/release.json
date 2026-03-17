@@ -1,0 +1,7 @@
+{
+  "version": "2.2.0",
+  "stage": "Beta",
+  "billing": "Planned for v2",
+  "tag": "v2.2.0-beta.1",
+  "nextMilestone": "Stabilize beta, complete cleanup, then prepare for a billing-enabled v2 follow-up."
+}
