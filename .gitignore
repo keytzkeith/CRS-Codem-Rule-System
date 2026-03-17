@@ -7,6 +7,9 @@ docker-compose.yaml
 .env
 .env.*
 !.env.example
+!backend/.env.example
+!backend/.env.production.example
+!frontend/.env.example
 *.key
 *.pem
 *.p12
@@ -21,6 +24,7 @@ config/secrets/
 *.json
 !config/siteIdentity.json
 !config/release.json
+!docs-site/package.json
 # OS-specific files
 .DS_Store
 .DS_Store?
