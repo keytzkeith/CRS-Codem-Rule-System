@@ -1,11 +1,10 @@
 <template>
-  <div class="card">
-    <div class="card-body">
+  <div class="rounded-[26px] border border-white/10 bg-white/[0.03] p-5 shadow-[0_24px_80px_rgba(8,15,35,0.28)] transition hover:border-amber-300/25 hover:bg-white/[0.045]">
+    <div>
       <div class="flex items-start justify-between">
         <div class="flex items-center space-x-4">
-          <!-- Broker Logo -->
           <div
-            class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center"
+            class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border"
             :class="brokerStyles.bgClass"
           >
             <span :class="brokerStyles.textClass" class="font-bold text-lg">
@@ -14,8 +13,8 @@
           </div>
 
           <div>
-            <h4 class="font-medium text-gray-900 dark:text-white">{{ connection.connectionName || brokerStyles.name }}</h4>
-            <p v-if="connection.connectionName || connection.externalAccountId" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <h4 class="font-medium text-white">{{ connection.connectionName || brokerStyles.name }}</h4>
+            <p v-if="connection.connectionName || connection.externalAccountId" class="mt-1 text-xs text-slate-400">
               {{ connection.connectionName ? brokerStyles.name : '' }}
               <span v-if="connection.connectionName && connection.externalAccountId"> · </span>
               <span v-if="connection.externalAccountId">Acct {{ connection.externalAccountId }}</span>
@@ -27,18 +26,17 @@
               >
                 {{ connection.connectionStatus }}
               </span>
-              <span v-if="connection.autoSyncEnabled" class="text-xs text-gray-500 dark:text-gray-400">
+              <span v-if="connection.autoSyncEnabled" class="text-xs text-slate-500">
                 Auto-sync {{ connection.syncFrequency }}
               </span>
             </div>
           </div>
         </div>
 
-        <!-- Actions Menu -->
         <div class="relative" ref="menuRef">
           <button
             @click="showMenu = !showMenu"
-            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+            class="rounded-xl border border-white/10 p-2 text-slate-400 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-white"
           >
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
@@ -47,29 +45,29 @@
 
           <div
             v-if="showMenu"
-            class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10"
+            class="absolute right-0 z-10 mt-2 w-48 rounded-2xl border border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur"
           >
             <button
               @click="emit('settings', connection); showMenu = false"
-              class="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg"
+              class="w-full px-4 py-2 text-left text-sm text-slate-200 hover:bg-white/[0.05] first:rounded-t-2xl"
             >
               Settings
             </button>
             <button
               @click="emit('test', connection); showMenu = false"
-              class="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              class="w-full px-4 py-2 text-left text-sm text-slate-200 hover:bg-white/[0.05]"
             >
               Test Connection
             </button>
             <button
               @click="emit('deleteTrades', connection); showMenu = false"
-              class="w-full px-4 py-2 text-left text-sm text-orange-600 dark:text-orange-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+              class="w-full px-4 py-2 text-left text-sm text-orange-300 hover:bg-white/[0.05]"
             >
               Delete All Trades
             </button>
             <button
               @click="emit('delete', connection); showMenu = false"
-              class="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 last:rounded-b-lg"
+              class="w-full px-4 py-2 text-left text-sm text-red-300 hover:bg-white/[0.05] last:rounded-b-2xl"
             >
               Disconnect
             </button>
@@ -77,13 +75,12 @@
         </div>
       </div>
 
-      <!-- Last Sync Info -->
-      <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div class="mt-4 border-t border-white/8 pt-4">
         <div class="flex items-center justify-between text-sm">
-          <div class="text-gray-500 dark:text-gray-400">
+          <div class="text-slate-400">
             <template v-if="connection.lastSyncAt">
               Last synced: {{ formatDate(connection.lastSyncAt) }}
-              <span v-if="connection.lastSyncTradesImported" class="text-green-600 dark:text-green-400">
+              <span v-if="connection.lastSyncTradesImported" class="text-emerald-300">
                 ({{ connection.lastSyncTradesImported }} imported)
               </span>
             </template>
@@ -95,7 +92,7 @@
           <button
             @click="emit('sync', connection)"
             :disabled="syncing"
-            class="btn-primary text-sm py-1.5 px-3"
+            class="crs-button-primary px-3 py-1.5 text-sm"
           >
             <span v-if="syncing" class="flex items-center">
               <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -105,10 +102,9 @@
           </button>
         </div>
 
-        <!-- Error Message -->
         <div
           v-if="connection.lastErrorMessage && connection.connectionStatus === 'error'"
-          class="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded text-sm text-red-700 dark:text-red-300"
+          class="mt-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200"
         >
           {{ connection.lastErrorMessage }}
         </div>
@@ -142,29 +138,29 @@ const brokerStyles = computed(() => {
       return {
         name: 'Interactive Brokers',
         abbrev: 'IB',
-        bgClass: 'bg-red-100 dark:bg-red-900/30',
-        textClass: 'text-red-600 dark:text-red-400'
+        bgClass: 'border-red-400/20 bg-red-500/10',
+        textClass: 'text-red-300'
       }
     case 'schwab':
       return {
         name: 'Charles Schwab',
         abbrev: 'CS',
-        bgClass: 'bg-blue-100 dark:bg-blue-900/30',
-        textClass: 'text-blue-600 dark:text-blue-400'
+        bgClass: 'border-sky-400/20 bg-sky-500/10',
+        textClass: 'text-sky-300'
       }
     case 'gft':
       return {
         name: 'Goat Funded Trader',
         abbrev: 'GF',
-        bgClass: 'bg-amber-100 dark:bg-amber-900/30',
-        textClass: 'text-amber-700 dark:text-amber-300'
+        bgClass: 'border-amber-300/25 bg-amber-400/10',
+        textClass: 'text-amber-200'
       }
     default:
       return {
         name: props.connection.brokerType,
         abbrev: props.connection.brokerType.substring(0, 2).toUpperCase(),
-        bgClass: 'bg-gray-100 dark:bg-gray-900/30',
-        textClass: 'text-gray-600 dark:text-gray-400'
+        bgClass: 'border-white/10 bg-white/[0.04]',
+        textClass: 'text-slate-300'
       }
   }
 })
@@ -172,13 +168,13 @@ const brokerStyles = computed(() => {
 const statusClass = computed(() => {
   switch (props.connection.connectionStatus) {
     case 'active':
-      return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+      return 'bg-emerald-400/10 text-emerald-200'
     case 'error':
-      return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+      return 'bg-red-500/10 text-red-200'
     case 'expired':
-      return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+      return 'bg-amber-400/10 text-amber-200'
     default:
-      return 'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
+      return 'bg-white/[0.06] text-slate-300'
   }
 })
 

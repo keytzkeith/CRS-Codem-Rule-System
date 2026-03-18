@@ -33,7 +33,15 @@ export const useCrsStore = defineStore('crs', () => {
   const tradesLoading = ref(false)
   const tradesReady = ref(false)
   const tradesError = ref(null)
-  const trades = computed(() => sourceTrades.value)
+  const trades = computed(() => {
+    const activeAccountId = settings.value.activeAccountId
+
+    if (!activeAccountId) {
+      return sourceTrades.value
+    }
+
+    return sourceTrades.value.filter((trade) => trade.accountId === activeAccountId)
+  })
 
   const sortedTrades = computed(() => sortTradesDesc(trades.value))
   const filterOptions = computed(() => {

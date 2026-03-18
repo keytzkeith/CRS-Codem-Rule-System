@@ -154,7 +154,7 @@ class GFTService {
       stopLoss: this.nullableNumber(trade?.sl),
       takeProfit: this.nullableNumber(trade?.tp),
       brokerConnectionId: connection.id,
-      accountIdentifier: connection.externalAccountId,
+      accountIdentifier: connection.accountId || connection.externalAccountId,
       contractMultiplier: this.inferContractMultiplier(symbol),
       executionData: [
         {
