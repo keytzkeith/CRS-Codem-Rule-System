@@ -510,7 +510,7 @@ function compactCurrency(value) {
 
 function barHeight(rows, value) {
   const max = Math.max(...rows.map((row) => Math.abs(row.value)), 1)
-  return Math.max((Math.abs(value) / max) * 100, 3)
+  return Math.min(Math.max((Math.abs(value) / max) * 92, 4), 92)
 }
 
 function dotColor(cell) {

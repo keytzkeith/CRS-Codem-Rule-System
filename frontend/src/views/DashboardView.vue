@@ -167,9 +167,9 @@
           <div class="flex justify-center">
             <svg viewBox="0 0 220 160" class="h-40 w-56 overflow-visible">
               <path :d="semiDonutPath" pathLength="100" class="crs-semi-donut-track" />
-              <path :d="semiDonutPath" pathLength="100" class="crs-semi-donut-win" :stroke-dasharray="semiDonutSegments.win.dash" :stroke-dashoffset="semiDonutSegments.win.offset" />
-              <path :d="semiDonutPath" pathLength="100" class="crs-semi-donut-loss" :stroke-dasharray="semiDonutSegments.loss.dash" :stroke-dashoffset="semiDonutSegments.loss.offset" />
-              <path :d="semiDonutPath" pathLength="100" class="crs-semi-donut-breakeven" :stroke-dasharray="semiDonutSegments.breakeven.dash" :stroke-dashoffset="semiDonutSegments.breakeven.offset" />
+              <path v-if="outcomeCounts.win > 0" :d="semiDonutPath" pathLength="100" class="crs-semi-donut-win" :stroke-dasharray="semiDonutSegments.win.dash" :stroke-dashoffset="semiDonutSegments.win.offset" />
+              <path v-if="outcomeCounts.loss > 0" :d="semiDonutPath" pathLength="100" class="crs-semi-donut-loss" :stroke-dasharray="semiDonutSegments.loss.dash" :stroke-dashoffset="semiDonutSegments.loss.offset" />
+              <path v-if="outcomeCounts.breakeven > 0" :d="semiDonutPath" pathLength="100" class="crs-semi-donut-breakeven" :stroke-dasharray="semiDonutSegments.breakeven.dash" :stroke-dashoffset="semiDonutSegments.breakeven.offset" />
               <text x="110" y="108" text-anchor="middle" fill="#f8fafc" font-size="24" font-weight="700">{{ metrics.winRate }}%</text>
               <text x="110" y="126" text-anchor="middle" fill="#7b8aa3" font-size="11">Win rate</text>
               <text x="110" y="142" text-anchor="middle" fill="#94a3b8" font-size="10">{{ metrics.totalTrades }} trades</text>
@@ -283,7 +283,7 @@ const semiDonutSegments = computed(() => {
     }
   }
 
-  const availableLength = Math.max(100 - activeSegments.length * semiDonutGap, 0)
+  const availableLength = Math.max(100 - Math.max(activeSegments.length - 1, 0) * semiDonutGap, 0)
   const normalized = activeSegments.map((segment) => ({
     ...segment,
     length: (segment.count / total) * availableLength
@@ -415,7 +415,7 @@ function formatDate(value) {
 
 function barHeight(value) {
   const max = Math.max(...pnlWeek.value.map((row) => Math.abs(row.value)), 1)
-  return Math.max((Math.abs(value) / max) * 100, 3)
+  return Math.min(Math.max((Math.abs(value) / max) * 92, 4), 92)
 }
 
 function barLabelPrimary(label) {

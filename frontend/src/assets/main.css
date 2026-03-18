@@ -687,7 +687,7 @@
   }
 
   .crs-chart-bar-stage {
-    @apply relative flex h-32 w-full items-end overflow-hidden rounded-[12px] border px-2 pb-2;
+    @apply relative flex h-32 w-full items-end overflow-hidden rounded-[12px] border p-2;
     border-color: rgba(148, 163, 184, 0.08);
     background: rgba(255, 255, 255, 0.02);
   }

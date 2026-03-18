@@ -499,32 +499,20 @@
     </div>
 
     <!-- Restore Confirmation Modal -->
-    <div
-        v-if="showRestoreModal"
-        class="fixed inset-0 z-50 overflow-y-auto"
-        aria-labelledby="modal-title"
-        role="dialog"
-        aria-modal="true"
-    >
-        <div
-            class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
-        >
-            <!-- Background overlay -->
+    <div v-if="showRestoreModal" class="crs-modal-shell">
+        <div class="crs-modal-frame">
             <div
-                class="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75 transition-opacity"
+                class="crs-modal-backdrop"
                 @click="showRestoreModal = false"
             ></div>
-
-            <!-- Modal panel -->
-            <div
-                class="inline-block align-bottom crs-admin-modal px-4 pt-5 pb-4 text-left overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6"
-            >
-                <div class="sm:flex sm:items-start">
+            <div class="crs-modal-panel max-w-lg">
+                <div class="crs-modal-body">
+                    <div class="flex items-start gap-4">
                     <div
-                        class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20 sm:mx-0 sm:h-10 sm:w-10"
+                        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-red-500/25 bg-red-500/10"
                     >
                         <svg
-                            class="h-6 w-6 text-red-600 dark:text-red-400"
+                            class="h-6 w-6 text-red-300"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -537,40 +525,35 @@
                             />
                         </svg>
                     </div>
-                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3
-                            class="text-lg leading-6 font-medium text-gray-900 dark:text-white"
-                            id="modal-title"
-                        >
+                    <div class="min-w-0 flex-1">
+                        <h3 class="crs-modal-title" id="modal-title">
                             Confirm Backup Restore
                         </h3>
                         <div class="mt-2">
-                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                            <p class="text-sm text-slate-400">
                                 You are about to restore data from:
                             </p>
-                            <p
-                                class="mt-1 text-sm font-medium text-gray-900 dark:text-white"
-                            >
+                            <p class="mt-1 text-sm font-medium text-white">
                                 {{ selectedRestoreFile?.name }}
                             </p>
                             <!-- Snapshot restore option -->
-                            <div class="mt-4 flex items-start">
+                            <div class="crs-toggle-row mt-4">
                                 <div class="flex items-center h-5">
                                     <input
                                         id="clear-existing"
                                         v-model="clearExisting"
                                         type="checkbox"
-                                        class="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded"
+                                        class="h-4 w-4 rounded border-white/15 bg-slate-950/70 text-amber-300 focus:ring-amber-300/40"
                                     />
                                 </div>
-                                <div class="ml-3 text-sm">
+                                <div class="min-w-0 flex-1 text-sm">
                                     <label
                                         for="clear-existing"
-                                        class="font-medium text-gray-700 dark:text-gray-300"
+                                        class="crs-toggle-title"
                                     >
                                         Full snapshot restore
                                     </label>
-                                    <p class="text-gray-500 dark:text-gray-400">
+                                    <p class="crs-toggle-copy">
                                         Clear all existing data before
                                         restoring. Restores the server to the
                                         exact state captured in the backup.
@@ -581,24 +564,24 @@
                             <!-- Overwrite option -->
                             <div
                                 v-if="!clearExisting"
-                                class="mt-3 flex items-start"
+                                class="crs-toggle-row mt-3"
                             >
                                 <div class="flex items-center h-5">
                                     <input
                                         id="overwrite-users"
                                         v-model="overwriteUsers"
                                         type="checkbox"
-                                        class="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded"
+                                        class="h-4 w-4 rounded border-white/15 bg-slate-950/70 text-amber-300 focus:ring-amber-300/40"
                                     />
                                 </div>
-                                <div class="ml-3 text-sm">
+                                <div class="min-w-0 flex-1 text-sm">
                                     <label
                                         for="overwrite-users"
-                                        class="font-medium text-gray-700 dark:text-gray-300"
+                                        class="crs-toggle-title"
                                     >
                                         Overwrite matching users data
                                     </label>
-                                    <p class="text-gray-500 dark:text-gray-400">
+                                    <p class="crs-toggle-copy">
                                         Update existing users with data from the
                                         backup (name, settings, etc.)
                                     </p>
@@ -606,11 +589,11 @@
                             </div>
 
                             <div
-                                class="mt-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-3"
+                                class="mt-4 rounded-[18px] border p-3"
                                 :class="
                                     clearExisting
-                                        ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                                        : ''
+                                        ? 'border-red-500/25 bg-red-500/10'
+                                        : 'border-amber-300/20 bg-amber-400/10'
                                 "
                             >
                                 <div class="flex">
@@ -635,8 +618,8 @@
                                             class="text-sm font-medium"
                                             :class="
                                                 clearExisting
-                                                    ? 'text-red-800 dark:text-red-300'
-                                                    : 'text-amber-800 dark:text-amber-300'
+                                                    ? 'text-red-200'
+                                                    : 'text-amber-100'
                                             "
                                         >
                                             {{
@@ -649,8 +632,8 @@
                                             class="mt-1 text-sm"
                                             :class="
                                                 clearExisting
-                                                    ? 'text-red-700 dark:text-red-400'
-                                                    : 'text-amber-700 dark:text-amber-400'
+                                                    ? 'text-red-100/85'
+                                                    : 'text-amber-100/85'
                                             "
                                         >
                                             <ul
@@ -709,12 +692,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                </div>
+                <div class="crs-modal-footer mt-6">
                     <button
                         @click="executeRestore"
                         :disabled="restoring"
                         type="button"
-                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="crs-button-danger inline-flex w-full justify-center px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 sm:ml-3 sm:w-auto"
                     >
                         <svg
                             v-if="restoring"
@@ -742,7 +726,7 @@
                         @click="cancelRestore"
                         :disabled="restoring"
                         type="button"
-                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50"
+                        class="crs-button crs-button-muted mt-3 inline-flex w-full justify-center px-4 py-2 text-sm disabled:opacity-50 sm:mt-0 sm:w-auto"
                     >
                         Cancel
                     </button>

@@ -60,7 +60,7 @@
                                 @input="handleSearch"
                                 type="text"
                                 placeholder="Search users..."
-                                class="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 pr-12 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md"
+                                class="crs-input block w-full pl-10 pr-12 sm:text-sm"
                             />
                             <div
                                 v-if="searchQuery"
@@ -97,7 +97,7 @@
                         <button
                             @click="exportUsersToCSV"
                             :disabled="loading || users.length === 0"
-                            class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="crs-button crs-button-muted inline-flex items-center px-3 py-1.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <svg
                                 class="w-4 h-4 mr-1.5"
@@ -723,19 +723,16 @@
     </div>
 
     <!-- Delete confirmation modal -->
-    <div
-        v-if="showDeleteConfirm"
-        class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
-    >
-        <div
-            class="relative top-20 mx-auto crs-admin-modal p-5 border w-96"
-        >
-            <div class="mt-3 text-center">
+    <div v-if="showDeleteConfirm" class="crs-modal-shell">
+        <div class="crs-modal-frame">
+            <div class="crs-modal-backdrop" @click="showDeleteConfirm = false"></div>
+            <div class="crs-modal-panel max-w-md">
+                <div class="crs-modal-body text-center">
                 <div
-                    class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20"
+                    class="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-red-500/25 bg-red-500/10"
                 >
                     <svg
-                        class="h-6 w-6 text-red-600 dark:text-red-400"
+                        class="h-6 w-6 text-red-300"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -748,53 +745,46 @@
                         />
                     </svg>
                 </div>
-                <h3
-                    class="text-lg font-medium text-gray-900 dark:text-white mt-2"
-                >
-                    Delete User
-                </h3>
-                <div class="mt-2 px-7 py-3">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                <h3 class="crs-modal-title mt-4">Delete user</h3>
+                <div class="mt-2 px-4 py-3">
+                    <p class="text-sm text-slate-400">
                         Are you sure you want to permanently delete user
                         <strong>{{ userToDelete?.username }}</strong
                         >? This action cannot be undone.
                     </p>
                 </div>
-                <div class="flex justify-center gap-4 mt-4">
+                <div class="mt-4 flex justify-center gap-4">
                     <button
                         @click="showDeleteConfirm = false"
-                        class="px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                        class="crs-button crs-button-muted"
                     >
                         Cancel
                     </button>
                     <button
                         @click="deleteUser"
                         :disabled="isUpdating"
-                        class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+                        class="crs-button-danger disabled:opacity-50"
                     >
                         {{ isUpdating ? "Deleting..." : "Delete" }}
                     </button>
+                </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Tier Management Modal -->
-    <div
-        v-if="showTierModal"
-        class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
-    >
-        <div
-            class="relative top-20 mx-auto crs-admin-modal p-5 border w-[500px]"
-        >
-            <div class="mt-3">
-                <div class="flex justify-between items-start mb-4">
-                    <h3 class="heading-card">
+    <div v-if="showTierModal" class="crs-modal-shell">
+        <div class="crs-modal-frame">
+            <div class="crs-modal-backdrop" @click="closeTierModal"></div>
+            <div class="crs-modal-panel max-w-[500px]">
+            <div class="crs-modal-header">
+                    <h3 class="crs-modal-title">
                         Manage Tier - {{ selectedUser?.username }}
                     </h3>
                     <button
                         @click="closeTierModal"
-                        class="text-gray-400 hover:text-gray-500"
+                        class="crs-modal-close"
                     >
                         <svg
                             class="h-5 w-5"
@@ -811,12 +801,13 @@
                         </svg>
                     </button>
                 </div>
+                <div class="crs-modal-body">
 
                 <!-- Current Tier Info -->
                 <div v-if="tierInfo" class="space-y-3">
                     <div>
                         <h4
-                            class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                            class="mb-1 text-sm font-medium text-white"
                         >
                             Current Tier
                         </h4>
@@ -834,7 +825,7 @@
                             </span>
                             <span
                                 v-if="tierInfo?.override"
-                                class="text-xs text-amber-600 dark:text-amber-400"
+                                class="text-xs text-amber-300"
                             >
                                 (Override active)
                             </span>
@@ -844,7 +835,7 @@
                                     (selectedUser.role === 'admin' ||
                                         selectedUser.role === 'owner')
                                 "
-                                class="text-xs text-blue-600 dark:text-blue-400"
+                                class="text-xs text-sky-300"
                             >
                                 (Admin - Pro by default)
                             </span>
@@ -854,9 +845,9 @@
                     <!-- Override Info -->
                     <div
                         v-if="tierInfo?.override"
-                        class="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3"
+                        class="rounded-[18px] border border-amber-300/20 bg-amber-400/10 p-3"
                     >
-                        <p class="text-sm text-amber-800 dark:text-amber-300">
+                        <p class="text-sm text-amber-100">
                             <strong>Override:</strong>
                             {{ tierInfo?.override?.tier }} tier
                             <span v-if="tierInfo?.override?.expires_at">
@@ -870,13 +861,13 @@
                         </p>
                         <p
                             v-if="tierInfo?.override?.reason"
-                            class="text-xs text-amber-700 dark:text-amber-400 mt-1"
+                            class="mt-1 text-xs text-amber-200"
                         >
                             Reason: {{ tierInfo?.override?.reason }}
                         </p>
                         <p
                             v-if="tierInfo?.override?.created_by_username"
-                            class="text-xs text-amber-700 dark:text-amber-400"
+                            class="text-xs text-amber-200"
                         >
                             Set by:
                             {{ tierInfo?.override?.created_by_username }}
@@ -889,14 +880,12 @@
                             tierInfo?.subscription &&
                             tierInfo?.subscription?.status === 'active'
                         "
-                        class="bg-green-50 dark:bg-green-900/20 rounded-lg p-3"
+                        class="rounded-[18px] border border-emerald-300/20 bg-emerald-400/10 p-3"
                     >
-                        <p class="text-sm text-green-800 dark:text-green-300">
+                        <p class="text-sm text-emerald-100">
                             <strong>Active Subscription</strong>
                         </p>
-                        <p
-                            class="text-xs text-green-700 dark:text-green-400 mt-1"
-                        >
+                        <p class="mt-1 text-xs text-emerald-200">
                             Renews:
                             {{
                                 tierInfo?.subscription?.current_period_end
@@ -911,18 +900,16 @@
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="space-y-3 pt-4 border-t dark:border-gray-700 mt-4">
+                <div class="mt-4 space-y-4 border-t border-white/10 pt-4">
                     <!-- Set Override -->
                     <div>
-                        <h4
-                            class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                        >
+                        <h4 class="mb-2 text-sm font-medium text-white">
                             Set Tier Override
                         </h4>
                         <div class="flex items-center space-x-2">
                             <select
                                 v-model="overrideTier"
-                                class="text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded focus:ring-primary-500 focus:border-primary-500"
+                                class="crs-input text-sm"
                             >
                                 <option value="free">Free</option>
                                 <option value="pro">Pro</option>
@@ -930,7 +917,7 @@
                             <button
                                 @click="setTierOverride"
                                 :disabled="isUpdating"
-                                class="px-3 py-1 bg-purple-600 text-white text-sm font-medium rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                                class="crs-button crs-button-primary px-3 py-2 text-sm disabled:opacity-50"
                             >
                                 Set Override
                             </button>
@@ -939,25 +926,25 @@
                             v-model="overrideExpiry"
                             type="date"
                             placeholder="Expiry date (optional)"
-                            class="w-full mt-2 text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded focus:ring-primary-500 focus:border-primary-500"
+                            class="crs-input mt-2 w-full text-sm"
                         />
                         <input
                             v-model="overrideReason"
                             type="text"
                             placeholder="Reason for override (optional)"
-                            class="w-full mt-2 text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded focus:ring-primary-500 focus:border-primary-500"
+                            class="crs-input mt-2 w-full text-sm"
                         />
                     </div>
 
                     <!-- 14-Day Free Trial Button -->
                     <div class="flex justify-between items-center">
-                        <span class="text-sm text-gray-600 dark:text-gray-400"
+                        <span class="text-sm text-slate-400"
                             >Grant 14-day Pro trial</span
                         >
                         <button
                             @click="grant14DayTrial"
                             :disabled="isUpdating"
-                            class="px-3 py-1 bg-primary-600 text-white text-sm font-medium rounded hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+                            class="crs-button crs-button-primary px-3 py-2 text-sm disabled:opacity-50"
                         >
                             Grant Trial
                         </button>
@@ -968,17 +955,18 @@
                         v-if="tierInfo?.override"
                         class="flex justify-between items-center"
                     >
-                        <span class="text-sm text-gray-600 dark:text-gray-400"
+                        <span class="text-sm text-slate-400"
                             >Remove tier override</span
                         >
                         <button
                             @click="removeTierOverride"
                             :disabled="isUpdating"
-                            class="px-3 py-1 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+                            class="crs-button-danger px-3 py-2 text-sm disabled:opacity-50"
                         >
                             Remove Override
                         </button>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
