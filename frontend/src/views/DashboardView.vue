@@ -20,7 +20,7 @@
       <MetricCard label="Average win" :value="currency(metrics.avgWin)" hint="Winners only" tone="positive" info="Average currency gain across winning trades only." />
       <MetricCard label="Average loss" :value="currency(metrics.avgLoss)" hint="Losses only" tone="negative" info="Average currency loss across losing trades only." />
       <MetricCard label="Profit factor" :value="String(metrics.profitFactor)" hint="Gross wins / gross losses" tone="warning" info="Gross winning amount divided by gross losing amount. Above 1.0 means gains outweigh losses." />
-      <MetricCard label="Average RR" :value="`${metrics.averageRR}:1`" hint="Planned target vs risk" info="Average planned reward-to-risk ratio based on your entry, stop loss, and target levels." />
+      <MetricCard label="Average RR" :value="`${metrics.averageRR}:1`" hint="Realized result in R" info="Average realized R-multiple across the current dataset, based on how trades actually closed." />
       <MetricCard label="Current streak" :value="streakText" :hint="streakHint" :tone="metrics.currentStreak.type === 'loss' ? 'negative' : 'positive'" info="The current consecutive run of wins, losses, or breakeven trades from the most recent trade backward." />
       <MetricCard label="Best day" :value="bestDayValue" :hint="bestDayHint" tone="positive" info="The single highest-PnL day in the current dataset." />
       <MetricCard label="Worst day" :value="worstDayValue" :hint="worstDayHint" tone="negative" info="The single lowest-PnL day in the current dataset." />

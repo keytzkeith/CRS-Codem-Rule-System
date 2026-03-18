@@ -177,10 +177,10 @@ export function buildDashboardMetrics(trades) {
   const grossWins = wins.reduce((sum, trade) => sum + trade.resultAmount, 0)
   const grossLosses = Math.abs(losses.reduce((sum, trade) => sum + trade.resultAmount, 0))
   const ruleFollowedCount = trades.filter((trade) => trade.journal.followedPlan).length
-  const averageRR = round(
-    trades.reduce((sum, trade) => sum + calculatePlannedRR(trade), 0) / trades.length,
-    2
-  )
+  const realizedRTrades = trades.filter((trade) => Number.isFinite(Number(trade.resultR)))
+  const averageRR = realizedRTrades.length
+    ? round(realizedRTrades.reduce((sum, trade) => sum + Number(trade.resultR || 0), 0) / realizedRTrades.length, 2)
+    : 0
 
   const byDay = trades.reduce((acc, trade) => {
     acc[trade.date] = (acc[trade.date] || 0) + trade.resultAmount
