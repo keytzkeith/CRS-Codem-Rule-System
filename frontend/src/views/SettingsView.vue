@@ -184,6 +184,16 @@
           <p class="crs-eyebrow">Current saved state</p>
           <pre class="overflow-x-auto text-sm text-slate-400">{{ formattedSettings }}</pre>
         </div>
+        <div class="mt-6 rounded-[24px] border border-amber-400/20 bg-amber-400/10 p-5">
+          <p class="crs-eyebrow">Broker sync</p>
+          <h3 class="mt-2 text-lg font-semibold text-white">Connect Goat Funded Trader or other brokers later.</h3>
+          <p class="mt-2 text-sm leading-7 text-slate-300">
+            Use broker sync when you want CRS to pull closed trades directly into the matching account without manual CSV import.
+          </p>
+          <router-link to="/settings/broker-sync" class="crs-button-primary mt-4 inline-flex">
+            Open broker sync
+          </router-link>
+        </div>
       </ChartCard>
     </div>
   </div>

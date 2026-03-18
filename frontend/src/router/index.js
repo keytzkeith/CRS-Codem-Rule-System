@@ -144,6 +144,16 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/settings/broker-sync',
+    name: 'broker-sync',
+    component: () => import('@/views/BrokerSyncView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/broker-sync',
+    redirect: '/settings/broker-sync'
+  },
+  {
     path: '/admin',
     name: 'admin',
     component: () => import('@/views/admin/AdminDashboardView.vue'),

@@ -3,7 +3,7 @@
     <div class="mb-8">
       <h1 class="heading-page">Broker Sync</h1>
       <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-        Connect your brokerage accounts to automatically sync trades.
+        Link funded accounts to CRS and sync closed trades without uploading a CSV file each time.
       </p>
     </div>
 
@@ -57,6 +57,33 @@
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-6">Add Broker Connection</h3>
 
           <div class="grid gap-6 md:grid-cols-2">
+            <!-- GFT Card -->
+            <div
+              class="p-6 border-2 rounded-lg transition-colors cursor-pointer"
+              :class="[
+                !(crsStore.settings.accounts || []).length
+                  ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 opacity-60 cursor-not-allowed'
+                  : 'border-dashed border-amber-300 dark:border-amber-700 hover:border-amber-500 dark:hover:border-amber-400'
+              ]"
+              @click="(crsStore.settings.accounts || []).length && openGFTModal()"
+            >
+              <div class="flex items-center space-x-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
+                  <span class="text-amber-600 dark:text-amber-300 font-bold text-lg">GF</span>
+                </div>
+                <div>
+                  <h4 class="font-medium text-gray-900 dark:text-white">Goat Funded Trader</h4>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {{
+                      !(crsStore.settings.accounts || []).length
+                        ? 'Create a CRS account in Settings first'
+                        : 'Connect with account ID and API token'
+                    }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <!-- IBKR Card -->
             <div
               class="p-6 border-2 rounded-lg transition-colors cursor-pointer"
@@ -102,6 +129,15 @@
                 </div>
               </div>
             </div>
+          </div>
+
+          <div
+            v-if="!(crsStore.settings.accounts || []).length"
+            class="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20"
+          >
+            <p class="text-xs text-red-700 dark:text-red-300">
+              Add at least one CRS account in Settings before connecting Goat Funded Trader. Each broker connection maps to one CRS account.
+            </p>
           </div>
 
           <!-- Schwab Note -->
@@ -184,6 +220,15 @@
       :error="store.error"
     />
 
+    <GFTConnectionModal
+      v-if="showGFTModal"
+      :accounts="crsStore.settings.accounts || []"
+      :loading="store.loading"
+      :error="store.error"
+      @close="closeGFTModal"
+      @save="handleGFTSave"
+    />
+
     <!-- Settings Modal -->
     <ConnectionSettingsModal
       v-if="showSettingsModal"
@@ -199,23 +244,26 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBrokerSyncStore } from '@/stores/brokerSync'
-import { useTradesStore } from '@/stores/trades'
+import { useCrsStore } from '@/stores/crs'
 import { useNotification } from '@/composables/useNotification'
 import BrokerConnectionCard from '@/components/broker-sync/BrokerConnectionCard.vue'
 import IBKRConnectionModal from '@/components/broker-sync/IBKRConnectionModal.vue'
+import GFTConnectionModal from '@/components/broker-sync/GFTConnectionModal.vue'
 import ConnectionSettingsModal from '@/components/broker-sync/ConnectionSettingsModal.vue'
 
 const store = useBrokerSyncStore()
-const tradesStore = useTradesStore()
+const crsStore = useCrsStore()
 const route = useRoute()
 const { showConfirmation, showDangerConfirmation } = useNotification()
 
 const showIBKRModal = ref(false)
+const showGFTModal = ref(false)
 const showSettingsModal = ref(false)
 const selectedConnection = ref(null)
 const successMessage = ref('')
 
 onMounted(async () => {
+  await crsStore.hydratePersistence()
   await store.fetchConnections()
   await store.fetchSyncLogs()
 
@@ -249,6 +297,16 @@ function closeIBKRModal() {
   showIBKRModal.value = false
 }
 
+function openGFTModal() {
+  store.clearError()
+  showGFTModal.value = true
+}
+
+function closeGFTModal() {
+  store.clearError()
+  showGFTModal.value = false
+}
+
 function openSettingsModal(connection) {
   selectedConnection.value = connection
   showSettingsModal.value = true
@@ -259,6 +317,17 @@ async function handleIBKRSave(credentials) {
     await store.addIBKRConnection(credentials)
     showIBKRModal.value = false
     successMessage.value = 'IBKR connection added successfully!'
+    setTimeout(() => { successMessage.value = '' }, 5000)
+  } catch (error) {
+    // Error is handled by store
+  }
+}
+
+async function handleGFTSave(credentials) {
+  try {
+    await store.addGFTConnection(credentials)
+    showGFTModal.value = false
+    successMessage.value = 'Goat Funded Trader connection added successfully!'
     setTimeout(() => { successMessage.value = '' }, 5000)
   } catch (error) {
     // Error is handled by store
@@ -285,9 +354,7 @@ async function handleSync(connection) {
     setTimeout(async () => {
       await store.fetchConnections()
       await store.fetchSyncLogs()
-      // Refresh trades data to update P&L and counts after sync
-      await tradesStore.fetchTrades()
-      await tradesStore.fetchAnalytics()
+      await crsStore.hydrateTrades(true)
     }, 5000)
   } catch (error) {
     // Error is handled by store
@@ -349,13 +416,8 @@ async function handleDeleteTrades(connection) {
         successMessage.value = result.message || `Deleted trades from ${brokerName}`
         setTimeout(() => { successMessage.value = '' }, 5000)
 
-        // Refresh trades data to update P&L and counts
-        console.log('[BROKER-SYNC] Refreshing trades store after delete...')
-        await tradesStore.fetchTrades()
-        await tradesStore.fetchAnalytics()
-        console.log('[BROKER-SYNC] Trades store refreshed. Total P&L:', tradesStore.totalPnL, 'Total trades:', tradesStore.totalTrades)
+        await crsStore.hydrateTrades(true)
       } catch (error) {
-        console.error('[BROKER-SYNC] Error refreshing trades:', error)
         // Error is handled by store
       }
     },

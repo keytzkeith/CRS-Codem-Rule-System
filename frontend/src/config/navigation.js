@@ -27,7 +27,7 @@ export const CRS_NAV_ITEMS = [
     name: 'Settings',
     to: '/settings',
     route: 'settings',
-    activeRoutes: ['settings', 'accounts']
+    activeRoutes: ['settings', 'accounts', 'broker-sync']
   },
   {
     name: 'Admin',
@@ -56,8 +56,6 @@ export const CRS_ROUTE_REDIRECTS = [
   '/billing',
   '/notifications',
   '/price-alerts',
-  '/broker-sync',
-  '/settings/broker-sync',
   '/calendar',
   '/import',
   '/cashflow',
