@@ -177,10 +177,9 @@ export function buildDashboardMetrics(trades) {
   const grossWins = wins.reduce((sum, trade) => sum + trade.resultAmount, 0)
   const grossLosses = Math.abs(losses.reduce((sum, trade) => sum + trade.resultAmount, 0))
   const ruleFollowedCount = trades.filter((trade) => trade.journal.followedPlan).length
-  const realizedRTrades = trades.filter((trade) => Number.isFinite(Number(trade.resultR)))
-  const averageRR = realizedRTrades.length
-    ? round(realizedRTrades.reduce((sum, trade) => sum + Number(trade.resultR || 0), 0) / realizedRTrades.length, 2)
-    : 0
+  const avgWin = wins.length ? round(grossWins / wins.length, 2) : 0
+  const avgLoss = losses.length ? round(grossLosses / losses.length, 2) : 0
+  const averageRR = avgLoss ? round(avgWin / avgLoss, 2) : 0
 
   const byDay = trades.reduce((acc, trade) => {
     acc[trade.date] = (acc[trade.date] || 0) + trade.resultAmount
@@ -216,8 +215,8 @@ export function buildDashboardMetrics(trades) {
     totalTrades: trades.length,
     winRate: round((wins.length / (wins.length + losses.length || trades.length)) * 100, 1),
     netPnl: round(netPnl, 2),
-    avgWin: wins.length ? round(grossWins / wins.length, 2) : 0,
-    avgLoss: losses.length ? round(Math.abs(losses.reduce((sum, trade) => sum + trade.resultAmount, 0)) / losses.length, 2) : 0,
+    avgWin,
+    avgLoss,
     profitFactor: grossLosses ? round(grossWins / grossLosses, 2) : round(grossWins, 2),
     averageRR,
     currentStreak: { type: streakType, count: streakCount },
