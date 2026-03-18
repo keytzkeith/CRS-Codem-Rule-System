@@ -122,7 +122,7 @@
           <button type="button" class="crs-button crs-button-muted" @click="emit('close')">Cancel</button>
           <button :disabled="props.loading || !isValid" class="crs-button-primary disabled:cursor-not-allowed disabled:opacity-60" @click="handleSubmit">
             <span v-if="props.loading" class="flex items-center">
-              <div class="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+              <CrsLoader class="mr-2" compact inline inverse aria-label="Connecting Goat Funded Trader" />
               Connecting...
             </span>
             <span v-else>Connect GFT</span>
@@ -135,6 +135,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import CrsLoader from '@/components/crs/CrsLoader.vue'
 
 const props = defineProps({
   loading: {

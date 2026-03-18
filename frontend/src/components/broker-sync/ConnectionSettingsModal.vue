@@ -120,7 +120,7 @@
             class="crs-button-primary disabled:cursor-not-allowed disabled:opacity-60"
           >
             <span v-if="loading" class="flex items-center">
-              <div class="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+              <CrsLoader class="mr-2" compact inline inverse aria-label="Saving connection settings" />
               Saving...
             </span>
             <span v-else>Save changes</span>
@@ -133,6 +133,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import CrsLoader from '@/components/crs/CrsLoader.vue'
 
 const props = defineProps({
   connection: {

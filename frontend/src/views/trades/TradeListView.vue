@@ -78,10 +78,10 @@
       <button
         type="button"
         class="crs-button-danger w-full sm:w-auto"
-        :disabled="crsStore.tradesLoading || !crsStore.sourceTrades.length"
+        :disabled="crsStore.tradesLoading || !accountTradeCount"
         @click="deleteAllTrades"
       >
-        {{ crsStore.tradesLoading ? 'Deleting...' : `Delete all trades (${crsStore.sourceTrades.length})` }}
+        {{ crsStore.tradesLoading ? 'Deleting...' : `Delete all trades (${accountTradeCount})` }}
       </button>
     </div>
 
@@ -89,7 +89,7 @@
       :open="showDeleteAllDialog"
       badge="Delete all trades"
       title="Delete every recorded trade?"
-      :message="`This will permanently remove all ${crsStore.sourceTrades.length} trades from the current ledger. This cannot be undone.`"
+      :message="deleteAllMessage"
       confirm-text="Delete all trades"
       loading-text="Deleting trades..."
       :loading="crsStore.tradesLoading"
@@ -164,6 +164,15 @@ const visibleTags = computed(() =>
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count)
 )
+const accountTradeCount = computed(() => crsStore.trades.length)
+const activeAccountName = computed(() => {
+  const activeId = crsStore.settings.activeAccountId
+  return crsStore.settings.accounts?.find((account) => account.id === activeId)?.name || ''
+})
+const deleteAllMessage = computed(() => {
+  const scope = activeAccountName.value ? `"${activeAccountName.value}"` : 'the current ledger'
+  return `This will permanently remove all ${accountTradeCount.value} trades from ${scope}. This cannot be undone.`
+})
 
 function openTrade(trade) {
   router.push(`/trades/${trade.id}`)
@@ -213,7 +222,7 @@ async function exportTrades() {
 }
 
 async function deleteAllTrades() {
-  if (!crsStore.sourceTrades.length) {
+  if (!accountTradeCount.value) {
     return
   }
 

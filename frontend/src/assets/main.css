@@ -44,6 +44,118 @@
 }
 
 @layer components {
+  .crs-loader {
+    --loader-bar-width: 0.42rem;
+    --loader-bar-min: 0.9rem;
+    --loader-bar-max: 2.8rem;
+    --loader-gap: 0.45rem;
+    --loader-height: 3.6rem;
+    --loader-shadow: rgba(115, 226, 167, 0.16);
+    --loader-from: rgba(115, 226, 167, 0.92);
+    --loader-to: rgba(215, 183, 122, 0.92);
+    display: grid;
+    gap: 0.9rem;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .crs-loader-inline {
+    display: inline-grid;
+    gap: 0;
+    justify-items: start;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .crs-loader-compact {
+    --loader-bar-width: 0.28rem;
+    --loader-bar-min: 0.55rem;
+    --loader-bar-max: 1.55rem;
+    --loader-gap: 0.28rem;
+    --loader-height: 1.8rem;
+  }
+
+  .crs-loader-inverse {
+    --loader-shadow: rgba(255, 255, 255, 0.12);
+    --loader-from: rgba(255, 255, 255, 0.95);
+    --loader-to: rgba(215, 183, 122, 0.9);
+  }
+
+  .crs-loader__graph {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--loader-gap);
+    height: var(--loader-height);
+  }
+
+  .crs-loader__bar {
+    width: var(--loader-bar-width);
+    height: var(--loader-bar-min);
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--loader-from), var(--loader-to));
+    box-shadow: 0 0 16px var(--loader-shadow);
+    animation: crs-oscillate 1.15s ease-in-out infinite;
+  }
+
+  .crs-loader__bar:nth-child(2) {
+    animation-delay: 0.08s;
+  }
+
+  .crs-loader__bar:nth-child(3) {
+    animation-delay: 0.16s;
+  }
+
+  .crs-loader__bar:nth-child(4) {
+    animation-delay: 0.24s;
+  }
+
+  .crs-loader__bar:nth-child(5) {
+    animation-delay: 0.32s;
+  }
+
+  .crs-loader__bar:nth-child(6) {
+    animation-delay: 0.4s;
+  }
+
+  .crs-loader__bar:nth-child(7) {
+    animation-delay: 0.48s;
+  }
+
+  .crs-loader__title {
+    margin: 0;
+    color: #e8eef9;
+    font-family: var(--crs-font-body);
+    font-size: 1.02rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .crs-loader__text {
+    margin: 0.3rem 0 0;
+    color: #93a4bd;
+    font-family: var(--crs-font-body);
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+
+  .crs-loader__copy {
+    display: grid;
+    gap: 0.1rem;
+  }
+
+  @keyframes crs-oscillate {
+    0%, 100% {
+      height: var(--loader-bar-min);
+      opacity: 0.5;
+    }
+
+    50% {
+      height: var(--loader-bar-max);
+      opacity: 1;
+    }
+  }
+
   .btn {
     @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium transition;
     min-height: 44px; /* Ensures proper touch target size on mobile */

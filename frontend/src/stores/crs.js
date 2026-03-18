@@ -10,7 +10,6 @@ import {
   buildFilterOptions,
   calculateActualRiskAmount,
   calculateNetPnl,
-  calculatePipValuePerLot,
   calculatePipsMoved,
   calculateResultR,
   calculateRiskAmount,
@@ -401,14 +400,14 @@ export const useCrsStore = defineStore('crs', () => {
   }
 
   async function deleteAllTrades() {
-    const ids = sourceTrades.value.map((trade) => trade.id).filter(Boolean)
+    const ids = trades.value.map((trade) => trade.id).filter(Boolean)
 
     if (!ids.length) {
       return
     }
 
     if (!localStorage.getItem('token')) {
-      sourceTrades.value = []
+      sourceTrades.value = sourceTrades.value.filter((trade) => !ids.includes(trade.id))
       return
     }
 

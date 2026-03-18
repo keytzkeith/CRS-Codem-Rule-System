@@ -95,7 +95,7 @@
             class="crs-button-primary px-3 py-1.5 text-sm"
           >
             <span v-if="syncing" class="flex items-center">
-              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              <CrsLoader class="mr-2" compact inline inverse aria-label="Syncing broker trades" />
               Syncing...
             </span>
             <span v-else>Sync Now</span>
@@ -116,6 +116,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useBrokerSyncStore } from '@/stores/brokerSync'
+import CrsLoader from '@/components/crs/CrsLoader.vue'
 
 const props = defineProps({
   connection: {

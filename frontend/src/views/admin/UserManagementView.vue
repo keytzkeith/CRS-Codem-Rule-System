@@ -9,9 +9,11 @@
 
         <!-- Loading state -->
         <div v-if="loading" class="flex justify-center items-center h-64">
-            <div
-                class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"
-            ></div>
+            <CrsLoader
+                title="Loading users"
+                text="Pulling account status, roles, and approval state."
+                aria-label="Loading users"
+            />
         </div>
 
         <!-- Error state -->
@@ -979,6 +981,7 @@ import api from "@/services/api";
 import { useNotification } from "@/composables/useNotification";
 import { useAuthStore } from "@/stores/auth";
 import MdiIcon from "@/components/MdiIcon.vue";
+import CrsLoader from "@/components/crs/CrsLoader.vue";
 import { mdiCheckCircle, mdiCloseCircle } from "@mdi/js";
 
 const { showSuccess, showError } = useNotification();

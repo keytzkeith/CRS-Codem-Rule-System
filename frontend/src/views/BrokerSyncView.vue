@@ -27,7 +27,7 @@
     </div>
 
     <div v-if="store.loading && !store.hasConnections" class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      <CrsLoader title="Loading broker sync" text="Checking connected brokers and recent sync runs." aria-label="Loading broker sync" />
     </div>
 
     <div v-else class="space-y-8">
@@ -230,6 +230,7 @@ import { useBrokerSyncStore } from '@/stores/brokerSync'
 import { useCrsStore } from '@/stores/crs'
 import { useNotification } from '@/composables/useNotification'
 import ChartCard from '@/components/crs/ChartCard.vue'
+import CrsLoader from '@/components/crs/CrsLoader.vue'
 import SectionHeader from '@/components/crs/SectionHeader.vue'
 import BrokerConnectionCard from '@/components/broker-sync/BrokerConnectionCard.vue'
 import IBKRConnectionModal from '@/components/broker-sync/IBKRConnectionModal.vue'

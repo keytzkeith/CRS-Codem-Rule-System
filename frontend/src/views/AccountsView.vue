@@ -9,7 +9,7 @@
 
     <!-- Loading State -->
     <div v-if="loading" class="flex justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      <CrsLoader title="Loading accounts" text="Pulling in your account list and balances." aria-label="Loading trading accounts" />
     </div>
 
     <!-- Error State -->
@@ -242,6 +242,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
+import CrsLoader from '@/components/crs/CrsLoader.vue'
 
 const loading = ref(true)
 const saving = ref(false)

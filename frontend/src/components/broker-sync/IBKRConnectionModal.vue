@@ -109,7 +109,7 @@
             class="crs-button-primary disabled:cursor-not-allowed disabled:opacity-60"
           >
             <span v-if="loading" class="flex items-center">
-              <div class="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+              <CrsLoader class="mr-2" compact inline inverse aria-label="Connecting Interactive Brokers" />
               Connecting...
             </span>
             <span v-else>Connect</span>
@@ -122,6 +122,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import CrsLoader from '@/components/crs/CrsLoader.vue'
 
 const props = defineProps({
   loading: {
