@@ -287,6 +287,7 @@ function buildAccountsLookup(accounts = []) {
 
   accounts.forEach((account) => {
     const keys = [
+      account.id,
       account.account_name,
       account.account_identifier,
       account.name,
@@ -363,7 +364,7 @@ function createTradeDraftFromRow(row, fieldMapping, options = {}) {
     stopLoss,
     takeProfit,
     broker: 'crs',
-    accountIdentifier: account?.account_identifier || account?.identifier || null,
+    accountIdentifier: account?.id || account?.account_identifier || account?.identifier || null,
     strategy: session,
     setup,
     setupStack: [setup],

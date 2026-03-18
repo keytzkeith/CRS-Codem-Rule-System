@@ -40,7 +40,13 @@ export const useCrsStore = defineStore('crs', () => {
       return sourceTrades.value
     }
 
-    return sourceTrades.value.filter((trade) => trade.accountId === activeAccountId)
+    const activeAccount = settings.value.accounts.find((account) => account.id === activeAccountId)
+    const legacyIdentifier = String(activeAccount?.identifier || '').trim()
+
+    return sourceTrades.value.filter((trade) => {
+      const tradeAccountId = String(trade.accountId || '').trim()
+      return tradeAccountId === String(activeAccountId) || (legacyIdentifier && tradeAccountId === legacyIdentifier)
+    })
   })
 
   const sortedTrades = computed(() => sortTradesDesc(trades.value))
@@ -928,6 +934,7 @@ function mapAccountFromBackend(account) {
   return {
     id: account.id,
     name: account.accountName || account.account_name || 'Account',
+    identifier: account.accountIdentifier || account.account_identifier || '',
     size: Number(account.initialBalance ?? account.initial_balance ?? 0)
   }
 }
@@ -1147,11 +1154,11 @@ function slugifyChecklistLabel(label = '') {
 }
 
 function resolveAccountName(accountId, accounts = []) {
-  return accounts.find((account) => account.id === accountId)?.name || ''
+  return accounts.find((account) => account.id === accountId || account.identifier === accountId)?.name || ''
 }
 
 function resolveAccountSize(accountId, accounts = []) {
-  return accounts.find((account) => account.id === accountId)?.size || 0
+  return accounts.find((account) => account.id === accountId || account.identifier === accountId)?.size || 0
 }
 
 function resolveApiErrorMessage(error, fallback) {

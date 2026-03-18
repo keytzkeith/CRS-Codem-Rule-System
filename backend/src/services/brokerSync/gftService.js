@@ -212,6 +212,16 @@ class GFTService {
         imported++;
       } catch (error) {
         if (error?.code === 'DUPLICATE_TRADE' || error?.status === 409) {
+          const duplicateTrade = await this.findDuplicateTradeBySignature(userId, tradeData);
+          if (duplicateTrade?.id) {
+            await this.updateExistingTrade(duplicateTrade.id, userId, {
+              ...tradeData,
+              brokerConnectionId: connectionId
+            });
+            updated++;
+            continue;
+          }
+
           duplicates++;
           continue;
         }
@@ -227,6 +237,18 @@ class GFTService {
     }
 
     return { imported, updated, skipped, failed, duplicates };
+  }
+
+  async findDuplicateTradeBySignature(userId, tradeData) {
+    return Trade.findDuplicateBySignature(userId, {
+      symbol: tradeData.symbol,
+      side: tradeData.side,
+      entryTime: tradeData.entryTime,
+      entryPrice: tradeData.entryPrice,
+      exitPrice: tradeData.exitPrice,
+      quantity: tradeData.quantity,
+      account_identifier: tradeData.accountIdentifier
+    });
   }
 
   async findExistingTrade(userId, connectionId, externalTradeId) {
@@ -289,6 +311,7 @@ class GFTService {
            account_identifier = $20,
            contract_multiplier = $21,
            external_trade_id = $22,
+           broker_connection_id = $23,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $1 AND user_id = $2`,
       [
@@ -314,6 +337,8 @@ class GFTService {
         tradeData.accountIdentifier,
         tradeData.contractMultiplier,
         tradeData.externalTradeId
+        ,
+        tradeData.brokerConnectionId || null
       ]
     );
   }
