@@ -81,9 +81,9 @@
           v-else
           eyebrow="No equity data"
           title="Analytics needs trades first."
-          description="Once there are recorded trades, the equity curve and all derived analytics will populate automatically."
+          description="Once there are imported trades, the equity curve and all derived analytics will populate automatically."
         >
-          <router-link to="/trades/new" class="crs-button-primary">Add trade</router-link>
+          <router-link to="/trades/import" class="crs-button-primary">Import trades</router-link>
         </EmptyState>
       </ChartCard>
 

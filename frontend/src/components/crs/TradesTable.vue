@@ -3,7 +3,7 @@
     <div v-if="!trades.length" class="crs-empty-state">
       <div class="crs-empty-badge">No matching trades</div>
       <h3 class="text-xl font-semibold tracking-[-0.03em] text-white">The current filter stack returned nothing.</h3>
-      <p class="max-w-md text-sm leading-7 text-slate-400">Change the setup, date, tag, or result filters, or add a new trade to start building the ledger.</p>
+      <p class="max-w-md text-sm leading-7 text-slate-400">Change the setup, date, tag, or result filters, or import another batch to keep building the ledger.</p>
     </div>
 
     <div v-else class="hidden overflow-hidden rounded-[24px] border border-white/10 lg:block">

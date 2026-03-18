@@ -11,7 +11,6 @@
           <button type="button" class="crs-button crs-button-ghost w-full sm:w-auto" :disabled="exporting" @click="exportTrades">
             {{ exporting ? 'Exporting...' : 'Export CSV' }}
           </button>
-          <router-link :to="accountRequiredRoute('/trades/new')" class="crs-button-primary w-full sm:w-auto">Add trade</router-link>
         </div>
       </SectionHeader>
     </section>

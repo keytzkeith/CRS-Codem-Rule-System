@@ -89,9 +89,9 @@
           v-else
           eyebrow="No equity data"
           title="No trades yet to draw the curve."
-          description="As soon as you save a trade, the dashboard will start plotting the account path and recent execution rhythm."
+          description="As soon as you import trades, the dashboard will start plotting the account path and recent execution rhythm."
         >
-          <router-link to="/trades/new" class="crs-button-primary">Add trade</router-link>
+          <router-link to="/trades/import" class="crs-button-primary">Import trades</router-link>
         </EmptyState>
       </ChartCard>
 
@@ -154,7 +154,7 @@
           title="No recent trades to review."
           description="Your most recent executions will appear here as soon as the ledger has data."
         >
-          <router-link to="/trades/new" class="crs-button-primary">Record trade</router-link>
+          <router-link to="/trades/import" class="crs-button-primary">Import trades</router-link>
         </EmptyState>
       </ChartCard>
 

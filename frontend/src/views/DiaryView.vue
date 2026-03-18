@@ -24,9 +24,9 @@
           v-else
           eyebrow="Journal empty"
           title="No reflections recorded yet."
-          description="Once trades are saved, this page becomes the quick review layer for discipline, emotions, and repeated mistakes."
+          description="Once imported trades are saved, this page becomes the quick review layer for discipline, emotions, and repeated mistakes."
         >
-          <router-link to="/trades/new" class="crs-button-primary">Record first trade</router-link>
+          <router-link to="/trades/import" class="crs-button-primary">Import first trades</router-link>
         </EmptyState>
       </ChartCard>
 
@@ -97,9 +97,9 @@
         v-else
         eyebrow="No entries"
         title="The journal ledger is empty."
-        description="Create a trade first, then this page will show the linked notes, emotions, and lessons for review."
+        description="Import trades first, then this page will show the linked notes, emotions, and lessons for review."
       >
-        <router-link to="/trades/new" class="crs-button-primary">Add trade</router-link>
+        <router-link to="/trades/import" class="crs-button-primary">Import trades</router-link>
       </EmptyState>
     </ChartCard>
   </div>

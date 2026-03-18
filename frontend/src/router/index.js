@@ -69,8 +69,7 @@ const routes = [
   {
     path: '/trades/new',
     name: 'trade-create',
-    component: () => import('@/views/trades/TradeFormView.vue'),
-    meta: { requiresAuth: true }
+    redirect: '/trades/import'
   },
   {
     path: '/trades/import',
