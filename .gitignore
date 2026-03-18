@@ -25,6 +25,7 @@ config/secrets/
 !config/siteIdentity.json
 !config/release.json
 !docs-site/package.json
+!frontend/vercel.json
 # OS-specific files
 .DS_Store
 .DS_Store?
