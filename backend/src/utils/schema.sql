@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS trades (
     notes TEXT,
     is_public BOOLEAN DEFAULT FALSE,
     broker VARCHAR(50),
+    account_identifier VARCHAR(50),
     instrument_type VARCHAR(20) DEFAULT 'stock',
     strategy VARCHAR(100),
     setup VARCHAR(100),
