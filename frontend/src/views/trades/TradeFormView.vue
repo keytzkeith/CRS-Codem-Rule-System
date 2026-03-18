@@ -130,7 +130,24 @@
               <span>Result amount</span>
               <div class="relative">
                 <span class="crs-field-prefix">{{ currencySymbol }}</span>
-                <input :value="resultAmount.toFixed(2)" type="text" class="crs-input crs-input-prefixed" readonly />
+                <input
+                  v-model.number="form.resultAmount"
+                  type="number"
+                  step="0.01"
+                  class="crs-input crs-input-prefixed"
+                  placeholder="0.00"
+                  @input="resultAmountDirty = true"
+                />
+              </div>
+              <div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+                <span>Estimated from price and size: {{ currency(estimatedResultAmount) }}</span>
+                <button
+                  type="button"
+                  class="rounded-full border border-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 transition hover:border-amber-200/40 hover:text-amber-100"
+                  @click="applyEstimatedResultAmount"
+                >
+                  Use estimate
+                </button>
               </div>
             </label>
           </div>
@@ -210,7 +227,7 @@
             <MetricCard label="Actual risk" :value="currency(actualRiskAmount)" hint="From stop and volume" tone="warning" info="Calculated from stop-loss distance, volume, and contract multiplier. This is the true amount placed at risk on the trade." />
             <MetricCard label="Risk of account" :value="`${riskPercentOfAccount.toFixed(3)}%`" hint="Consistency check" info="Shows the actual percentage of the selected account risked on this trade so you can compare it to your usual standard." />
             <MetricCard label="Pips / points" :value="String(pipsMoved)" hint="Move captured" info="The signed move from entry to close converted using the inferred or overridden pip size." />
-            <MetricCard label="Result amount" :value="currency(resultAmount)" :tone="resultAmount >= 0 ? 'positive' : 'negative'" hint="Calculated automatically" info="Computed from price movement, volume, contract multiplier, commission, and swap or fees." />
+            <MetricCard label="Result amount" :value="currency(form.resultAmount)" :tone="form.resultAmount >= 0 ? 'positive' : 'negative'" hint="Broker or manual net result" info="Use the actual broker net PnL when you have it. The estimate above is only a quick helper." />
             <MetricCard label="Plan-followed" :value="form.journal.followedPlan ? 'Yes' : 'No'" hint="Journal switch" />
           </div>
         </ChartCard>
@@ -250,6 +267,7 @@ const existingTrade = computed(() => (route.params.id ? crsStore.getTradeById(ro
 const isEditing = computed(() => Boolean(existingTrade.value))
 
 const form = reactive(buildForm(existingTrade.value))
+const resultAmountDirty = ref(hasStoredResultAmount(existingTrade.value))
 const checklistItems = computed(() => crsStore.settings.checklistItems || [])
 const availableSetupTypes = computed(() => crsStore.availableSetupTypes)
 const availableTags = computed(() => crsStore.availableTags)
@@ -276,7 +294,7 @@ const plannedRR = computed(() => `${calculatePlannedRR({
   stopLoss: form.stopLoss,
   takeProfit: form.takeProfit
 })}:1`)
-const resultAmount = computed(() => calculateNetPnl({
+const estimatedResultAmount = computed(() => calculateNetPnl({
   entry: form.entry,
   closePrice: form.closePrice,
   direction: form.direction,
@@ -292,16 +310,12 @@ const actualRiskAmount = computed(() => calculateActualRiskAmount({
   contractMultiplier: form.contractMultiplier
 }))
 const calculatedResultR = computed(() => {
-  if (!actualRiskAmount.value) {
-    return calculateResultR({
-      entry: form.entry,
-      stopLoss: form.stopLoss,
-      closePrice: form.closePrice,
-      direction: form.direction
-    })
-  }
-
-  return Number((resultAmount.value / actualRiskAmount.value).toFixed(3))
+  return calculateResultR({
+    entry: form.entry,
+    stopLoss: form.stopLoss,
+    closePrice: form.closePrice,
+    direction: form.direction
+  })
 })
 const riskPercentOfAccount = computed(() => calculateRiskPercentOfAccount({
   entry: form.entry,
@@ -321,14 +335,25 @@ watch(
   existingTrade,
   (nextTrade) => {
     Object.assign(form, buildForm(nextTrade))
+    resultAmountDirty.value = hasStoredResultAmount(nextTrade)
   },
   { immediate: false }
 )
 
 watch(
-  [() => form.entry, () => form.stopLoss, () => form.closePrice, () => form.direction, () => form.volume, () => form.contractMultiplier, () => form.commission, () => form.swap],
+  [() => form.entry, () => form.stopLoss, () => form.closePrice, () => form.direction],
   () => {
     form.resultR = calculatedResultR.value
+  },
+  { immediate: true }
+)
+
+watch(
+  [() => form.entry, () => form.closePrice, () => form.direction, () => form.volume, () => form.contractMultiplier, () => form.commission, () => form.swap],
+  () => {
+    if (!resultAmountDirty.value) {
+      form.resultAmount = estimatedResultAmount.value
+    }
   },
   { immediate: true }
 )
@@ -386,7 +411,8 @@ async function submitTrade() {
       actualRiskAmount: actualRiskAmount.value,
       riskPercentOfAccount: riskPercentOfAccount.value,
       pips: pipsMoved.value,
-      resultAmount: resultAmount.value
+      resultAmount: Number(form.resultAmount || 0),
+      resultR: form.resultR
     })
 
     router.push(`/trades/${savedTrade.id}`)
@@ -454,7 +480,7 @@ function buildForm(trade) {
     takeProfit: trade.takeProfit,
     closePrice: trade.closePrice || trade.entry,
     resultR: trade.resultR,
-    resultAmount: trade.resultAmount,
+    resultAmount: Number(trade.resultAmount || 0),
     tags: [...trade.tags],
     screenshot: trade.screenshot || '',
     journal: {
@@ -473,6 +499,15 @@ function currency(value) {
   }).format(Math.abs(value))
 
   return value < 0 ? `-${amount}` : amount
+}
+
+function applyEstimatedResultAmount() {
+  form.resultAmount = estimatedResultAmount.value
+  resultAmountDirty.value = false
+}
+
+function hasStoredResultAmount(trade) {
+  return Number.isFinite(Number(trade?.resultAmount))
 }
 
 function formatTradeSaveError(error) {
