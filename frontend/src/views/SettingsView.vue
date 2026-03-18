@@ -186,9 +186,9 @@
         </div>
         <div class="mt-6 rounded-[24px] border border-amber-400/20 bg-amber-400/10 p-5">
           <p class="crs-eyebrow">Broker sync</p>
-          <h3 class="mt-2 text-lg font-semibold text-white">Connect Goat Funded Trader or other brokers later.</h3>
+          <h3 class="mt-2 text-lg font-semibold text-white">Connect a broker account.</h3>
           <p class="mt-2 text-sm leading-7 text-slate-300">
-            Use broker sync when you want CRS to pull closed trades directly into the matching account without manual CSV import.
+            Pull closed trades into the right CRS account without importing a file each time.
           </p>
           <router-link to="/settings/broker-sync" class="crs-button-primary mt-4 inline-flex">
             Open broker sync

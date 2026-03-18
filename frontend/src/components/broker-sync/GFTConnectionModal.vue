@@ -8,7 +8,7 @@
           <div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Connect Goat Funded Trader</h3>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Link one GFT account to one CRS account, then sync closed trades directly into the journal.
+              Map one GFT account to one CRS account, then sync closed trades straight into the journal.
             </p>
           </div>
           <button
@@ -23,7 +23,7 @@
 
         <div class="space-y-6 p-6">
           <div class="rounded-lg bg-amber-50 p-4 dark:bg-amber-900/20">
-            <h4 class="mb-2 text-sm font-medium text-amber-800 dark:text-amber-300">What you need</h4>
+            <h4 class="mb-2 text-sm font-medium text-amber-800 dark:text-amber-300">Before you connect</h4>
             <ol class="list-inside list-decimal space-y-2 text-sm text-amber-700 dark:text-amber-400">
               <li>Create or choose the CRS account that should own these imported trades.</li>
               <li>Paste the GFT account ID used by the broker API.</li>

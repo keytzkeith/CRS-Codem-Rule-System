@@ -9,6 +9,7 @@ const ibkrService = require('../services/brokerSync/ibkrService');
 const gftService = require('../services/brokerSync/gftService');
 const schwabService = require('../services/brokerSync/schwabService');
 const brokerSyncService = require('../services/brokerSync');
+const encryptionService = require('../services/brokerSync/encryptionService');
 const AnalyticsCache = require('../services/analyticsCache');
 const cache = require('../utils/cache');
 const logger = require('../utils/logger');
@@ -168,6 +169,15 @@ const brokerSyncController = {
         });
       }
 
+      try {
+        encryptionService.validateKey();
+      } catch (error) {
+        return res.status(503).json({
+          success: false,
+          error: 'Broker sync is not fully configured yet. Add BROKER_ENCRYPTION_KEY on the server and redeploy.'
+        });
+      }
+
       const account = await Account.findById(accountId, userId);
       if (!account) {
         return res.status(404).json({
@@ -212,6 +222,20 @@ const brokerSyncController = {
         message: 'Goat Funded Trader connection added successfully'
       });
     } catch (error) {
+      if (error?.code === '23505') {
+        return res.status(409).json({
+          success: false,
+          error: 'That GFT account is already connected to this CRS account.'
+        });
+      }
+
+      if (error?.code === '42703') {
+        return res.status(503).json({
+          success: false,
+          error: 'The server is missing the latest broker sync database changes. Redeploy the backend and try again.'
+        });
+      }
+
       logger.logError('Error adding GFT connection:', error);
       next(error);
     }

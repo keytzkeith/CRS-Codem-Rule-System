@@ -3,7 +3,7 @@
     <div class="mb-8">
       <h1 class="heading-page">Broker Sync</h1>
       <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-        Link funded accounts to CRS and sync closed trades without uploading a CSV file each time.
+        Connect broker accounts and bring closed trades into CRS without repeating the CSV step.
       </p>
     </div>
 
