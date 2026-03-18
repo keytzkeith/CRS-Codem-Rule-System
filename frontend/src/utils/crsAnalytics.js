@@ -7,6 +7,29 @@ function round(value, digits = 2) {
   return Math.round(value * factor) / factor
 }
 
+function normalizeDirection(direction) {
+  const value = String(direction || '').trim().toLowerCase()
+  if (value === 'short' || value === 'sell') {
+    return 'short'
+  }
+
+  return 'long'
+}
+
+function hasValidStopFrame({ entry, stopLoss, direction }) {
+  const normalizedDirection = normalizeDirection(direction)
+
+  if (!entry || !stopLoss) {
+    return false
+  }
+
+  if (normalizedDirection === 'short') {
+    return stopLoss > entry
+  }
+
+  return stopLoss < entry
+}
+
 export function classifyTradeOutcome(trade) {
   const resultAmount = Number(trade?.resultAmount)
   if (Number.isFinite(resultAmount)) {
@@ -35,10 +58,19 @@ export function classifyTradeOutcome(trade) {
 }
 
 export function calculatePlannedRR(trade) {
-  const risk = Math.abs(trade.entry - trade.stopLoss)
-  const reward = Math.abs(trade.takeProfit - trade.entry)
+  const entry = Number(trade?.entry || 0)
+  const stopLoss = Number(trade?.stopLoss || 0)
+  const takeProfit = Number(trade?.takeProfit || 0)
+  const direction = normalizeDirection(trade?.direction)
 
-  if (!risk) {
+  if (!hasValidStopFrame({ entry, stopLoss, direction }) || !takeProfit) {
+    return 0
+  }
+
+  const risk = direction === 'short' ? stopLoss - entry : entry - stopLoss
+  const reward = direction === 'short' ? entry - takeProfit : takeProfit - entry
+
+  if (!risk || reward <= 0) {
     return 0
   }
 
@@ -46,15 +78,17 @@ export function calculatePlannedRR(trade) {
 }
 
 export function calculateResultR(trade) {
-  const risk = Math.abs(Number(trade.entry || 0) - Number(trade.stopLoss || 0))
-  const close = Number(trade.closePrice ?? trade.exitPrice ?? 0)
   const entry = Number(trade.entry || 0)
+  const stopLoss = Number(trade.stopLoss || 0)
+  const close = Number(trade.closePrice ?? trade.exitPrice ?? 0)
+  const direction = normalizeDirection(trade.direction)
 
-  if (!risk || !close || !entry) {
+  if (!close || !entry || !hasValidStopFrame({ entry, stopLoss, direction })) {
     return 0
   }
 
-  const reward = trade.direction === 'Short' ? entry - close : close - entry
+  const risk = direction === 'short' ? stopLoss - entry : entry - stopLoss
+  const reward = direction === 'short' ? entry - close : close - entry
   return round(reward / risk, 3)
 }
 
@@ -126,11 +160,19 @@ export function calculatePipValuePerLot(trade) {
 }
 
 export function calculateActualRiskAmount(trade) {
-  const riskDistance = Math.abs(Number(trade.entry || 0) - Number(trade.stopLoss || 0))
+  const entry = Number(trade.entry || 0)
+  const stopLoss = Number(trade.stopLoss || 0)
   const volume = Number(trade.volume || trade.quantity || 0)
   const multiplier = Number(trade.contractMultiplier || 1)
   const pair = String(trade.pair || trade.symbol || '').toUpperCase()
   const pipSize = Number(trade.pipSize || inferPipSize(pair))
+  const direction = normalizeDirection(trade.direction)
+
+  if (!hasValidStopFrame({ entry, stopLoss, direction })) {
+    return 0
+  }
+
+  const riskDistance = direction === 'short' ? stopLoss - entry : entry - stopLoss
 
   if (!riskDistance || !volume || !multiplier) {
     return 0

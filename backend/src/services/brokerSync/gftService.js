@@ -134,6 +134,8 @@ class GFTService {
     const commission = this.toNumber(trade?.commission);
     const swap = this.toNumber(trade?.swap);
     const pnl = Number((profit + swap - commission).toFixed(2));
+    const rawStopLoss = this.nullableNumber(trade?.sl);
+    const rawTakeProfit = this.nullableNumber(trade?.tp);
 
     return {
       externalTradeId: String(trade?.id || '').trim(),
@@ -151,8 +153,8 @@ class GFTService {
       fees: 0,
       broker: 'gft',
       instrumentType: this.inferInstrumentType(symbol),
-      stopLoss: this.nullableNumber(trade?.sl),
-      takeProfit: this.nullableNumber(trade?.tp),
+      stopLoss: this.sanitizeStopLoss(rawStopLoss, entryPrice, side),
+      takeProfit: this.sanitizeTakeProfit(rawTakeProfit, entryPrice, side),
       brokerConnectionId: connection.id,
       accountIdentifier: connection.accountId || connection.externalAccountId,
       contractMultiplier: this.inferContractMultiplier(symbol),
@@ -394,6 +396,38 @@ class GFTService {
 
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  sanitizeStopLoss(stopLoss, entryPrice, side) {
+    if (stopLoss === null || stopLoss === undefined) {
+      return null;
+    }
+
+    if (side === 'long') {
+      return stopLoss < entryPrice ? stopLoss : null;
+    }
+
+    if (side === 'short') {
+      return stopLoss > entryPrice ? stopLoss : null;
+    }
+
+    return null;
+  }
+
+  sanitizeTakeProfit(takeProfit, entryPrice, side) {
+    if (takeProfit === null || takeProfit === undefined) {
+      return null;
+    }
+
+    if (side === 'long') {
+      return takeProfit > entryPrice ? takeProfit : null;
+    }
+
+    if (side === 'short') {
+      return takeProfit < entryPrice ? takeProfit : null;
+    }
+
+    return null;
   }
 }
 

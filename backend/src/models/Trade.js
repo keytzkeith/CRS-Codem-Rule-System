@@ -360,7 +360,7 @@ class Trade {
     // Debug logging for default stop loss/take profit application
     console.log(`[DEFAULTS] Checking defaults for ${symbol}: stopLoss=${stopLoss}, takeProfit=${takeProfit}, entryPrice=${entryPrice}`);
 
-    if ((!finalStopLoss || !finalTakeProfit) && entryPrice) {
+    if ((!finalStopLoss || !finalTakeProfit) && entryPrice && !options.skipApiCalls) {
       try {
         const User = require('./User');
         userSettings = await User.getSettings(userId);
@@ -489,7 +489,7 @@ class Trade {
         // Continue without defaults if there's an error
       }
     } else {
-      console.log(`[DEFAULTS] Skipping defaults: stopLoss=${finalStopLoss ? 'provided' : 'missing'}, takeProfit=${finalTakeProfit ? 'provided' : 'missing'}, entryPrice=${entryPrice ? 'provided' : 'missing'}`);
+      console.log(`[DEFAULTS] Skipping defaults: stopLoss=${finalStopLoss ? 'provided' : 'missing'}, takeProfit=${finalTakeProfit ? 'provided' : 'missing'}, entryPrice=${entryPrice ? 'provided' : 'missing'}, skipApiCalls=${options.skipApiCalls ? 'yes' : 'no'}`);
     }
 
     console.log(`[DEFAULTS] Final values for ${symbol}: stopLoss=${finalStopLoss}, takeProfit=${finalTakeProfit}`);
