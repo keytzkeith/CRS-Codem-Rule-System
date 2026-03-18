@@ -1,137 +1,115 @@
 <template>
-  <div class="fixed inset-0 z-50 overflow-y-auto">
-    <div class="flex min-h-full items-center justify-center p-4">
-      <!-- Backdrop -->
-      <div class="fixed inset-0 bg-black/50 transition-opacity" @click="emit('close')"></div>
+  <div class="crs-modal-shell">
+    <div class="crs-modal-frame">
+      <div class="crs-modal-backdrop" @click="emit('close')"></div>
 
-      <!-- Modal -->
-      <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg">
-        <!-- Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            Connect Interactive Brokers
-          </h3>
-          <button
-            @click="emit('close')"
-            class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-          >
+      <div class="crs-modal-panel max-w-lg">
+        <div class="crs-modal-header">
+          <div>
+            <h3 class="crs-modal-title">Connect Interactive Brokers</h3>
+            <p class="crs-modal-copy">Use your Flex Query details to pull closed trades into CRS on a schedule.</p>
+          </div>
+          <button @click="emit('close')" class="crs-modal-close">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <!-- Body -->
-        <div class="p-6">
-          <!-- Instructions -->
-          <div class="mb-6 p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
-            <h4 class="text-sm font-medium text-primary-800 dark:text-primary-300 mb-2">Setup Instructions</h4>
-            <ol class="text-sm text-primary-700 dark:text-primary-400 space-y-2 list-decimal list-inside">
+        <div class="crs-modal-body">
+          <div class="crs-modal-note">
+            <h4 class="crs-modal-note-title">Before you connect</h4>
+            <ol class="crs-modal-note-copy list-inside list-decimal space-y-2">
               <li>Log in to <a href="https://www.interactivebrokers.com/sso/Login" target="_blank" class="underline font-medium">IBKR Client Portal</a></li>
-              <li>Navigate to <strong>Performance & Reports > Flex Queries</strong></li>
-              <li>Under "Activity Flex Query", click the <strong>+</strong> button to create a new query</li>
-              <li>Name your query, select <strong>Trades</strong> in the Sections, then Save</li>
-              <li>Note the <strong>Query ID</strong> shown next to your saved query</li>
-              <li>Click the <strong>gear icon</strong> next to "Configure Flex Web Service"</li>
-              <li>Generate or copy your <strong>Current Token</strong></li>
+              <li>Navigate to <strong>Performance &amp; Reports &gt; Flex Queries</strong></li>
+              <li>Create an Activity Flex Query that includes the Trades section.</li>
+              <li>Copy the saved query ID and your current Flex token.</li>
             </ol>
-            <p class="mt-3 text-xs text-primary-600 dark:text-primary-400">
-              <a href="https://www.interactivebrokers.com/en/software/am/am/reports/activityflexqueries.htm" target="_blank" class="underline">View IBKR's official Flex Query documentation</a>
+            <p class="mt-3 text-xs text-amber-200">
+              <a href="https://www.interactivebrokers.com/en/software/am/am/reports/activityflexqueries.htm" target="_blank" class="underline">View IBKR Flex Query documentation</a>
             </p>
           </div>
 
-          <!-- Error Message -->
-          <div v-if="props.error" class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <div v-if="props.error" class="crs-modal-error">
             <div class="flex">
-              <svg class="h-5 w-5 text-red-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <svg class="h-5 w-5 flex-shrink-0 text-red-300" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
               </svg>
-              <p class="ml-3 text-sm text-red-700 dark:text-red-300">{{ props.error }}</p>
+              <p class="ml-3">{{ props.error }}</p>
             </div>
           </div>
 
-          <form @submit.prevent="handleSubmit" class="space-y-4">
-            <div>
-              <label for="flexToken" class="label">Flex Token</label>
+          <form class="space-y-4" @submit.prevent="handleSubmit">
+            <label class="crs-filter-field">
+              <span>Flex token</span>
               <input
                 id="flexToken"
                 v-model="form.flexToken"
                 type="password"
-                class="input"
-                placeholder="Enter your Flex Token"
+                class="crs-input"
+                placeholder="Enter your Flex token"
                 required
               />
-            </div>
+            </label>
 
-            <div>
-              <label for="flexQueryId" class="label">Flex Query ID</label>
+            <label class="crs-filter-field">
+              <span>Flex Query ID</span>
               <input
                 id="flexQueryId"
                 v-model="form.flexQueryId"
                 type="text"
-                class="input"
-                placeholder="e.g., 123456"
+                class="crs-input"
+                placeholder="e.g. 123456"
                 required
               />
-            </div>
+            </label>
 
-            <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div class="crs-toggle-row">
               <div>
-                <label class="block text-sm font-medium text-gray-900 dark:text-white">
-                  Auto-Sync
-                </label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  Automatically sync trades daily
-                </p>
+                <label class="crs-toggle-title">Auto-sync</label>
+                <p class="crs-toggle-copy">Automatically sync trades daily.</p>
               </div>
               <button
                 type="button"
                 @click="form.autoSyncEnabled = !form.autoSyncEnabled"
                 :class="[
-                  form.autoSyncEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-600',
-                  'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2'
+                  'crs-switch',
+                  form.autoSyncEnabled ? 'crs-switch-active' : 'crs-switch-idle'
                 ]"
               >
                 <span
                   :class="[
-                    form.autoSyncEnabled ? 'translate-x-5' : 'translate-x-0',
-                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out'
+                    'crs-switch-thumb',
+                    form.autoSyncEnabled ? 'crs-switch-thumb-active' : 'crs-switch-thumb-idle'
                   ]"
                 />
               </button>
             </div>
 
-            <div v-if="form.autoSyncEnabled">
-              <label for="syncTime" class="label">Sync Time</label>
+            <label v-if="form.autoSyncEnabled" class="crs-filter-field">
+              <span>Sync time</span>
               <input
                 id="syncTime"
                 v-model="form.syncTime"
                 type="time"
-                class="input"
+                class="crs-input"
               />
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Time to automatically sync each day (in your local timezone)
+              <p class="text-xs normal-case tracking-normal text-slate-500">
+                Time to automatically sync each day in your local timezone.
               </p>
-            </div>
+            </label>
           </form>
         </div>
 
-        <!-- Footer -->
-        <div class="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
-          <button
-            type="button"
-            @click="emit('close')"
-            class="btn-secondary"
-          >
-            Cancel
-          </button>
+        <div class="crs-modal-footer">
+          <button type="button" @click="emit('close')" class="crs-button crs-button-muted">Cancel</button>
           <button
             @click="handleSubmit"
             :disabled="loading || !isValid"
-            class="btn-primary"
+            class="crs-button-primary disabled:cursor-not-allowed disabled:opacity-60"
           >
             <span v-if="loading" class="flex items-center">
-              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              <div class="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
               Connecting...
             </span>
             <span v-else>Connect</span>
