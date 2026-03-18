@@ -32,6 +32,9 @@ router.get('/connections/:id/logs', brokerSyncController.getSyncLogs);
 // Add IBKR connection
 router.post('/connections/ibkr', brokerSyncController.addIBKRConnection);
 
+// Add Goat Funded Trader connection
+router.post('/connections/gft', brokerSyncController.addGFTConnection);
+
 // Initialize Schwab OAuth flow
 router.post('/connections/schwab/init', brokerSyncController.initSchwabOAuth);
 

@@ -14,7 +14,12 @@
           </div>
 
           <div>
-            <h4 class="font-medium text-gray-900 dark:text-white">{{ brokerStyles.name }}</h4>
+            <h4 class="font-medium text-gray-900 dark:text-white">{{ connection.connectionName || brokerStyles.name }}</h4>
+            <p v-if="connection.connectionName || connection.externalAccountId" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ connection.connectionName ? brokerStyles.name : '' }}
+              <span v-if="connection.connectionName && connection.externalAccountId"> · </span>
+              <span v-if="connection.externalAccountId">Acct {{ connection.externalAccountId }}</span>
+            </p>
             <div class="flex items-center space-x-2 mt-1">
               <span
                 class="px-2 py-0.5 text-xs rounded-full"
@@ -146,6 +151,13 @@ const brokerStyles = computed(() => {
         abbrev: 'CS',
         bgClass: 'bg-blue-100 dark:bg-blue-900/30',
         textClass: 'text-blue-600 dark:text-blue-400'
+      }
+    case 'gft':
+      return {
+        name: 'Goat Funded Trader',
+        abbrev: 'GF',
+        bgClass: 'bg-amber-100 dark:bg-amber-900/30',
+        textClass: 'text-amber-700 dark:text-amber-300'
       }
     default:
       return {

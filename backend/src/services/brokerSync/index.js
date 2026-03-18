@@ -6,6 +6,7 @@
 const BrokerConnection = require('../../models/BrokerConnection');
 const Trade = require('../../models/Trade');
 const db = require('../../config/database');
+const gftService = require('./gftService');
 const ibkrService = require('./ibkrService');
 const schwabService = require('./schwabService');
 
@@ -44,6 +45,14 @@ class BrokerSyncService {
       switch (connection.brokerType) {
         case 'ibkr':
           result = await ibkrService.syncTrades(connection, {
+            startDate,
+            endDate,
+            syncLogId: syncLog.id
+          });
+          break;
+
+        case 'gft':
+          result = await gftService.syncTrades(connection, {
             startDate,
             endDate,
             syncLogId: syncLog.id
@@ -157,10 +166,16 @@ class BrokerSyncService {
    * Validate credentials for a broker connection
    */
   async validateCredentials(brokerType, credentials) {
-    switch (brokerType) {
-      case 'ibkr':
-        return ibkrService.validateCredentials(
-          credentials.flexToken,
+      switch (brokerType) {
+        case 'gft':
+          return gftService.validateCredentials(
+            credentials.externalAccountId,
+            credentials.apiToken
+          );
+
+        case 'ibkr':
+          return ibkrService.validateCredentials(
+            credentials.flexToken,
           credentials.flexQueryId
         );
 

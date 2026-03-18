@@ -4,7 +4,9 @@
  */
 
 const BrokerConnection = require('../models/BrokerConnection');
+const Account = require('../models/Account');
 const ibkrService = require('../services/brokerSync/ibkrService');
+const gftService = require('../services/brokerSync/gftService');
 const schwabService = require('../services/brokerSync/schwabService');
 const brokerSyncService = require('../services/brokerSync');
 const AnalyticsCache = require('../services/analyticsCache');
@@ -139,6 +141,78 @@ const brokerSyncController = {
       });
     } catch (error) {
       logger.logError('Error adding IBKR connection:', error);
+      next(error);
+    }
+  },
+
+  /**
+   * Add Goat Funded Trader connection
+   */
+  async addGFTConnection(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const {
+        accountId,
+        externalAccountId,
+        apiToken,
+        connectionName,
+        autoSyncEnabled = false,
+        syncFrequency = 'daily',
+        syncTime = '06:00:00'
+      } = req.body;
+
+      if (!accountId || !externalAccountId || !apiToken) {
+        return res.status(400).json({
+          success: false,
+          error: 'CRS account, broker account ID, and API token are required'
+        });
+      }
+
+      const account = await Account.findById(accountId, userId);
+      if (!account) {
+        return res.status(404).json({
+          success: false,
+          error: 'CRS account not found'
+        });
+      }
+
+      const validation = await gftService.validateCredentials(externalAccountId, apiToken);
+      if (!validation.valid) {
+        return res.status(400).json({
+          success: false,
+          error: validation.message
+        });
+      }
+
+      const connection = await BrokerConnection.create(userId, {
+        brokerType: 'gft',
+        accountId,
+        externalAccountId,
+        connectionName: connectionName || `${account.account_name || account.accountName || 'Account'} · GFT`,
+        gftApiToken: apiToken,
+        autoSyncEnabled,
+        syncFrequency,
+        syncTime
+      });
+
+      await BrokerConnection.updateStatus(connection.id, 'active', 'Connection validated successfully');
+
+      if (autoSyncEnabled && syncFrequency !== 'manual') {
+        const nextSync = BrokerConnection.calculateNextSync(syncFrequency, syncTime);
+        if (nextSync) {
+          await BrokerConnection.update(connection.id, { nextScheduledSync: nextSync });
+        }
+      }
+
+      const updatedConnection = await BrokerConnection.findById(connection.id, false);
+
+      res.status(201).json({
+        success: true,
+        data: updatedConnection,
+        message: 'Goat Funded Trader connection added successfully'
+      });
+    } catch (error) {
+      logger.logError('Error adding GFT connection:', error);
       next(error);
     }
   },
@@ -500,6 +574,11 @@ const brokerSyncController = {
         testResult = await ibkrService.validateCredentials(
           connection.ibkrFlexToken,
           connection.ibkrFlexQueryId
+        );
+      } else if (connection.brokerType === 'gft') {
+        testResult = await gftService.validateCredentials(
+          connection.externalAccountId,
+          connection.gftApiToken
         );
       } else if (connection.brokerType === 'schwab') {
         // Test Schwab connection by checking token validity

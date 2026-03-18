@@ -13,6 +13,10 @@ class BrokerConnection {
   static async create(userId, connectionData) {
     const {
       brokerType,
+      accountId,
+      connectionName,
+      externalAccountId,
+      gftApiToken,
       ibkrFlexToken,
       ibkrFlexQueryId,
       schwabAccessToken,
@@ -26,36 +30,29 @@ class BrokerConnection {
 
     // Encrypt sensitive credentials
     const encryptedIbkrToken = ibkrFlexToken ? encryptionService.encrypt(ibkrFlexToken) : null;
+    const encryptedGftToken = gftApiToken ? encryptionService.encrypt(gftApiToken) : null;
     const encryptedSchwabAccess = schwabAccessToken ? encryptionService.encrypt(schwabAccessToken) : null;
     const encryptedSchwabRefresh = schwabRefreshToken ? encryptionService.encrypt(schwabRefreshToken) : null;
 
     const query = `
       INSERT INTO broker_connections (
-        user_id, broker_type, connection_status,
+        user_id, broker_type, account_id, connection_name, external_account_id, connection_status,
+        gft_api_token,
         ibkr_flex_token, ibkr_flex_query_id,
         schwab_access_token, schwab_refresh_token, schwab_token_expires_at, schwab_account_id,
         auto_sync_enabled, sync_frequency, sync_time
       )
-      VALUES ($1, $2, 'pending', $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      ON CONFLICT (user_id, broker_type) DO UPDATE SET
-        ibkr_flex_token = EXCLUDED.ibkr_flex_token,
-        ibkr_flex_query_id = EXCLUDED.ibkr_flex_query_id,
-        schwab_access_token = EXCLUDED.schwab_access_token,
-        schwab_refresh_token = EXCLUDED.schwab_refresh_token,
-        schwab_token_expires_at = EXCLUDED.schwab_token_expires_at,
-        schwab_account_id = EXCLUDED.schwab_account_id,
-        auto_sync_enabled = EXCLUDED.auto_sync_enabled,
-        sync_frequency = EXCLUDED.sync_frequency,
-        sync_time = EXCLUDED.sync_time,
-        connection_status = 'pending',
-        consecutive_failures = 0,
-        updated_at = CURRENT_TIMESTAMP
+      VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *
     `;
 
     const result = await db.query(query, [
       userId,
       brokerType,
+      accountId || null,
+      connectionName || null,
+      externalAccountId || null,
+      encryptedGftToken,
       encryptedIbkrToken,
       ibkrFlexQueryId,
       encryptedSchwabAccess,
@@ -204,7 +201,7 @@ class BrokerConnection {
    * Update connection settings
    */
   static async update(connectionId, updates) {
-    const allowedFields = ['auto_sync_enabled', 'sync_frequency', 'sync_time'];
+    const allowedFields = ['auto_sync_enabled', 'sync_frequency', 'sync_time', 'connection_name', 'account_id', 'external_account_id', 'next_scheduled_sync'];
     const setClauses = [];
     const values = [];
     let paramCount = 1;
@@ -360,6 +357,9 @@ class BrokerConnection {
       id: row.id,
       userId: row.user_id,
       brokerType: row.broker_type,
+      accountId: row.account_id,
+      connectionName: row.connection_name,
+      externalAccountId: row.external_account_id,
       connectionStatus: row.connection_status,
       autoSyncEnabled: row.auto_sync_enabled,
       syncFrequency: row.sync_frequency,
@@ -378,7 +378,11 @@ class BrokerConnection {
     };
 
     // Add broker-specific public fields
-    if (row.broker_type === 'ibkr') {
+    if (row.broker_type === 'gft') {
+      if (includeCredentials && row.gft_api_token) {
+        connection.gftApiToken = encryptionService.decrypt(row.gft_api_token);
+      }
+    } else if (row.broker_type === 'ibkr') {
       connection.ibkrFlexQueryId = row.ibkr_flex_query_id;
       // Only include decrypted token if explicitly requested (for sync operations)
       if (includeCredentials && row.ibkr_flex_token) {

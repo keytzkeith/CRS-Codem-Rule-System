@@ -25,6 +25,10 @@ export const useBrokerSyncStore = defineStore('brokerSync', () => {
     connections.value.find(c => c.brokerType === 'schwab')
   )
 
+  const gftConnections = computed(() =>
+    connections.value.filter(c => c.brokerType === 'gft')
+  )
+
   const isConnectionSyncing = (connectionId) => {
     return syncing.value[connectionId] === true
   }
@@ -66,6 +70,32 @@ export const useBrokerSyncStore = defineStore('brokerSync', () => {
     } catch (err) {
       console.error('[BROKER-SYNC] Failed to add IBKR connection:', err)
       error.value = err.response?.data?.error || 'Failed to add IBKR connection'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function addGFTConnection(credentials) {
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await api.post('/broker-sync/connections/gft', {
+        accountId: credentials.accountId,
+        externalAccountId: credentials.externalAccountId,
+        apiToken: credentials.apiToken,
+        connectionName: credentials.connectionName,
+        autoSyncEnabled: credentials.autoSyncEnabled || false,
+        syncFrequency: credentials.syncFrequency || 'daily',
+        syncTime: credentials.syncTime || '06:00:00'
+      })
+
+      await fetchConnections()
+      return response.data.data
+    } catch (err) {
+      console.error('[BROKER-SYNC] Failed to add GFT connection:', err)
+      error.value = err.response?.data?.error || 'Failed to add Goat Funded Trader connection'
       throw err
     } finally {
       loading.value = false
@@ -249,11 +279,13 @@ export const useBrokerSyncStore = defineStore('brokerSync', () => {
     activeConnections,
     ibkrConnection,
     schwabConnection,
+    gftConnections,
     isConnectionSyncing,
 
     // Actions
     fetchConnections,
     addIBKRConnection,
+    addGFTConnection,
     initSchwabOAuth,
     updateConnection,
     deleteConnection,
