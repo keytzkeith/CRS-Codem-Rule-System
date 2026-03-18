@@ -70,18 +70,82 @@ export function calculateNetPnl(trade) {
     return 0
   }
 
+  const pair = String(trade.pair || trade.symbol || '').toUpperCase()
+  const pipSize = Number(trade.pipSize || inferPipSize(pair))
+  const pipValuePerLot = calculatePipValuePerLot({
+    pair,
+    entry,
+    pipSize,
+    contractMultiplier: multiplier
+  })
+
+  if (pipValuePerLot) {
+    const signedPips = calculatePipsMoved({
+      pair,
+      entry,
+      closePrice: close,
+      direction: trade.direction,
+      pipSize
+    })
+    const grossPnl = signedPips * pipValuePerLot * volume
+    return round(grossPnl - commission - swap, 2)
+  }
+
   const priceMove = trade.direction === 'Short' ? entry - close : close - entry
   const grossPnl = priceMove * volume * multiplier
   return round(grossPnl - commission - swap, 2)
+}
+
+export function calculatePipValuePerLot(trade) {
+  const pair = String(trade?.pair || trade?.symbol || '').toUpperCase()
+  const entry = Number(trade?.entry || trade?.entryPrice || 0)
+  const pipSize = Number(trade?.pipSize || inferPipSize(pair))
+  const contractMultiplier = Number(trade?.contractMultiplier || inferContractMultiplier(pair) || 0)
+
+  if (!pair || !pipSize || !contractMultiplier) {
+    return 0
+  }
+
+  if (pair.startsWith('XAU') || pair.startsWith('XAG')) {
+    return round(pipSize * contractMultiplier, 6)
+  }
+
+  if (/^[A-Z]{6}$/.test(pair)) {
+    const quote = pair.slice(3)
+
+    if (quote === 'USD') {
+      return round(pipSize * contractMultiplier, 6)
+    }
+
+    if (quote === 'JPY' && entry) {
+      return round((pipSize / entry) * contractMultiplier, 6)
+    }
+  }
+
+  return 0
 }
 
 export function calculateActualRiskAmount(trade) {
   const riskDistance = Math.abs(Number(trade.entry || 0) - Number(trade.stopLoss || 0))
   const volume = Number(trade.volume || trade.quantity || 0)
   const multiplier = Number(trade.contractMultiplier || 1)
+  const pair = String(trade.pair || trade.symbol || '').toUpperCase()
+  const pipSize = Number(trade.pipSize || inferPipSize(pair))
 
   if (!riskDistance || !volume || !multiplier) {
     return 0
+  }
+
+  const pipValuePerLot = calculatePipValuePerLot({
+    pair,
+    entry: trade.entry,
+    pipSize,
+    contractMultiplier: multiplier
+  })
+
+  if (pipValuePerLot && pipSize) {
+    const riskPips = riskDistance / pipSize
+    return round(riskPips * pipValuePerLot * volume, 2)
   }
 
   return round(riskDistance * volume * multiplier, 2)
@@ -125,7 +189,11 @@ export function inferPipSize(symbol = '') {
     return 0.01
   }
 
-  if (value.startsWith('XAU') || value.startsWith('XAG') || /^(US30|NAS100|SPX|GER40|UK100|DJI|NQ|ES)/.test(value)) {
+  if (value.startsWith('XAU') || value.startsWith('XAG')) {
+    return 0.01
+  }
+
+  if (/^(US30|NAS100|SPX|GER40|UK100|DJI|NQ|ES)/.test(value)) {
     return 0.1
   }
 

@@ -267,9 +267,36 @@ function inferPipSize(symbol = '') {
   const value = String(symbol || '').toUpperCase();
 
   if (value.includes('JPY')) return 0.01;
-  if (value.startsWith('XAU') || value.startsWith('XAG') || /^(US30|NAS100|SPX|GER40|UK100|DJI|NQ|ES)/.test(value)) return 0.1;
+  if (value.startsWith('XAU') || value.startsWith('XAG')) return 0.01;
+  if (/^(US30|NAS100|SPX|GER40|UK100|DJI|NQ|ES)/.test(value)) return 0.1;
   if (/^[A-Z]{6}$/.test(value)) return 0.0001;
   return 0.01;
+}
+
+function calculatePipValuePerLot(symbol = '', entry = 0, pipSize = 0, contractMultiplier = 0) {
+  const value = String(symbol || '').toUpperCase();
+
+  if (!value || !pipSize || !contractMultiplier) {
+    return 0;
+  }
+
+  if (value.startsWith('XAU') || value.startsWith('XAG')) {
+    return pipSize * contractMultiplier;
+  }
+
+  if (/^[A-Z]{6}$/.test(value)) {
+    const quote = value.slice(3);
+
+    if (quote === 'USD') {
+      return pipSize * contractMultiplier;
+    }
+
+    if (quote === 'JPY' && entry) {
+      return (pipSize / entry) * contractMultiplier;
+    }
+  }
+
+  return 0;
 }
 
 function resolveAccount(accountName, accountsByKey, defaultAccount) {
@@ -338,9 +365,16 @@ function createTradeDraftFromRow(row, fieldMapping, options = {}) {
     ? (direction === 'short' ? entry - closePrice : closePrice - entry)
     : null;
   const pips = move != null ? Math.round((move / pipSize) * 10) / 10 : null;
-  const resultR = actualRiskAmount && netProfit != null
-    ? Math.round((netProfit / actualRiskAmount) * 1000) / 1000
-    : null;
+  const riskPips = entry && stopLoss ? Math.abs(entry - stopLoss) / pipSize : 0;
+  const rewardPips = move != null ? Math.abs(move / pipSize) : 0;
+  const pipValuePerLot = calculatePipValuePerLot(symbol, entry, pipSize, contractMultiplier);
+  const derivedActualRiskAmount = pipValuePerLot && riskPips && volume
+    ? Math.round(riskPips * pipValuePerLot * volume * 100) / 100
+    : actualRiskAmount;
+  const resultR = riskPips ? Math.round((rewardPips / riskPips) * 1000) / 1000 : 0;
+  const derivedRiskPercentOfAccount = derivedActualRiskAmount && options.defaultAccount && Number(options.defaultAccount.initial_balance || 0)
+    ? Math.round((derivedActualRiskAmount / Number(options.defaultAccount.initial_balance)) * 1000000) / 10000
+    : 0;
   const session = deriveSessionLabel(openTime || closeTime || parsedDate, mapped.session || 'London', options.timezone || DEFAULT_SESSION_TIMEZONE);
   const setup = mapped.setupType || 'Imported trade';
   const tags = splitList(mapped.tags);
@@ -374,8 +408,8 @@ function createTradeDraftFromRow(row, fieldMapping, options = {}) {
     checklistPayload: {},
     contractMultiplier,
     pipSize,
-    actualRiskAmount,
-    riskPercentOfAccount,
+    actualRiskAmount: derivedActualRiskAmount,
+    riskPercentOfAccount: derivedRiskPercentOfAccount,
     pips,
     rValue: resultR
   };

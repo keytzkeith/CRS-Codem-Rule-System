@@ -10,6 +10,7 @@ import {
   buildFilterOptions,
   calculateActualRiskAmount,
   calculateNetPnl,
+  calculatePipValuePerLot,
   calculatePipsMoved,
   calculateResultR,
   calculateRiskAmount,
@@ -688,32 +689,36 @@ function normalizeTrade(tradeDraft, timezone = DEFAULT_SESSION_TIMEZONE) {
   const pipSize = Number(tradeDraft.pipSize ?? inferPipSize(pair))
   const commission = Number(tradeDraft.commission || 0)
   const swap = Number(tradeDraft.swap || 0)
+  const entry = Number(tradeDraft.entry || 0)
+  const stopLoss = Number(tradeDraft.stopLoss || 0)
   const derivedResultR = calculateResultR({
-    entry: tradeDraft.entry,
-    stopLoss: tradeDraft.stopLoss,
+    entry,
+    stopLoss,
     closePrice,
     direction: tradeDraft.direction
   })
   const resultAmount = Number(tradeDraft.resultAmount ?? calculateNetPnl({
-    entry: tradeDraft.entry,
+    pair,
+    entry,
     closePrice,
     direction: tradeDraft.direction,
     volume,
     contractMultiplier,
+    pipSize,
     commission,
     swap
   }) ?? 0)
-  const resultR = Number(tradeDraft.resultR ?? (calculateActualRiskAmount({
-    entry: tradeDraft.entry,
-    stopLoss: tradeDraft.stopLoss,
-    volume,
-    contractMultiplier
-  }) ? resultAmount / calculateActualRiskAmount({
-    entry: tradeDraft.entry,
-    stopLoss: tradeDraft.stopLoss,
-    volume,
-    contractMultiplier
-  }) : derivedResultR) ?? 0)
+  const derivedActualRiskAmount = derivedResultR
+    ? Math.abs(resultAmount / derivedResultR)
+    : calculateActualRiskAmount({
+      pair,
+      entry,
+      stopLoss,
+      volume,
+      contractMultiplier,
+      pipSize
+    })
+  const resultR = Number(derivedResultR ?? tradeDraft.resultR ?? 0)
   const journal = tradeDraft.journal || {}
   const checklist = tradeDraft.checklist || {}
   const setupStack = Array.isArray(tradeDraft.setupStack)
@@ -757,23 +762,18 @@ function normalizeTrade(tradeDraft, timezone = DEFAULT_SESSION_TIMEZONE) {
     pipSize,
     commission,
     swap,
-    entry: Number(tradeDraft.entry || 0),
-    stopLoss: Number(tradeDraft.stopLoss || 0),
+    entry,
+    stopLoss,
     takeProfit: Number(tradeDraft.takeProfit || 0),
     closePrice,
     status: outcome === 'win' ? 'Win' : outcome === 'loss' ? 'Loss' : 'Breakeven',
     resultR,
     resultAmount,
-    actualRiskAmount: Number(tradeDraft.actualRiskAmount ?? calculateActualRiskAmount({
-      entry: tradeDraft.entry,
-      stopLoss: tradeDraft.stopLoss,
-      volume,
-      contractMultiplier
-    })),
+    actualRiskAmount: Number(tradeDraft.actualRiskAmount ?? derivedActualRiskAmount),
     riskPercentOfAccount: Number(tradeDraft.riskPercentOfAccount || 0),
     pips: Number(tradeDraft.pips ?? calculatePipsMoved({
       pair,
-      entry: tradeDraft.entry,
+      entry,
       closePrice,
       direction: tradeDraft.direction,
       pipSize
@@ -872,9 +872,42 @@ function mapTradeFromBackend(trade, accounts = [], timezone = DEFAULT_SESSION_TI
     ? (trade.setupStack || trade.setup_stack || metadata.setupStack)
     : [String(trade.setup || 'Custom').trim()].filter(Boolean)
   const resultAmount = Number(trade.pnl ?? metadata.resultAmount ?? 0)
-  const resultR = Number(trade.rValue ?? trade.r_value ?? metadata.resultR ?? 0)
   const journal = trade.journalPayload || trade.journal_payload || metadata.journal || {}
   const checklist = trade.checklistPayload || trade.checklist_payload || metadata.checklist || {}
+  const entry = Number(trade.entryPrice ?? trade.entry_price ?? 0)
+  const closePrice = Number(trade.exitPrice ?? trade.exit_price ?? 0)
+  const stopLoss = Number(trade.stopLoss ?? trade.stop_loss ?? 0)
+  const pair = String(trade.symbol || '').toUpperCase()
+  const pipSize = Number(trade.pipSize ?? trade.pip_size ?? metadata.pipSize ?? inferPipSize(pair))
+  const contractMultiplier = Number(trade.contractMultiplier ?? trade.contract_multiplier ?? trade.pointValue ?? trade.point_value ?? metadata.contractMultiplier ?? inferContractMultiplier(pair))
+  const volume = Number(trade.quantity ?? metadata.volume ?? 0)
+  const derivedResultR = calculateResultR({
+    entry,
+    stopLoss,
+    closePrice,
+    direction: trade.side === 'short' ? 'Short' : 'Long'
+  })
+  const derivedActualRiskAmount = derivedResultR
+    ? Math.abs(resultAmount / derivedResultR)
+    : calculateActualRiskAmount({
+      pair,
+      entry,
+      stopLoss,
+      volume,
+      contractMultiplier,
+      pipSize
+    })
+  const derivedPips = calculatePipsMoved({
+    pair,
+    entry,
+    closePrice,
+    direction: trade.side === 'short' ? 'Short' : 'Long',
+    pipSize
+  })
+  const accountSize = resolveAccountSize(accountId, accounts)
+  const derivedRiskPercentOfAccount = accountSize
+    ? Math.round((derivedActualRiskAmount / accountSize) * 1000000) / 10000
+    : 0
 
   return normalizeTrade({
     id: trade.id,
@@ -888,31 +921,20 @@ function mapTradeFromBackend(trade, accounts = [], timezone = DEFAULT_SESSION_TI
     session: trade.strategy || metadata.session || 'London',
     accountId,
     accountName,
-    volume: Number(trade.quantity ?? metadata.volume ?? 0),
-    contractMultiplier: Number(trade.contractMultiplier ?? trade.contract_multiplier ?? trade.pointValue ?? trade.point_value ?? metadata.contractMultiplier ?? inferContractMultiplier(trade.symbol)),
-    pipSize: Number(trade.pipSize ?? trade.pip_size ?? metadata.pipSize ?? inferPipSize(trade.symbol)),
+    volume,
+    contractMultiplier,
+    pipSize,
     commission: Number(trade.commission ?? metadata.commission ?? 0),
     swap: Number(trade.swap ?? metadata.swap ?? trade.fees ?? 0),
-    entry: Number(trade.entryPrice ?? trade.entry_price ?? 0),
-    stopLoss: Number(trade.stopLoss ?? trade.stop_loss ?? 0),
+    entry,
+    stopLoss,
     takeProfit: Number(trade.takeProfit ?? trade.take_profit ?? 0),
-    closePrice: Number(trade.exitPrice ?? trade.exit_price ?? 0),
-    resultR,
+    closePrice,
+    resultR: derivedResultR,
     resultAmount,
-    actualRiskAmount: Number((trade.actualRiskAmount ?? trade.actual_risk_amount ?? metadata.actualRiskAmount) || 0),
-    riskPercentOfAccount: Number((trade.riskPercentOfAccount ?? trade.risk_percent_of_account ?? metadata.riskPercentOfAccount) || calculateRiskPercentOfAccount({
-      entry: Number(trade.entryPrice ?? trade.entry_price ?? 0),
-      stopLoss: Number(trade.stopLoss ?? trade.stop_loss ?? 0),
-      volume: Number(trade.quantity ?? metadata.volume ?? 0),
-      contractMultiplier: Number(trade.contractMultiplier ?? trade.contract_multiplier ?? trade.pointValue ?? trade.point_value ?? metadata.contractMultiplier ?? inferContractMultiplier(trade.symbol))
-    }, resolveAccountSize(accountId, accounts))),
-    pips: Number(trade.pips ?? metadata.pips ?? calculatePipsMoved({
-      pair: trade.symbol,
-      entry: Number(trade.entryPrice ?? trade.entry_price ?? 0),
-      closePrice: Number(trade.exitPrice ?? trade.exit_price ?? 0),
-      direction: trade.side === 'short' ? 'Short' : 'Long',
-      pipSize: Number(trade.pipSize ?? trade.pip_size ?? metadata.pipSize ?? inferPipSize(trade.symbol))
-    })),
+    actualRiskAmount: Number(derivedActualRiskAmount || 0),
+    riskPercentOfAccount: Number(derivedRiskPercentOfAccount || 0),
+    pips: Number(derivedPips),
     tags: mergeUniqueStrings(trade.tags || []),
     screenshot: metadata.screenshot || trade.chartUrl || trade.chart_url || null,
     journal: {
