@@ -45,16 +45,21 @@
 
 @layer components {
   .btn {
-    @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200;
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium transition;
     min-height: 44px; /* Ensures proper touch target size on mobile */
+    border-radius: 9999px;
   }
   
   .btn-primary {
-    @apply btn text-white bg-primary-600 hover:bg-primary-700 focus:ring-primary-500;
+    @apply btn text-slate-950;
+    background: linear-gradient(135deg, #d7b77a, #f2d7a1);
   }
   
   .btn-secondary {
-    @apply btn text-gray-700 bg-white hover:bg-gray-50 border-gray-300 focus:ring-primary-500 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700;
+    @apply btn;
+    color: var(--crs-muted);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(148, 163, 184, 0.1);
   }
   
   .btn-danger {
@@ -66,9 +71,16 @@
   }
   
   .input {
-    @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:border-gray-600;
+    @apply block w-full px-4 py-2.5 border rounded-xl outline-none transition;
     min-height: 44px; /* Ensures proper touch target size on mobile */
     font-size: 16px; /* Prevents iOS zoom on input focus */
+    border-color: var(--crs-border);
+    background: rgba(255, 255, 255, 0.03);
+    color: #eef4ff;
+  }
+
+  .input::placeholder {
+    color: #70829b;
   }
   
   select.input {
@@ -140,11 +152,16 @@
   }
   
   .label {
-    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
+    @apply block mb-1 text-sm font-medium;
+    color: var(--crs-muted);
   }
   
   .card {
-    @apply bg-white dark:bg-gray-800 shadow rounded-lg;
+    @apply rounded-[22px] border;
+    border-color: var(--crs-border);
+    background:
+      linear-gradient(180deg, rgba(11, 24, 41, 0.92), rgba(8, 17, 31, 0.82));
+    box-shadow: 0 20px 45px rgba(3, 10, 21, 0.35);
   }
   
   .card-body {
