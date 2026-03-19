@@ -139,6 +139,16 @@ class GFTService {
     const pipSize = this.inferPipSize(symbol);
     const move = side === 'long' ? exitPrice - entryPrice : entryPrice - exitPrice;
     const pips = Number((move / pipSize).toFixed(1));
+    const contractMultiplier = this.inferContractMultiplier(symbol);
+    const stopLoss = this.sanitizeStopLoss(rawStopLoss, entryPrice, side);
+    const takeProfit = this.sanitizeTakeProfit(rawTakeProfit, entryPrice, side);
+
+    // Calculate actual risk amount in dollars
+    let actualRiskAmount = null;
+    if (stopLoss && entryPrice && quantity && contractMultiplier) {
+      const riskDistance = Math.abs(entryPrice - stopLoss);
+      actualRiskAmount = Number((riskDistance * quantity * contractMultiplier).toFixed(2));
+    }
 
     return {
       externalTradeId: String(trade?.id || '').trim(),
@@ -156,11 +166,12 @@ class GFTService {
       fees: 0,
       broker: 'gft',
       instrumentType: this.inferInstrumentType(symbol),
-      stopLoss: this.sanitizeStopLoss(rawStopLoss, entryPrice, side),
-      takeProfit: this.sanitizeTakeProfit(rawTakeProfit, entryPrice, side),
+      stopLoss,
+      takeProfit,
+      actualRiskAmount,
       brokerConnectionId: connection.id,
       accountIdentifier: connection.accountId || connection.externalAccountId,
-      contractMultiplier: this.inferContractMultiplier(symbol),
+      contractMultiplier,
       pipSize,
       pips,
       executionData: [
@@ -265,7 +276,7 @@ class GFTService {
 
     const result = await db.query(
       `SELECT id, symbol, side, quantity, entry_time, exit_time, entry_price, exit_price,
-              pnl, commission, swap, stop_loss, take_profit, account_identifier
+              pnl, commission, swap, stop_loss, take_profit, actual_risk_amount, account_identifier
        FROM trades
        WHERE user_id = $1
          AND broker_connection_id = $2
@@ -291,6 +302,7 @@ class GFTService {
       Number(existingTrade.swap || 0) !== Number(incomingTrade.swap || 0) ||
       Number(existingTrade.stop_loss || 0) !== Number(incomingTrade.stopLoss || 0) ||
       Number(existingTrade.take_profit || 0) !== Number(incomingTrade.takeProfit || 0) ||
+      Number(existingTrade.actual_risk_amount || 0) !== Number(incomingTrade.actualRiskAmount || 0) ||
       String(existingTrade.account_identifier || '') !== String(incomingTrade.accountIdentifier || '')
     );
   }
@@ -319,6 +331,7 @@ class GFTService {
            contract_multiplier = $21,
            external_trade_id = $22,
            broker_connection_id = $23,
+           actual_risk_amount = $24,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $1 AND user_id = $2`,
       [
@@ -343,9 +356,9 @@ class GFTService {
         JSON.stringify(tradeData.executionData || []),
         tradeData.accountIdentifier,
         tradeData.contractMultiplier,
-        tradeData.externalTradeId
-        ,
-        tradeData.brokerConnectionId || null
+        tradeData.externalTradeId,
+        tradeData.brokerConnectionId || null,
+        tradeData.actualRiskAmount
       ]
     );
   }
