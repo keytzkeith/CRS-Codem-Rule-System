@@ -380,6 +380,16 @@ class GFTService {
     return 'stock';
   }
 
+  inferPipSize(symbol = '') {
+    const value = String(symbol || '').toUpperCase();
+
+    if (value.includes('JPY')) return 0.01;
+    if (value.startsWith('XAU') || value.startsWith('XAG')) return 0.01;
+    if (/^(US30|NAS100|SPX|GER40|UK100|DJI|NQ|ES)/.test(value)) return 0.1;
+    if (/^[A-Z]{6}$/.test(value)) return 0.0001;
+    return 0.01;
+  }
+
   inferContractMultiplier(symbol) {
     if (!symbol) return 1;
     if (symbol.startsWith('XAU')) return 100;
