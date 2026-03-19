@@ -3,17 +3,56 @@ import { useAuthStore } from '@/stores/auth'
 import { useAnalytics } from '@/composables/useAnalytics'
 import { CRS_ROUTE_REDIRECTS } from '@/config/navigation'
 
+const mode = import.meta.env.VITE_APP_MODE || 'full'
+
 const appRedirect = () => {
   const authStore = useAuthStore()
   return authStore.isAuthenticated ? { name: 'dashboard' } : { name: 'login' }
 }
 
-const routes = [
+const landingRoutes = [
   {
     path: '/',
     name: 'home',
     component: () => import('@/views/LandingView.vue')
   },
+  {
+    path: '/privacy',
+    name: 'privacy',
+    component: () => import('@/views/PrivacyPolicyView.vue')
+  },
+  {
+    path: '/terms',
+    name: 'terms',
+    component: () => import('@/views/TermsOfServiceView.vue')
+  },
+  {
+    path: '/features',
+    redirect: '/'
+  },
+  {
+    path: '/pricing',
+    redirect: '/'
+  },
+  {
+    path: '/compare',
+    redirect: '/'
+  },
+  {
+    path: '/compare/tradervue',
+    redirect: '/'
+  },
+  {
+    path: '/faq',
+    redirect: '/'
+  },
+  {
+    path: '/public',
+    redirect: '/'
+  }
+]
+
+const authRoutes = [
   {
     path: '/login',
     name: 'login',
@@ -25,16 +64,6 @@ const routes = [
     name: 'register',
     component: () => import('@/views/auth/RegisterView.vue'),
     meta: { guest: true }
-  },
-  {
-    path: '/privacy',
-    name: 'privacy',
-    component: () => import('@/views/PrivacyPolicyView.vue')
-  },
-  {
-    path: '/terms',
-    name: 'terms',
-    component: () => import('@/views/TermsOfServiceView.vue')
   },
   {
     path: '/verify-email/:token',
@@ -53,7 +82,10 @@ const routes = [
     name: 'reset-password',
     component: () => import('@/views/auth/ResetPasswordView.vue'),
     meta: { guest: true }
-  },
+  }
+]
+
+const dashboardRoutes = [
   {
     path: '/dashboard',
     name: 'dashboard',
@@ -152,7 +184,10 @@ const routes = [
   {
     path: '/broker-sync',
     redirect: '/settings/broker-sync'
-  },
+  }
+]
+
+const adminRoutes = [
   {
     path: '/admin',
     name: 'admin',
@@ -170,40 +205,52 @@ const routes = [
     name: 'admin-backups',
     component: () => import('@/views/admin/BackupManagementView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/features',
-    redirect: '/'
-  },
-  {
-    path: '/pricing',
-    redirect: '/'
-  },
-  {
-    path: '/compare',
-    redirect: '/'
-  },
-  {
-    path: '/compare/tradervue',
-    redirect: '/'
-  },
-  {
-    path: '/faq',
-    redirect: '/'
-  },
-  {
-    path: '/public',
-    redirect: '/'
-  },
-  ...CRS_ROUTE_REDIRECTS.map((path) => ({
-    path,
-    redirect: appRedirect
-  })),
-  {
-    path: '/:pathMatch(.*)*',
-    redirect: appRedirect
   }
 ]
+
+const appOnlyRoutes = [...authRoutes, ...dashboardRoutes, ...adminRoutes]
+
+let routes = []
+
+if (mode === 'landing') {
+  routes = [
+    ...landingRoutes,
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: { name: 'home' }
+    }
+  ]
+} else if (mode === 'app') {
+  routes = [
+    {
+      path: '/',
+      redirect: appRedirect
+    },
+    ...appOnlyRoutes,
+    ...landingRoutes.filter(r => r.name !== 'home'),
+    ...CRS_ROUTE_REDIRECTS.map((path) => ({
+      path,
+      redirect: appRedirect
+    })),
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: appRedirect
+    }
+  ]
+} else {
+  routes = [
+    ...landingRoutes,
+    ...appOnlyRoutes,
+    ...CRS_ROUTE_REDIRECTS.map((path) => ({
+      path,
+      redirect: appRedirect
+    })),
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: appRedirect
+    }
+  ]
+}
 
 const router = createRouter({
   history: createWebHistory(),

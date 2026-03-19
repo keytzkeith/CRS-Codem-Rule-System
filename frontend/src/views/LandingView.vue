@@ -30,8 +30,14 @@ import siteIdentity from '../../../config/siteIdentity.json'
 const authStore = useAuthStore()
 
 const docsUrl = import.meta.env.DEV ? 'http://localhost:3001' : siteIdentity.urls.docs
+const appUrl = import.meta.env.DEV ? '' : siteIdentity.urls.app
 const primaryLabel = computed(() => (authStore.isAuthenticated ? 'Open app' : 'Start journaling'))
-const primaryTo = computed(() => (authStore.isAuthenticated ? '/dashboard' : '/register'))
+const primaryTo = computed(() => {
+  if (import.meta.env.VITE_APP_MODE === 'landing') {
+    return authStore.isAuthenticated ? `${appUrl}/dashboard` : `${appUrl}/register`
+  }
+  return authStore.isAuthenticated ? '/dashboard' : '/register'
+})
 
 useScrollReveal()
 

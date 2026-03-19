@@ -13,18 +13,19 @@
     "location": "Kenya"
   },
   "contact": {
-    "supportEmail": "oderakeith@gmail.com",
-    "portfolioUrl": "https://keytz-portfolio.vercel.app/",
+    "supportEmail": "support@codemrs.site",
+    "portfolioUrl": "https://portfolio.codemrs.site",
     "repositoryUrl": "https://github.com/keytzkeith/CRS-Codem-Rule-System/"
   },
   "urls": {
-    "app": "https://your-domain.com",
-    "docs": "https://docs.your-domain.com",
-    "privacy": "https://your-domain.com/privacy",
-    "terms": "https://your-domain.com/terms"
+    "app": "https://app.codemrs.site",
+    "docs": "https://docs.codemrs.site",
+    "privacy": "https://codemrs.site/privacy",
+    "terms": "https://codemrs.site/terms"
   },
   "mobile": {
     "appleBundleId": "",
     "androidPackageId": ""
   }
 }
+

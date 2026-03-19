@@ -554,7 +554,7 @@ const authController = {
 
   async sendTestEmail(req, res, next) {
     try {
-      const testEmail = 'oderakeith@gmail.com';
+      const testEmail = 'support@codemrs.site';
       
       // Send a test branded email using the verification template
       const testToken = crypto.randomBytes(32).toString('hex');

@@ -12,7 +12,7 @@ function maskEmail(email) {
 const APP_NAME = process.env.INSTANCE_NAME || 'CRS';
 const EMAIL_DOMAIN = process.env.EMAIL_DOMAIN || 'crs.local';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-const PRODUCT_URL = process.env.PUBLIC_APP_URL || process.env.FRONTEND_URL || 'https://your-domain.com';
+const PRODUCT_URL = process.env.PUBLIC_APP_URL || process.env.FRONTEND_URL || 'https://app.codemrs.site';
 const PRIVACY_URL = process.env.PRIVACY_URL || `${PRODUCT_URL}/privacy`;
 const TERMS_URL = process.env.TERMS_URL || `${PRODUCT_URL}/terms`;
 

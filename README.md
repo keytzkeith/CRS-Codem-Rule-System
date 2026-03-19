@@ -175,7 +175,7 @@ Main files:
 
 Current support contact:
 
-- `oderakeith@gmail.com`
+- `support@codemrs.site`
 
 ## Deployment Notes
 
