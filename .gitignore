@@ -288,4 +288,4 @@ certificates/
 .claude/*
 performance-test.js
 backend/TELEMETRY.md
-CORRECTIONS.MD
+.corrections/

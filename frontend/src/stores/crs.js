@@ -936,6 +936,7 @@ function mapTradeFromBackend(trade, accounts = [], timezone = DEFAULT_SESSION_TI
     pips: Number(derivedPips),
     tags: mergeUniqueStrings(trade.tags || []),
     screenshot: metadata.screenshot || trade.chartUrl || trade.chart_url || null,
+    charts: trade.charts || [],
     journal: {
       whyTaken: journal.whyTaken || '',
       htfBias: journal.htfBias || '',

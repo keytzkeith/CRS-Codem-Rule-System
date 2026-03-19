@@ -209,14 +209,8 @@
           </div>
         </ChartCard>
 
-        <ChartCard eyebrow="Screenshot" title="Image preview" description="Mock-first URL input for chart evidence until uploads are wired to the backend.">
-          <div class="space-y-4">
-            <label class="crs-filter-field">
-              <span>Screenshot URL</span>
-              <input v-model="form.screenshot" type="url" class="crs-input" placeholder="https://..." />
-            </label>
-            <ImagePreviewCard :src="form.screenshot" alt="Trade screenshot preview" />
-          </div>
+        <ChartCard eyebrow="Evidence" title="Trade images" description="Upload charts or execution screenshots to document this setup.">
+          <ImageUpload ref="imageUploadRef" :trade-id="existingTrade?.id" />
         </ChartCard>
 
         <ChartCard eyebrow="Summary" title="Auto-read" description="Live summary so the record feels precise before saving.">
@@ -245,6 +239,7 @@ import InfoTip from '@/components/crs/InfoTip.vue'
 import MetricCard from '@/components/crs/MetricCard.vue'
 import SectionHeader from '@/components/crs/SectionHeader.vue'
 import TagPicker from '@/components/crs/TagPicker.vue'
+import ImageUpload from '@/components/trades/ImageUpload.vue'
 import { useCrsStore } from '@/stores/crs'
 import {
   calculateActualRiskAmount,
@@ -262,6 +257,7 @@ const route = useRoute()
 const router = useRouter()
 const crsStore = useCrsStore()
 const saveError = ref('')
+const imageUploadRef = ref(null)
 
 const existingTrade = computed(() => (route.params.id ? crsStore.getTradeById(route.params.id) : null))
 const isEditing = computed(() => Boolean(existingTrade.value))
@@ -414,6 +410,11 @@ async function submitTrade() {
       resultAmount: Number(form.resultAmount || 0),
       resultR: form.resultR
     })
+
+    // If there are images to upload, flush them now
+    if (imageUploadRef.value && imageUploadRef.value.selectedFiles.length > 0) {
+      await imageUploadRef.value.flushPendingImages(savedTrade.id)
+    }
 
     router.push(`/trades/${savedTrade.id}`)
   } catch (error) {

@@ -56,10 +56,18 @@
 
       <ChartCard
         eyebrow="Chart evidence"
-        title="Screenshot / image"
-        description="Mock-first placeholder wired for the trade record shape you requested."
+        title="Execution screenshots"
+        description="Visual evidence of the setup, entries, and exits recorded during the live trade."
       >
-        <ImagePreviewCard :src="trade.screenshot" :alt="`${trade.pair} screenshot`" />
+        <div v-if="trade.charts?.length" class="grid gap-4 sm:grid-cols-2">
+          <ImagePreviewCard
+            v-for="chart in trade.charts"
+            :key="chart.id"
+            :src="resolveImageUrl(chart.chart_url)"
+            :alt="chart.chart_title || 'Trade screenshot'"
+          />
+        </div>
+        <ImagePreviewCard v-else :src="resolveImageUrl(trade.screenshot)" :alt="`${trade.pair} screenshot`" />
       </ChartCard>
     </div>
 
@@ -141,6 +149,7 @@ import ImagePreviewCard from '@/components/crs/ImagePreviewCard.vue'
 import MetricCard from '@/components/crs/MetricCard.vue'
 import ResultBadge from '@/components/crs/ResultBadge.vue'
 import { useCrsStore } from '@/stores/crs'
+import api from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -150,6 +159,16 @@ const showDeleteDialog = ref(false)
 
 const trade = computed(() => crsStore.getTradeById(route.params.id))
 const checklistItems = computed(() => crsStore.settings.checklistItems || [])
+
+function resolveImageUrl(path) {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  
+  // Clean up relative path and prefix with API base URL
+  const baseUrl = api.defaults.baseURL.replace('/api', '')
+  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  return `${baseUrl}${cleanPath}`
+}
 
 function formatPrice(value) {
   return value >= 100 ? value.toFixed(2) : value.toFixed(4)
