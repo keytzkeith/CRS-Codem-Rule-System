@@ -84,7 +84,7 @@ export function calculateResultR(trade) {
   const direction = normalizeDirection(trade.direction)
 
   if (!close || !entry || !hasValidStopFrame({ entry, stopLoss, direction })) {
-    return 0
+    return null
   }
 
   const risk = direction === 'short' ? stopLoss - entry : entry - stopLoss

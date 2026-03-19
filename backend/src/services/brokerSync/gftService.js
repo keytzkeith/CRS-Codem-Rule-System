@@ -136,6 +136,9 @@ class GFTService {
     const pnl = Number((profit + swap - commission).toFixed(2));
     const rawStopLoss = this.nullableNumber(trade?.sl);
     const rawTakeProfit = this.nullableNumber(trade?.tp);
+    const pipSize = this.inferPipSize(symbol);
+    const move = side === 'long' ? exitPrice - entryPrice : entryPrice - exitPrice;
+    const pips = Number((move / pipSize).toFixed(1));
 
     return {
       externalTradeId: String(trade?.id || '').trim(),
@@ -158,6 +161,8 @@ class GFTService {
       brokerConnectionId: connection.id,
       accountIdentifier: connection.accountId || connection.externalAccountId,
       contractMultiplier: this.inferContractMultiplier(symbol),
+      pipSize,
+      pips,
       executionData: [
         {
           action: side === 'long' ? 'buy' : 'sell',

@@ -45,7 +45,11 @@ function inferPipSize(symbol = '') {
     return 0.01;
   }
 
-  if (value.startsWith('XAU') || value.startsWith('XAG') || /^(US30|NAS100|SPX|GER40|UK100|DJI|NQ|ES)/.test(value)) {
+  if (value.startsWith('XAU') || value.startsWith('XAG')) {
+    return 0.01;
+  }
+
+  if (/^(US30|NAS100|SPX|GER40|UK100|DJI|NQ|ES)/.test(value)) {
     return 0.1;
   }
 

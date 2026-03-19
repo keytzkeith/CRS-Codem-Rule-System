@@ -133,7 +133,12 @@ const filterOptions = computed(() => crsStore.filterOptions)
 const filteredTrades = computed(() => crsStore.filterTrades(filters))
 const filteredPnl = computed(() => filteredTrades.value.reduce((sum, trade) => sum + trade.resultAmount, 0))
 const filteredVolume = computed(() => filteredTrades.value.reduce((sum, trade) => sum + Number(trade.volume || 0), 0))
-const filteredPips = computed(() => Number(filteredTrades.value.reduce((sum, trade) => sum + Number(trade.pips || 0), 0).toFixed(1)))
+const filteredPips = computed(() => {
+  const sum = filteredTrades.value.reduce((total, trade) => {
+    return total + (trade.pips !== null && trade.pips !== undefined ? Number(trade.pips) : 0)
+  }, 0)
+  return Number(sum.toFixed(1))
+})
 const filteredWinRate = computed(() => {
   if (!filteredTrades.value.length) {
     return 0

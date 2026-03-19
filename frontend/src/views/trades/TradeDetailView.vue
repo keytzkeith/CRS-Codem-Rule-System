@@ -44,10 +44,10 @@
           <MetricCard label="Multiplier" :value="String(trade.contractMultiplier || 1)" hint="Contract sizing" />
           <MetricCard label="Stop loss" :value="formatPrice(trade.stopLoss)" hint="Invalidation" tone="negative" />
           <MetricCard label="Take profit" :value="formatPrice(trade.takeProfit)" hint="Primary target" tone="positive" />
-          <MetricCard label="Result" :value="`${trade.resultR.toFixed(3)}R`" :hint="currency(trade.resultAmount)" :tone="trade.resultAmount >= 0 ? 'positive' : 'negative'" />
+          <MetricCard label="Result" :value="trade.resultR !== null ? `${trade.resultR.toFixed(3)}R` : 'N/A'" :hint="currency(trade.resultAmount)" :tone="trade.resultAmount >= 0 ? 'positive' : 'negative'" />
           <MetricCard label="Actual risk" :value="currency(trade.actualRiskAmount || 0)" hint="Capital at risk" tone="warning" />
           <MetricCard label="Risk of account" :value="`${Number(trade.riskPercentOfAccount || 0).toFixed(3)}%`" hint="Consistency" />
-          <MetricCard label="Pips / points" :value="String(trade.pips || 0)" hint="Signed move" />
+          <MetricCard label="Pips / points" :value="trade.pips !== null && trade.pips !== undefined ? String(trade.pips) : 'N/A'" hint="Signed move" />
           <MetricCard label="Holding time" :value="formatHoldingTime(trade)" hint="Open to close" />
           <MetricCard label="Followed plan" :value="trade.journal.followedPlan ? 'Yes' : 'No'" hint="Rule-based execution" />
           <MetricCard label="Planned RR" :value="`${trade.plannedRR}:1`" hint="Reward to risk" />

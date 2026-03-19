@@ -26,9 +26,7 @@
             <td class="crs-table-cell">{{ trade.setupType }}</td>
             <td class="crs-table-cell">{{ trade.session }}</td>
             <td class="crs-table-cell">{{ formatVolume(trade.volume) }}</td>
-            <td class="crs-table-cell">{{ formatPrice(trade.entry) }}</td>
-            <td class="crs-table-cell">{{ formatPrice(trade.stopLoss) }}</td>
-            <td class="crs-table-cell">{{ formatPrice(trade.takeProfit) }}</td>
+            <td class="crs-table-cell text-right">{{ formatPips(trade.pips) }}</td>
             <td class="crs-table-cell">{{ formatResultR(trade.resultR) }}</td>
             <td class="crs-table-cell">{{ formatCurrencyAmount(trade.resultAmount) }}</td>
             <td class="crs-table-cell"><ResultBadge :value="trade.status || 'Breakeven'" /></td>
@@ -56,7 +54,7 @@
         <div class="grid grid-cols-2 gap-3 text-sm text-slate-300">
           <p><span class="text-slate-500">Direction</span><br>{{ trade.direction }}</p>
           <p><span class="text-slate-500">Setup</span><br>{{ trade.setupType }}</p>
-          <p><span class="text-slate-500">Session</span><br>{{ trade.session }}</p>
+          <p><span class="text-slate-500">Pips</span><br>{{ formatPips(trade.pips) }}</p>
           <p><span class="text-slate-500">Volume</span><br>{{ formatVolume(trade.volume) }}</p>
           <p><span class="text-slate-500">Result</span><br>{{ formatResultSummary(trade) }}</p>
         </div>
@@ -85,9 +83,7 @@ const columns = [
   { key: 'setupType', label: 'Setup' },
   { key: 'session', label: 'Session' },
   { key: 'volume', label: 'Volume' },
-  { key: 'entry', label: 'Entry' },
-  { key: 'stopLoss', label: 'Stop' },
-  { key: 'takeProfit', label: 'Target' },
+  { key: 'pips', label: 'Pips' },
   { key: 'resultR', label: 'R' },
   { key: 'resultAmount', label: '$' },
   { key: 'status', label: 'Status' },
@@ -109,8 +105,12 @@ function formatNumber(value) {
   }).format(value)
 }
 
+function formatPips(value) {
+  return value !== null && value !== undefined ? value.toFixed(1) : 'N/A'
+}
+
 function formatResultR(value) {
-  return typeof value === 'number' ? `${value.toFixed(3)}R` : '—'
+  return typeof value === 'number' && value !== null ? `${value.toFixed(3)}R` : 'N/A'
 }
 
 function formatCurrencyAmount(value) {
