@@ -4,7 +4,13 @@
     :class="headerClass"
   >
     <nav class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-      <router-link :to="authStore.isAuthenticated ? '/dashboard' : '/'" class="flex items-center">
+      <template v-if="isLandingMode && authStore.isAuthenticated">
+        <a :href="appUrl + '/dashboard'" class="flex items-center">
+          <img src="/crs-logo.png" :alt="siteIdentity.productName" class="h-11 w-11 shrink-0 object-contain drop-shadow-[0_12px_32px_rgba(0,0,0,0.28)] md:hidden" />
+          <img src="/crs-main.png" :alt="siteIdentity.productName" class="hidden h-12 w-auto max-w-[240px] shrink-0 object-contain drop-shadow-[0_12px_32px_rgba(0,0,0,0.28)] md:block" />
+        </a>
+      </template>
+      <router-link v-else :to="authStore.isAuthenticated ? '/dashboard' : '/'" class="flex items-center">
         <img src="/crs-logo.png" :alt="siteIdentity.productName" class="h-11 w-11 shrink-0 object-contain drop-shadow-[0_12px_32px_rgba(0,0,0,0.28)] md:hidden" />
         <img src="/crs-main.png" :alt="siteIdentity.productName" class="hidden h-12 w-auto max-w-[240px] shrink-0 object-contain drop-shadow-[0_12px_32px_rgba(0,0,0,0.28)] md:block" />
       </router-link>
@@ -44,8 +50,14 @@
           <a :href="docsUrl" target="_blank" rel="noreferrer" class="hidden rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:border-white/20 hover:text-white md:inline-flex">
             Docs
           </a>
-          <router-link to="/login" class="hidden md:inline-flex crs-button crs-button-ghost text-white">Login</router-link>
-          <router-link to="/register" class="hidden md:inline-flex crs-button-primary">Start journaling</router-link>
+          <template v-if="isLandingMode">
+            <a :href="loginTo" class="hidden md:inline-flex crs-button crs-button-ghost text-white">Login</a>
+            <a :href="registerTo" class="hidden md:inline-flex crs-button-primary">Start journaling</a>
+          </template>
+          <template v-else>
+            <router-link to="/login" class="hidden md:inline-flex crs-button crs-button-ghost text-white">Login</router-link>
+            <router-link to="/register" class="hidden md:inline-flex crs-button-primary">Start journaling</router-link>
+          </template>
         </template>
       </div>
     </nav>
@@ -81,20 +93,38 @@
           >
             Docs
           </a>
-          <router-link
-            to="/login"
-            class="rounded-xl bg-white/5 px-4 py-3 text-sm text-slate-300 transition hover:bg-white/10"
-            @click="isMobileMenuOpen = false"
-          >
-            Login
-          </router-link>
-          <router-link
-            to="/register"
-            class="rounded-xl bg-amber-300 px-4 py-3 text-sm font-medium text-slate-950 transition hover:bg-amber-200"
-            @click="isMobileMenuOpen = false"
-          >
-            Start journaling
-          </router-link>
+          <template v-if="isLandingMode">
+            <a
+              :href="loginTo"
+              class="rounded-xl bg-white/5 px-4 py-3 text-sm text-slate-300 transition hover:bg-white/10"
+              @click="isMobileMenuOpen = false"
+            >
+              Login
+            </a>
+            <a
+              :href="registerTo"
+              class="rounded-xl bg-amber-300 px-4 py-3 text-sm font-medium text-slate-950 transition hover:bg-amber-200"
+              @click="isMobileMenuOpen = false"
+            >
+              Start journaling
+            </a>
+          </template>
+          <template v-else>
+            <router-link
+              to="/login"
+              class="rounded-xl bg-white/5 px-4 py-3 text-sm text-slate-300 transition hover:bg-white/10"
+              @click="isMobileMenuOpen = false"
+            >
+              Login
+            </router-link>
+            <router-link
+              to="/register"
+              class="rounded-xl bg-amber-300 px-4 py-3 text-sm font-medium text-slate-950 transition hover:bg-amber-200"
+              @click="isMobileMenuOpen = false"
+            >
+              Start journaling
+            </router-link>
+          </template>
         </template>
       </div>
     </div>
@@ -114,6 +144,19 @@ const route = useRoute()
 const isMobileMenuOpen = ref(false)
 const isMobileHeaderHidden = ref(false)
 let lastScrollY = 0
+
+const appUrl = import.meta.env.DEV ? '' : siteIdentity.urls.app
+const isLandingMode = import.meta.env.VITE_APP_MODE === 'landing'
+
+const loginTo = computed(() => {
+  if (isLandingMode) return `${appUrl}/login`
+  return '/login'
+})
+
+const registerTo = computed(() => {
+  if (isLandingMode) return `${appUrl}/register`
+  return '/register'
+})
 
 const navigation = computed(() =>
   CRS_NAV_ITEMS.filter((item) => !item.adminOnly || authStore.user?.role === 'admin')

@@ -18,7 +18,10 @@
         </p>
 
         <div class="landing-hero__actions">
-          <router-link :to="primaryTo" class="crs-button-primary landing-hero__primary">
+          <a v-if="isLandingMode" :href="primaryTo" class="crs-button-primary landing-hero__primary">
+            {{ primaryLabel }}
+          </a>
+          <router-link v-else :to="primaryTo" class="crs-button-primary landing-hero__primary">
             {{ primaryLabel }}
           </router-link>
           <a :href="docsUrl" target="_blank" rel="noreferrer" class="landing-hero__secondary">
@@ -63,6 +66,18 @@ defineProps({
   primaryTo: {
     type: String,
     required: true
+  },
+  loginTo: {
+    type: String,
+    default: '/login'
+  },
+  registerTo: {
+    type: String,
+    default: '/register'
+  },
+  isLandingMode: {
+    type: Boolean,
+    default: false
   },
   docsUrl: {
     type: String,

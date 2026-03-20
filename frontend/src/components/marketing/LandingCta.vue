@@ -7,7 +7,8 @@
         Open the app, create the account, and keep the rest of the workflow tight from the first trade onward.
       </p>
       <div class="landing-cta__actions">
-        <router-link :to="primaryTo" class="crs-button-primary">{{ primaryLabel }}</router-link>
+        <a v-if="isLandingMode" :href="primaryTo" class="crs-button-primary">{{ primaryLabel }}</a>
+        <router-link v-else :to="primaryTo" class="crs-button-primary">{{ primaryLabel }}</router-link>
         <a :href="docsUrl" target="_blank" rel="noreferrer" class="landing-hero__secondary">
           View docs
         </a>
@@ -25,6 +26,10 @@ defineProps({
   primaryTo: {
     type: String,
     required: true
+  },
+  isLandingMode: {
+    type: Boolean,
+    default: false
   },
   docsUrl: {
     type: String,

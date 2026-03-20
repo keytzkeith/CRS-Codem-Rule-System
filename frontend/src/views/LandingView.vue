@@ -1,6 +1,13 @@
 <template>
   <div class="landing-page">
-    <LandingHero :primary-label="primaryLabel" :primary-to="primaryTo" :docs-url="docsUrl" />
+    <LandingHero
+      :primary-label="primaryLabel"
+      :primary-to="primaryTo"
+      :login-to="loginTo"
+      :register-to="registerTo"
+      :is-landing-mode="isLandingMode"
+      :docs-url="docsUrl"
+    />
     <LandingProofStrip />
     <LandingWorkflow />
     <LandingFeatureGrid />
@@ -8,7 +15,12 @@
     <LandingAnalyticsPreview />
     <LandingFounder />
     <LandingFaq />
-    <LandingCta :primary-label="primaryLabel" :primary-to="primaryTo" :docs-url="docsUrl" />
+    <LandingCta
+      :primary-label="primaryLabel"
+      :primary-to="primaryTo"
+      :is-landing-mode="isLandingMode"
+      :docs-url="docsUrl"
+    />
   </div>
 </template>
 
@@ -31,12 +43,24 @@ const authStore = useAuthStore()
 
 const docsUrl = import.meta.env.DEV ? 'http://localhost:3001' : siteIdentity.urls.docs
 const appUrl = import.meta.env.DEV ? '' : siteIdentity.urls.app
+const isLandingMode = import.meta.env.VITE_APP_MODE === 'landing'
+
 const primaryLabel = computed(() => (authStore.isAuthenticated ? 'Open app' : 'Start journaling'))
 const primaryTo = computed(() => {
-  if (import.meta.env.VITE_APP_MODE === 'landing') {
+  if (isLandingMode) {
     return authStore.isAuthenticated ? `${appUrl}/dashboard` : `${appUrl}/register`
   }
   return authStore.isAuthenticated ? '/dashboard' : '/register'
+})
+
+const loginTo = computed(() => {
+  if (isLandingMode) return `${appUrl}/login`
+  return '/login'
+})
+
+const registerTo = computed(() => {
+  if (isLandingMode) return `${appUrl}/register`
+  return '/register'
 })
 
 useScrollReveal()
