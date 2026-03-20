@@ -78,9 +78,9 @@ Make sure your `.env` file has the correct database settings:
 ```bash
 DB_USER=trader
 DB_PASSWORD=your_secure_password
-DB_NAME=tradetally
+DB_NAME=crs
 ```
 
 ---
 
-**This upgrade is a one-time process**. Once completed, your database will be PostgreSQL 16 and fully compatible with the latest TradeTally version.
+**This upgrade is a one-time process**. Once completed, your database will be PostgreSQL 16 and fully compatible with the latest CRS version.

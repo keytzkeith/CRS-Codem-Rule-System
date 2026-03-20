@@ -20,7 +20,7 @@ async function resetAdminPassword() {
     port: process.env.DB_PORT || 5432,
     user: process.env.DB_USER || 'trader',
     password: process.env.DB_PASSWORD || 'trader123',
-    database: process.env.DB_NAME || 'tradetally'
+    database: process.env.DB_NAME || 'crs'
   });
 
   try {

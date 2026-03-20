@@ -23,7 +23,7 @@ Current beta baseline for CRS.
 
 ### Changed
 
-- active user-facing surfaces moved away from legacy TradeTally branding
+- active user-facing surfaces moved away from legacy CRS branding
 - mobile docs navigation fixed
 - landing page optimized for mobile and simplified loading state
 

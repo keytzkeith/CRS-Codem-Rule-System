@@ -6,7 +6,7 @@
 echo "[INFO] Marking all migrations as already applied..."
 
 # Get all migration files
-MIGRATION_DIR="/Users/brennonoverton/Projects/tradetally/backend/migrations"
+MIGRATION_DIR="/Users/brennonoverton/Projects/crs/backend/migrations"
 
 # Counter
 COUNT=0
@@ -16,14 +16,14 @@ for migration_file in $(ls -1 $MIGRATION_DIR/*.sql | sort); do
     filename=$(basename "$migration_file")
 
     # Skip if already in migrations table
-    EXISTS=$(psql -U $USER -d tradetally -t -c "SELECT COUNT(*) FROM migrations WHERE filename = '$filename';" 2>/dev/null | xargs)
+    EXISTS=$(psql -U $USER -d crs -t -c "SELECT COUNT(*) FROM migrations WHERE filename = '$filename';" 2>/dev/null | xargs)
 
     if [ "$EXISTS" = "0" ]; then
         # Calculate checksum
         CHECKSUM=$(sha256sum "$migration_file" | awk '{print $1}')
 
         # Insert into migrations table
-        psql -U $USER -d tradetally -c "INSERT INTO migrations (filename, checksum, applied_at) VALUES ('$filename', '$CHECKSUM', CURRENT_TIMESTAMP);" 2>/dev/null
+        psql -U $USER -d crs -c "INSERT INTO migrations (filename, checksum, applied_at) VALUES ('$filename', '$CHECKSUM', CURRENT_TIMESTAMP);" 2>/dev/null
 
         if [ $? -eq 0 ]; then
             echo "[SUCCESS] Marked as applied: $filename"
@@ -40,5 +40,5 @@ echo ""
 echo "[COMPLETE] Marked $COUNT migrations as applied"
 echo ""
 echo "You can now start your application normally:"
-echo "  cd /Users/brennonoverton/Projects/tradetally/backend"
+echo "  cd /Users/brennonoverton/Projects/crs/backend"
 echo "  npm run dev"

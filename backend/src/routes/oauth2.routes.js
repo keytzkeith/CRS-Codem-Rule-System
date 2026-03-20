@@ -50,7 +50,7 @@ router.get('/.well-known/openid-configuration', oauth2Controller.openidConfigura
 router.post('/revoke', oauth2Controller.revoke);
 
 // Protected API endpoints for OAuth client management
-// These require authentication and are used by TradeTally admins/users
+// These require authentication and are used by CRS admins/users
 
 /**
  * GET /api/oauth/clients

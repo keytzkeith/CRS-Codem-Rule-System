@@ -1,4 +1,4 @@
--- Script to drop all data from TradeTally database while preserving schema
+-- Script to drop all data from CRS database while preserving schema
 -- WARNING: This will DELETE ALL DATA permanently!
 
 BEGIN;

@@ -1,16 +1,16 @@
 # Discourse OAuth2 Integration Guide
 
-This guide walks you through setting up Discourse to use TradeTally as an OAuth2 identity provider, allowing users to log into your Discourse forum with their TradeTally credentials.
+This guide walks you through setting up Discourse to use CRS as an OAuth2 identity provider, allowing users to log into your Discourse forum with their CRS credentials.
 
 ## Prerequisites
 
-- Running TradeTally instance (self-hosted or cloud)
+- Running CRS instance (self-hosted or cloud)
 - Discourse forum with admin access
 - Discourse OAuth2 Basic plugin installed
 
-## Step 1: Create OAuth2 Application in TradeTally
+## Step 1: Create OAuth2 Application in CRS
 
-1. Log into your TradeTally instance as an administrator
+1. Log into your CRS instance as an administrator
 2. Navigate to **Admin > OAuth Applications** (`/admin/oauth`)
 3. Click **"New Application"**
 4. Fill in the application details:
@@ -28,7 +28,7 @@ https://your-discourse-domain.com/auth/oauth2_basic/callback
 
 ### Recommended Settings:
 
-- **Description:** "Discourse forum integration for TradeTally users"
+- **Description:** "Discourse forum integration for CRS users"
 - **Website URL:** `https://your-discourse-domain.com`
 - **Allowed Scopes:** Select `openid`, `profile`, and `email`
 - **Trusted Application:** ☑ (Optional - skips consent screen for faster login)
@@ -76,15 +76,15 @@ oauth2_client_id: [Your Client ID from Step 1]
 
 oauth2_client_secret: [Your Client Secret from Step 1]
 
-oauth2_authorize_url: https://your-tradetally-domain.com/oauth/authorize
+oauth2_authorize_url: https://your-crs-domain.com/oauth/authorize
 
-oauth2_token_url: https://your-tradetally-domain.com/oauth/token
+oauth2_token_url: https://your-crs-domain.com/oauth/token
 
-oauth2_user_json_url: https://your-tradetally-domain.com/oauth/userinfo
+oauth2_user_json_url: https://your-crs-domain.com/oauth/userinfo
 
 oauth2_scope: openid profile email
 
-oauth2_button_title: Login with TradeTally
+oauth2_button_title: Login with CRS
 
 oauth2_json_user_id_path: sub
 
@@ -105,26 +105,26 @@ oauth2_callback_user_id_path: sub
 oauth2_callback_user_info_paths: {"username": "username", "name": "name", "email": "email", "avatar_url": "avatar_url"}
 ```
 
-**Replace `your-tradetally-domain.com` with:**
-- Self-hosted: Your TradeTally domain (e.g., `tradetally.yourdomain.com`)
-- Official instance: `tradetally.io`
+**Replace `your-crs-domain.com` with:**
+- Self-hosted: Your CRS domain (e.g., `app.codemrs.site`)
+- Official instance: `crs.io`
 
 ## Step 4: Test the Integration
 
 1. **Log out** of Discourse if you're currently logged in
 2. Go to your Discourse homepage
 3. Click **"Login"** or **"Sign Up"**
-4. You should see a **"Login with TradeTally"** button
-5. Click it and you'll be redirected to TradeTally
-6. If not already logged into TradeTally, log in
-7. If the TradeTally app is not "Trusted", you'll see a consent screen - click **"Authorize"**
+4. You should see a **"Login with CRS"** button
+5. Click it and you'll be redirected to CRS
+6. If not already logged into CRS, log in
+7. If the CRS app is not "Trusted", you'll see a consent screen - click **"Authorize"**
 8. You'll be redirected back to Discourse and logged in
 
 ## Step 5: Optional Configuration
 
-### Make TradeTally the Primary Login Method
+### Make CRS the Primary Login Method
 
-To make TradeTally the default and hide Discourse's built-in login:
+To make CRS the default and hide Discourse's built-in login:
 
 1. Go to **Settings** > **Login**
 2. Set these options:
@@ -133,22 +133,22 @@ enable_local_logins: ☐ false
 enable_local_logins_via_email: ☐ false
 ```
 
-3. Keep OAuth2 enabled to allow TradeTally login
+3. Keep OAuth2 enabled to allow CRS login
 
 ### Automatic User Provisioning
 
-Users will be automatically created in Discourse when they first log in via TradeTally. The following data is synced:
+Users will be automatically created in Discourse when they first log in via CRS. The following data is synced:
 
-- **Username:** TradeTally username
-- **Email:** TradeTally email
-- **Display Name:** TradeTally full name
-- **Avatar:** TradeTally avatar (if available)
+- **Username:** CRS username
+- **Email:** CRS email
+- **Display Name:** CRS full name
+- **Avatar:** CRS avatar (if available)
 
 ### Sync User Groups (Optional)
 
-You can map TradeTally user roles/tiers to Discourse groups using custom claims:
+You can map CRS user roles/tiers to Discourse groups using custom claims:
 
-The TradeTally OAuth2 userinfo endpoint returns:
+The CRS OAuth2 userinfo endpoint returns:
 ```json
 {
   "sub": "user-uuid",
@@ -167,11 +167,11 @@ You can use the `role` and `tier` fields for advanced group mapping with Discour
 
 ### "Invalid client" error
 
-**Solution:** Verify your Client ID and Client Secret are correct and match what's shown in TradeTally.
+**Solution:** Verify your Client ID and Client Secret are correct and match what's shown in CRS.
 
 ### "Redirect URI mismatch" error
 
-**Solution:** Ensure the redirect URI in TradeTally exactly matches:
+**Solution:** Ensure the redirect URI in CRS exactly matches:
 ```
 https://your-discourse-domain.com/auth/oauth2_basic/callback
 ```
@@ -181,16 +181,16 @@ https://your-discourse-domain.com/auth/oauth2_basic/callback
 
 ### "Invalid token" error
 
-**Solution:** Check that your TradeTally instance is accessible from your Discourse server:
+**Solution:** Check that your CRS instance is accessible from your Discourse server:
 ```bash
-curl https://your-tradetally-domain.com/oauth/userinfo
+curl https://your-crs-domain.com/oauth/userinfo
 ```
 
 ### Users getting "Email already exists" error
 
 **Solution:** This happens when a user exists in Discourse with the same email. Options:
 1. Delete the Discourse account first
-2. Have the user log in with their Discourse credentials, then connect TradeTally in account settings
+2. Have the user log in with their Discourse credentials, then connect CRS in account settings
 3. Enable `oauth2_email_verified` to auto-merge accounts
 
 ### Login button not appearing
@@ -202,7 +202,7 @@ curl https://your-tradetally-domain.com/oauth/userinfo
 
 ### PKCE Support
 
-TradeTally OAuth2 supports PKCE (Proof Key for Code Exchange) for enhanced security. If your Discourse version supports it:
+CRS OAuth2 supports PKCE (Proof Key for Code Exchange) for enhanced security. If your Discourse version supports it:
 
 ```
 oauth2_pkce_enabled: ☑ true
@@ -211,15 +211,15 @@ oauth2_pkce_code_challenge_method: S256
 
 ## Security Best Practices
 
-1. **Use HTTPS:** Always use HTTPS for both TradeTally and Discourse
+1. **Use HTTPS:** Always use HTTPS for both CRS and Discourse
 2. **Trusted Applications:** Only mark applications as "Trusted" if you fully control both systems
 3. **Rotate Secrets:** Periodically rotate your OAuth2 client secret
-4. **Monitor Access:** Regularly review authorized applications in TradeTally admin panel
-5. **Revoke Access:** Users can revoke Discourse access from their TradeTally account settings
+4. **Monitor Access:** Regularly review authorized applications in CRS admin panel
+5. **Revoke Access:** Users can revoke Discourse access from their CRS account settings
 
 ## Advanced: Multiple Discourse Instances
 
-If you have multiple Discourse forums (e.g., staging, production), create separate OAuth2 applications in TradeTally:
+If you have multiple Discourse forums (e.g., staging, production), create separate OAuth2 applications in CRS:
 
 1. Create one app for production with production callback URL
 2. Create another app for staging with staging callback URL
@@ -229,44 +229,44 @@ If you have multiple Discourse forums (e.g., staging, production), create separa
 
 ### Revoking Access
 
-**Admin revocation (TradeTally):**
+**Admin revocation (CRS):**
 1. Go to Admin > OAuth Applications
 2. Click on Discourse application
 3. Click "Delete" to revoke all access tokens
 
 **User revocation:**
-1. Users can revoke access from TradeTally Settings > Connected Applications
+1. Users can revoke access from CRS Settings > Connected Applications
 2. Find "Discourse Forum" and click "Revoke Access"
 
 ### Syncing User Data
 
 User data is synced on each login. To force a sync:
 1. Log out of Discourse
-2. Log back in via TradeTally
+2. Log back in via CRS
 
 ## API Rate Limits
 
-TradeTally OAuth2 endpoints have the following rate limits:
+CRS OAuth2 endpoints have the following rate limits:
 
 - `/oauth/authorize`: 60 requests per minute per user
 - `/oauth/token`: 60 requests per minute per client
 - `/oauth/userinfo`: 300 requests per minute per token
 
-These limits should be sufficient for normal Discourse usage. If you hit limits, contact your TradeTally administrator.
+These limits should be sufficient for normal Discourse usage. If you hit limits, contact your CRS administrator.
 
 ## Support
 
 For issues with:
-- **TradeTally OAuth2 configuration:** Check TradeTally logs at `/backend/src/logs/`
+- **CRS OAuth2 configuration:** Check CRS logs at `/backend/src/logs/`
 - **Discourse configuration:** Check Discourse logs with `./launcher logs app`
 - **Integration issues:** Test each endpoint individually using curl:
 
 ```bash
 # Test authorization endpoint
-curl "https://your-tradetally-domain.com/oauth/authorize?response_type=code&client_id=YOUR_CLIENT_ID&redirect_uri=http://localhost&scope=openid"
+curl "https://your-crs-domain.com/oauth/authorize?response_type=code&client_id=YOUR_CLIENT_ID&redirect_uri=http://localhost&scope=openid"
 
 # Test token endpoint (after getting a code)
-curl -X POST https://your-tradetally-domain.com/oauth/token \
+curl -X POST https://your-crs-domain.com/oauth/token \
   -d "grant_type=authorization_code" \
   -d "code=YOUR_CODE" \
   -d "redirect_uri=http://localhost" \
@@ -274,7 +274,7 @@ curl -X POST https://your-tradetally-domain.com/oauth/token \
   -d "client_secret=YOUR_CLIENT_SECRET"
 
 # Test userinfo endpoint (with access token)
-curl https://your-tradetally-domain.com/oauth/userinfo \
+curl https://your-crs-domain.com/oauth/userinfo \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -282,7 +282,7 @@ curl https://your-tradetally-domain.com/oauth/userinfo \
 
 - [Discourse OAuth2 Basic Plugin Documentation](https://meta.discourse.org/t/discourse-oauth2-basic/33879)
 - [OAuth 2.0 Specification](https://oauth.net/2/)
-- [TradeTally OAuth2 API Reference](https://your-tradetally-domain.com/api-docs) (if Swagger is enabled)
+- [CRS OAuth2 API Reference](https://your-crs-domain.com/api-docs) (if Swagger is enabled)
 
 ---
 

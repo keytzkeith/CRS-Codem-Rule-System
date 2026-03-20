@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS device_tokens (
     device_token VARCHAR(500) NOT NULL,
     platform VARCHAR(20) NOT NULL CHECK (platform IN ('ios', 'android')),
     environment VARCHAR(20) DEFAULT 'production' CHECK (environment IN ('development', 'production')),
-    bundle_id VARCHAR(255) DEFAULT 'com.tradetally.app',
+    bundle_id VARCHAR(255) DEFAULT 'com.crs.app',
     active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

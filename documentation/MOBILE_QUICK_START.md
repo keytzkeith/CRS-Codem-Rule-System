@@ -1,13 +1,13 @@
-# TradeTally Mobile API - Quick Start Guide
+# CRS Mobile API - Quick Start Guide
 
 ## [START] Getting Started
 
 ### 1. Server Discovery
 
-First, discover your TradeTally server configuration:
+First, discover your CRS server configuration:
 
 ```bash
-curl https://your-server.com/.well-known/tradetally-config.json
+curl https://your-server.com/.well-known/crs-config.json
 ```
 
 ### 2. Login with Device Registration
@@ -52,7 +52,7 @@ curl -X POST https://your-server.com/api/v1/auth/refresh \
 ```javascript
 // 1. Server Discovery
 const discoverServer = async (serverUrl) => {
-  const response = await fetch(`${serverUrl}/.well-known/tradetally-config.json`);
+  const response = await fetch(`${serverUrl}/.well-known/crs-config.json`);
   return response.json();
 };
 
@@ -134,7 +134,7 @@ const performDeltaSync = async () => {
 
 | Endpoint | Method | Purpose |
 |----------|---------|----------|
-| `/.well-known/tradetally-config.json` | GET | Server discovery |
+| `/.well-known/crs-config.json` | GET | Server discovery |
 | `/api/v1/server/info` | GET | Server information |
 | `/api/v1/auth/login/device` | POST | Login with device |
 | `/api/v1/auth/refresh` | POST | Refresh tokens |
@@ -158,8 +158,8 @@ REFRESH_TOKEN_EXPIRE=30d
 MAX_DEVICES_PER_USER=10
 
 # Instance info
-INSTANCE_NAME=TradeTally
-INSTANCE_URL=https://your-domain.com
+INSTANCE_NAME=CRS
+INSTANCE_URL=https://codemrs.site
 ```
 
 ### Docker Setup
@@ -215,7 +215,7 @@ curl https://your-server.com/api/v1/users/profile \
 
 ## [TARGET] Next Steps
 
-1. **Server Discovery**: Test `/.well-known/tradetally-config.json`
+1. **Server Discovery**: Test `/.well-known/crs-config.json`
 2. **Authentication**: Implement login with device registration
 3. **Token Management**: Set up automatic refresh
 4. **Data Sync**: Implement full and delta sync

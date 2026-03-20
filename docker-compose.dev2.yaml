@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER:-trader}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-trader_password}
-      POSTGRES_DB: ${DB_NAME:-tradetally}
+      POSTGRES_DB: ${DB_NAME:-crs}
     volumes:
       - postgres_data_dev-new:/var/lib/postgresql/data
     ports:
@@ -16,7 +16,7 @@ services:
     networks:
       - trader-network-dev-new
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-trader} -d ${DB_NAME:-tradetally}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-trader} -d ${DB_NAME:-crs}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,7 +35,7 @@ services:
       DB_PORT: 5432
       DB_USER: ${DB_USER:-trader}
       DB_PASSWORD: ${DB_PASSWORD:-trader_password}
-      DB_NAME: ${DB_NAME:-tradetally}
+      DB_NAME: ${DB_NAME:-crs}
       JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_here}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       # Email configuration (optional)

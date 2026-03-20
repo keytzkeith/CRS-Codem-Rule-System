@@ -109,12 +109,12 @@ detect_containers() {
     elif docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^crs-db-dev$"; then
         DB_CONTAINER="crs-db-dev"
         APP_CONTAINER="crs-app-dev"
-    elif docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^tradetally-db$"; then
-        DB_CONTAINER="tradetally-db"
-        APP_CONTAINER="tradetally-app"
-    elif docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^tradetally-db-dev$"; then
-        DB_CONTAINER="tradetally-db-dev"
-        APP_CONTAINER="tradetally-app-dev"
+    elif docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^crs-db$"; then
+        DB_CONTAINER="crs-db"
+        APP_CONTAINER="crs-app"
+    elif docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^crs-db-dev$"; then
+        DB_CONTAINER="crs-db-dev"
+        APP_CONTAINER="crs-app-dev"
     fi
 }
 
@@ -180,7 +180,7 @@ backup_database() {
     if [ "$MODE" == "docker" ]; then
         # Docker mode: use docker exec
         if [ -z "$DB_CONTAINER" ] || ! docker ps --format '{{.Names}}' | grep -q "^${DB_CONTAINER}$"; then
-            log_error "Database container is not running (tried crs-db, crs-db-dev, tradetally-db, and tradetally-db-dev)"
+            log_error "Database container is not running (tried crs-db, crs-db-dev, crs-db, and crs-db-dev)"
             exit 1
         fi
 
@@ -362,7 +362,7 @@ create_manifest() {
   "created_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "created_by": "$(whoami)@$(hostname)",
   "backup_mode": "$MODE",
-  "tradetally": {
+  "crs": {
     "database": {
       "name": "$DB_NAME",
       "users": $user_count,
@@ -375,7 +375,7 @@ create_manifest() {
     }
   },
   "contents": {
-    "database": "database/tradetally.sql",
+    "database": "database/crs.sql",
     "uploads": "uploads/",
     "data": "data/",
     "config": "config/"

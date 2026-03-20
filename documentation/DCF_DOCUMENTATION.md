@@ -2,7 +2,7 @@
 
 ## Overview
 
-TradeTally uses a **traditional DCF model** that projects cash flows year-by-year and includes terminal value. This is the proper DCF method, not a simplified target price calculation.
+CRS uses a **traditional DCF model** that projects cash flows year-by-year and includes terminal value. This is the proper DCF method, not a simplified target price calculation.
 
 ---
 

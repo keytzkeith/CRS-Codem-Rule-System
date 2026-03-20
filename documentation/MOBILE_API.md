@@ -1,8 +1,8 @@
-# TradeTally Mobile API Documentation
+# CRS Mobile API Documentation
 
 ## Overview
 
-The TradeTally Mobile API (v1) provides comprehensive endpoints for mobile applications to integrate with TradeTally instances. This API supports both cloud (tradetally.io) and self-hosted deployments with automatic server discovery.
+The CRS Mobile API (v1) provides comprehensive endpoints for mobile applications to integrate with CRS instances. This API supports both cloud (crs.io) and self-hosted deployments with automatic server discovery.
 
 ## Base URL
 
@@ -46,7 +46,7 @@ GET /api/v1/server/info
 ```json
 {
   "server": {
-    "name": "TradeTally",
+    "name": "CRS",
     "version": "v1",
     "url": "https://your-server.com",
     "isCloud": false,
@@ -80,7 +80,7 @@ GET /api/v1/server/info
 Standard discovery endpoint for automatic configuration.
 
 ```http
-GET /.well-known/tradetally-config.json
+GET /.well-known/crs-config.json
 ```
 
 ---
@@ -625,7 +625,7 @@ When you receive a `TOKEN_EXPIRED` error:
 
 ```javascript
 // Discover server configuration
-const config = await fetch('https://server.com/.well-known/tradetally-config.json');
+const config = await fetch('https://server.com/.well-known/crs-config.json');
 const serverInfo = await config.json();
 
 // Configure app based on server capabilities
@@ -760,7 +760,7 @@ async function updatePushToken(newToken) {
 
 Use these endpoints to test your mobile app integration:
 
-1. **Server Discovery**: `GET /.well-known/tradetally-config.json`
+1. **Server Discovery**: `GET /.well-known/crs-config.json`
 2. **Health Check**: `GET /api/v1/server/health`
 3. **Authentication**: `POST /api/v1/auth/login/device`
 4. **Token Refresh**: `POST /api/v1/auth/refresh`
@@ -785,4 +785,4 @@ Use these endpoints to test your mobile app integration:
 - **Server Setup**: See `README.md` for server configuration
 - **Environment Variables**: See `.env.example` for complete configuration options
 
-For support and updates, visit the TradeTally documentation or GitHub repository.
+For support and updates, visit the CRS documentation or GitHub repository.

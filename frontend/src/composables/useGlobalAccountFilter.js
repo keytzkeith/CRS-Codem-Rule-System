@@ -2,7 +2,7 @@ import { ref, computed, watch } from 'vue'
 import api from '@/services/api'
 
 export const STORAGE_KEY = 'crs_global_account'
-export const LEGACY_STORAGE_KEY = 'tradetally_global_account'
+export const LEGACY_STORAGE_KEY = 'crs_global_account'
 export const CRS_STORAGE_KEY = 'crs_global_account'
 
 // Special filter value for trades without an account

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# PostgreSQL 16 to 15 Rollback Script for TradeTally
+# PostgreSQL 16 to 15 Rollback Script for CRS
 # This script rolls back from PostgreSQL 16 to 15 using backups
 
 set -e  # Exit on any error
@@ -27,7 +27,7 @@ DOCKER_COMPOSE_FILE="${COMPOSE_FILE:-$DOCKER_COMPOSE_FILE}"
 echo -e "${BLUE}[INFO] Using compose file: $DOCKER_COMPOSE_FILE${NC}"
 BACKUP_DIR="./postgres-migration-backup"
 
-echo -e "${BLUE}=== TradeTally PostgreSQL 16 to 15 Rollback ===${NC}"
+echo -e "${BLUE}=== CRS PostgreSQL 16 to 15 Rollback ===${NC}"
 echo -e "${YELLOW}[WARNING] This will roll back your database to PostgreSQL 15${NC}"
 echo -e "${YELLOW}[WARNING] Any data changes since migration will be lost${NC}"
 echo ""
@@ -44,7 +44,7 @@ echo -e "${BLUE}[INFO] Available backups:${NC}"
 ls -la "$BACKUP_DIR"
 
 # Find the most recent SQL backup
-SQL_BACKUP=$(ls -t "$BACKUP_DIR"/tradetally_backup_*.sql 2>/dev/null | head -1)
+SQL_BACKUP=$(ls -t "$BACKUP_DIR"/crs_backup_*.sql 2>/dev/null | head -1)
 VOLUME_BACKUP=$(ls -t "$BACKUP_DIR"/postgres_volume_backup_*.tar.gz 2>/dev/null | head -1)
 
 if [[ -z "$SQL_BACKUP" ]]; then
@@ -76,9 +76,9 @@ docker-compose -f "$DOCKER_COMPOSE_FILE" down
 
 # Determine volume name based on compose file
 if [[ "$DOCKER_COMPOSE_FILE" == *"dev"* ]]; then
-    VOLUME_NAME="tradetally_postgres_data_dev"
+    VOLUME_NAME="crs_postgres_data_dev"
 else
-    VOLUME_NAME="tradetally_postgres_data"
+    VOLUME_NAME="crs_postgres_data"
 fi
 
 echo -e "${BLUE}[INFO] Using volume: $VOLUME_NAME${NC}"
@@ -109,7 +109,7 @@ docker-compose -f "$DOCKER_COMPOSE_FILE" up -d
 # Wait for PostgreSQL to be ready
 echo -e "${BLUE}[INFO] Waiting for PostgreSQL 15 to be ready...${NC}"
 for i in {1..30}; do
-    if docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T postgres pg_isready -U trader -d tradetally; then
+    if docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T postgres pg_isready -U trader -d crs; then
         echo -e "${GREEN}[SUCCESS] PostgreSQL 15 is ready${NC}"
         break
     fi
@@ -126,11 +126,11 @@ echo -e "${BLUE}[INFO] Verifying rollback...${NC}"
 sleep 5
 
 # Check PostgreSQL version
-PG_VERSION=$(docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T postgres psql -U trader -d tradetally -t -c "SELECT version();" | head -1 | xargs)
+PG_VERSION=$(docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T postgres psql -U trader -d crs -t -c "SELECT version();" | head -1 | xargs)
 echo -e "${BLUE}[INFO] Current PostgreSQL version: $PG_VERSION${NC}"
 
 # Check if we can connect and query data
-TRADE_COUNT=$(docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T postgres psql -U trader -d tradetally -t -c "SELECT COUNT(*) FROM trades;" 2>/dev/null | xargs || echo "0")
+TRADE_COUNT=$(docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T postgres psql -U trader -d crs -t -c "SELECT COUNT(*) FROM trades;" 2>/dev/null | xargs || echo "0")
 echo -e "${BLUE}[INFO] Trade count in database: $TRADE_COUNT${NC}"
 
 # Clean up backup file from docker-compose

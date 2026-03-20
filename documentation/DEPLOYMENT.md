@@ -1,6 +1,6 @@
-# TradeTally Docker Deployment Guide
+# CRS Docker Deployment Guide
 
-Deploy TradeTally quickly using Docker and Docker Compose.
+Deploy CRS quickly using Docker and Docker Compose.
 
 ## Quick Start
 
@@ -13,14 +13,14 @@ Deploy TradeTally quickly using Docker and Docker Compose.
 Create a new directory and download the required files:
 
 ```bash
-mkdir tradetally
-cd tradetally
+mkdir crs
+cd crs
 
 # Download the docker-compose file
-curl -O https://raw.githubusercontent.com/GeneBO98/tradetally/refs/heads/main/docker-compose.yaml
+curl -O https://raw.githubusercontent.com/GeneBO98/crs/refs/heads/main/docker-compose.yaml
 
 # Download the environment template
-curl -O https://raw.githubusercontent.com/GeneBO98/tradetally/main/.env.example
+curl -O https://raw.githubusercontent.com/GeneBO98/crs/main/.env.example
 
 # Rename to .env
 mv .env.example .env
@@ -37,7 +37,7 @@ nano .env  # or vim .env
 **Required configurations:**
 - `DB_USER`: Database username (default: trader)
 - `DB_PASSWORD`: Set a strong database password
-- `DB_NAME`: Database name (default: tradetally)
+- `DB_NAME`: Database name (default: crs)
 - `JWT_SECRET`: Change this to a secure random string
 - `CORS_ORIGINS`: Additional CORS origins for mobile apps
 
@@ -84,15 +84,15 @@ The database will be automatically created. To verify:
 
 ```bash
 # Check if database is ready
-docker exec tradetally-db pg_isready -U trader -d tradetally
+docker exec crs-db pg_isready -U trader -d crs
 
 # If you need to manually run the schema (only if tables don't exist):
-# docker exec -i tradetally-db psql -U trader -d tradetally < schema.sql
+# docker exec -i crs-db psql -U trader -d crs < schema.sql
 ```
 
 ### 5. Access the Application
 
-- **TradeTally**: http://localhost
+- **CRS**: http://localhost
 - **Database Admin**: http://localhost:8080 (optional)
 
 ## Default Login
@@ -118,12 +118,12 @@ docker-compose up -d app
 
 ### Backup Database
 ```bash
-docker exec tradetally-db pg_dump -U trader tradetally > tradetally_backup_$(date +%Y%m%d).sql
+docker exec crs-db pg_dump -U trader crs > crs_backup_$(date +%Y%m%d).sql
 ```
 
 ### Restore Database
 ```bash
-docker exec -i tradetally-db psql -U trader tradetally < tradetally_backup.sql
+docker exec -i crs-db psql -U trader crs < crs_backup.sql
 ```
 
 ### Stop Services
@@ -139,7 +139,7 @@ docker-compose down -v
 
 After deployment, your directory should look like:
 ```
-tradetally/
+crs/
 ├── docker-compose.yaml
 ├── .env
 ├── logs/          (created automatically)
@@ -154,7 +154,7 @@ tradetally/
 docker-compose logs app
 
 # Check database connection
-docker exec tradetally-app ping postgres
+docker exec crs-app ping postgres
 ```
 
 ### Database connection issues
@@ -182,7 +182,7 @@ docker-compose logs postgres
 ## Support
 
 For issues and support:
-- GitHub Issues: https://github.com/GeneBO98/tradetally/issues
+- GitHub Issues: https://github.com/GeneBO98/crs/issues
 
 ## API Keys (Optional)
 

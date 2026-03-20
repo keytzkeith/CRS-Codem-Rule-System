@@ -27,7 +27,7 @@ fi
 # Set defaults
 DB_USER=${DB_USER:-trader}
 DB_PASSWORD=${DB_PASSWORD:-trader_password}
-DB_NAME=${DB_NAME:-tradetally}
+DB_NAME=${DB_NAME:-crs}
 AUTO_MIGRATE_POSTGRES=${AUTO_MIGRATE_POSTGRES:-false}
 
 log "PostgreSQL Migration Check Starting..."
@@ -38,7 +38,7 @@ if [[ "$AUTO_MIGRATE_POSTGRES" != "true" ]]; then
     log "Auto-migration disabled. Checking for version compatibility..."
     
     # Just check if there's a version mismatch and provide helpful message
-    VERSION_CHECK=$(docker run --rm -v tradetally_postgres_data_dev:/data alpine sh -c 'if [[ -f /data/PG_VERSION ]]; then cat /data/PG_VERSION; else echo "none"; fi' 2>/dev/null || echo "none")
+    VERSION_CHECK=$(docker run --rm -v crs_postgres_data_dev:/data alpine sh -c 'if [[ -f /data/PG_VERSION ]]; then cat /data/PG_VERSION; else echo "none"; fi' 2>/dev/null || echo "none")
     
     if [[ "$VERSION_CHECK" == "15" ]]; then
         log_error "=== POSTGRESQL VERSION MISMATCH DETECTED ==="
@@ -64,7 +64,7 @@ mkdir -p "$BACKUP_DIR"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
 # Check current database version
-VERSION_CHECK=$(docker run --rm -v tradetally_postgres_data_dev:/data alpine sh -c 'if [[ -f /data/PG_VERSION ]]; then cat /data/PG_VERSION; else echo "none"; fi' 2>/dev/null || echo "none")
+VERSION_CHECK=$(docker run --rm -v crs_postgres_data_dev:/data alpine sh -c 'if [[ -f /data/PG_VERSION ]]; then cat /data/PG_VERSION; else echo "none"; fi' 2>/dev/null || echo "none")
 
 log "Current database version: $VERSION_CHECK"
 
@@ -86,7 +86,7 @@ if [[ "$VERSION_CHECK" == "15" ]]; then
     BACKUP_FILE="$BACKUP_DIR/migration_backup_$TIMESTAMP.sql"
     
     docker run --rm \
-        -v tradetally_postgres_data_dev:/var/lib/postgresql/data \
+        -v crs_postgres_data_dev:/var/lib/postgresql/data \
         -v "$(pwd)/$BACKUP_DIR":/backup \
         -e POSTGRES_USER="$DB_USER" \
         -e POSTGRES_PASSWORD="$DB_PASSWORD" \
@@ -126,13 +126,13 @@ if [[ "$VERSION_CHECK" == "15" ]]; then
     
     # Step 2: Remove old data volume
     log "Removing PostgreSQL 15 data volume..."
-    docker volume rm tradetally_postgres_data_dev || true
+    docker volume rm crs_postgres_data_dev || true
     
     # Step 3: Initialize PostgreSQL 16 and restore data
     log "Initializing PostgreSQL 16 and restoring data..."
     
     docker run --rm \
-        -v tradetally_postgres_data_dev:/var/lib/postgresql/data \
+        -v crs_postgres_data_dev:/var/lib/postgresql/data \
         -v "$(pwd)/$BACKUP_DIR":/backup \
         -e POSTGRES_USER="$DB_USER" \
         -e POSTGRES_PASSWORD="$DB_PASSWORD" \

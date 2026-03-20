@@ -1,8 +1,8 @@
-# TradeTally Tier Structure & Enforcement
+# CRS Tier Structure & Enforcement
 
 ## Overview
 
-TradeTally uses a simple two-tier system: **Free** and **Pro ($8/month)**
+CRS uses a simple two-tier system: **Free** and **Pro ($8/month)**
 
 ---
 
@@ -192,7 +192,7 @@ const comparison = TierService.getTierComparison();
 ### Billing Modes
 
 - **Self-hosted:** Billing automatically disabled (all users get Pro features)
-- **SaaS (tradetally.io):** Billing enabled, Stripe integration
+- **SaaS (crs.io):** Billing enabled, Stripe integration
 - Admin users always get Pro tier
 - Tier overrides allow manual Pro access with optional expiration
 

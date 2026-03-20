@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS instance_config (
 
 -- Insert default instance configuration
 INSERT INTO instance_config (key, value, description, is_public) VALUES
-    ('instance_name', '"TradeTally"'::jsonb, 'Display name for this instance', true),
+    ('instance_name', '"CRS"'::jsonb, 'Display name for this instance', true),
     ('instance_url', '""'::jsonb, 'Base URL for this instance', true),
     ('api_version', '"v1"'::jsonb, 'Current API version', true),
     ('features', '{

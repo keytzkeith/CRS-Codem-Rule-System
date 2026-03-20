@@ -147,12 +147,12 @@ detect_containers() {
     elif docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^crs-db-dev$"; then
         DB_CONTAINER="crs-db-dev"
         APP_CONTAINER="crs-app-dev"
-    elif docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^tradetally-db$"; then
-        DB_CONTAINER="tradetally-db"
-        APP_CONTAINER="tradetally-app"
-    elif docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^tradetally-db-dev$"; then
-        DB_CONTAINER="tradetally-db-dev"
-        APP_CONTAINER="tradetally-app-dev"
+    elif docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^crs-db$"; then
+        DB_CONTAINER="crs-db"
+        APP_CONTAINER="crs-app"
+    elif docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^crs-db-dev$"; then
+        DB_CONTAINER="crs-db-dev"
+        APP_CONTAINER="crs-app-dev"
     fi
 }
 
@@ -243,10 +243,10 @@ extract_backup() {
         echo ""
         log_info "Backup information:"
         jq -r '.created_at // "unknown"' "$TEMP_DIR/manifest.json" | xargs -I {} echo "  Created: {}"
-        jq -r '.tradetally.database.users // "unknown"' "$TEMP_DIR/manifest.json" | xargs -I {} echo "  Users: {}"
-        jq -r '.tradetally.database.trades // "unknown"' "$TEMP_DIR/manifest.json" | xargs -I {} echo "  Trades: {}"
-        jq -r '.tradetally.database.diary_entries // "unknown"' "$TEMP_DIR/manifest.json" | xargs -I {} echo "  Diary entries: {}"
-        jq -r '.tradetally.files.uploads // "unknown"' "$TEMP_DIR/manifest.json" | xargs -I {} echo "  Upload files: {}"
+        jq -r '.crs.database.users // "unknown"' "$TEMP_DIR/manifest.json" | xargs -I {} echo "  Users: {}"
+        jq -r '.crs.database.trades // "unknown"' "$TEMP_DIR/manifest.json" | xargs -I {} echo "  Trades: {}"
+        jq -r '.crs.database.diary_entries // "unknown"' "$TEMP_DIR/manifest.json" | xargs -I {} echo "  Diary entries: {}"
+        jq -r '.crs.files.uploads // "unknown"' "$TEMP_DIR/manifest.json" | xargs -I {} echo "  Upload files: {}"
         echo ""
     fi
 }
@@ -280,7 +280,7 @@ restore_database() {
         return
     fi
 
-    local dump_file="$TEMP_DIR/database/tradetally.sql"
+    local dump_file="$TEMP_DIR/database/crs.sql"
 
     if [ ! -f "$dump_file" ]; then
         log_error "Database dump not found in backup"
@@ -291,7 +291,7 @@ restore_database() {
 
     if [ "$MODE" == "docker" ]; then
         if [ -z "$DB_CONTAINER" ] || ! docker ps --format '{{.Names}}' | grep -q "^${DB_CONTAINER}$"; then
-            log_error "Database container is not running (tried crs-db, crs-db-dev, tradetally-db, and tradetally-db-dev)"
+            log_error "Database container is not running (tried crs-db, crs-db-dev, crs-db, and crs-db-dev)"
             exit 1
         fi
 

@@ -1,4 +1,4 @@
--- Core database schema for TradeTally main branch
+-- Core database schema for CRS main branch
 -- This is the base schema that must exist before any migrations run
 
 -- Users table

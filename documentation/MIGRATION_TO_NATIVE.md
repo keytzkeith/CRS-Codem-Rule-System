@@ -1,6 +1,6 @@
 # Migration Guide: Docker to Native Services
 
-This guide will help you migrate TradeTally from Docker containers to running natively with Node.js and PostgreSQL as system services.
+This guide will help you migrate CRS from Docker containers to running natively with Node.js and PostgreSQL as system services.
 
 ## Prerequisites
 
@@ -19,17 +19,17 @@ First, create a backup of your PostgreSQL database from the Docker container:
 
 ```bash
 # Create backup directory
-mkdir -p ~/tradetally-migration
+mkdir -p ~/crs-migration
 
 # Export the database from Docker
-docker exec tradetally-db-dev pg_dump -U trader -d tradetally > ~/tradetally-migration/tradetally_backup.sql
+docker exec crs-db-dev pg_dump -U trader -d crs > ~/crs-migration/crs_backup.sql
 
 # Export users and roles (if custom)
-docker exec tradetally-db-dev pg_dumpall -U trader --roles-only > ~/tradetally-migration/roles_backup.sql
+docker exec crs-db-dev pg_dumpall -U trader --roles-only > ~/crs-migration/roles_backup.sql
 
 # Copy any uploaded files from Docker volumes
-docker cp tradetally-app-dev:/app/backend/src/data ~/tradetally-migration/app_data
-docker cp tradetally-app:/app/backend/src/logs ~/tradetally-migration/app_logs
+docker cp crs-app-dev:/app/backend/src/data ~/crs-migration/app_data
+docker cp crs-app:/app/backend/src/logs ~/crs-migration/app_logs
 ```
 
 ### 1.2 Export Environment Variables
@@ -38,10 +38,10 @@ Save your current environment configuration:
 
 ```bash
 # Copy your .env file
-cp .env ~/tradetally-migration/.env.backup
+cp .env ~/crs-migration/.env.backup
 
 # Export Docker environment (for reference)
-docker exec tradetally-app env > ~/tradetally-migration/docker_env.txt
+docker exec crs-app env > ~/crs-migration/docker_env.txt
 ```
 
 ## Step 2: Install Native Services
@@ -93,8 +93,8 @@ sudo -u postgres psql
 
 # In PostgreSQL prompt:
 CREATE USER trader WITH PASSWORD 'your_secure_password';
-CREATE DATABASE tradetally OWNER trader;
-GRANT ALL PRIVILEGES ON DATABASE tradetally TO trader;
+CREATE DATABASE crs OWNER trader;
+GRANT ALL PRIVILEGES ON DATABASE crs TO trader;
 \q
 ```
 
@@ -102,11 +102,11 @@ GRANT ALL PRIVILEGES ON DATABASE tradetally TO trader;
 
 ```bash
 # Import the database backup
-sudo -u postgres psql tradetally < ~/tradetally-migration/tradetally_backup.sql
+sudo -u postgres psql crs < ~/crs-migration/crs_backup.sql
 
 # Set proper ownership
-sudo -u postgres psql -c "ALTER DATABASE tradetally OWNER TO trader;"
-sudo -u postgres psql -d tradetally -c "REASSIGN OWNED BY postgres TO trader;"
+sudo -u postgres psql -c "ALTER DATABASE crs OWNER TO trader;"
+sudo -u postgres psql -d crs -c "REASSIGN OWNED BY postgres TO trader;"
 ```
 
 ### 3.3 Configure PostgreSQL Access
@@ -118,40 +118,40 @@ Edit PostgreSQL configuration:
 sudo nano /etc/postgresql/16/main/pg_hba.conf
 
 # Add this line for local connections:
-local   tradetally      trader                                  md5
-host    tradetally      trader          127.0.0.1/32            md5
-host    tradetally      trader          ::1/128                 md5
+local   crs      trader                                  md5
+host    crs      trader          127.0.0.1/32            md5
+host    crs      trader          ::1/128                 md5
 
 # Restart PostgreSQL
 sudo systemctl restart postgresql
 ```
 
-## Step 4: Set Up TradeTally Application
+## Step 4: Set Up CRS Application
 
 ### 4.1 Prepare Application Directory
 
 ```bash
 # Create application directory
-sudo mkdir -p /opt/tradetally
-sudo chown $USER:$USER /opt/tradetally
+sudo mkdir -p /opt/crs
+sudo chown $USER:$USER /opt/crs
 
 # Clone or copy your application
-cp -r ~tradetally/* /opt/tradetally/
+cp -r ~crs/* /opt/crs/
 
 # Restore data and logs
-cp -r ~/tradetally-migration/app_data /opt/tradetally/backend/src/
-cp -r ~/tradetally-migration/app_logs /opt/tradetally/backend/src/
+cp -r ~/crs-migration/app_data /opt/crs/backend/src/
+cp -r ~/crs-migration/app_logs /opt/crs/backend/src/
 ```
 
 ### 4.2 Install Dependencies
 
 ```bash
 # Backend dependencies
-cd /opt/tradetally/backend
+cd /opt/crs/backend
 npm install --production
 
 # Frontend build
-cd /opt/tradetally/frontend
+cd /opt/crs/frontend
 npm install
 npm run build
 ```
@@ -162,7 +162,7 @@ Create production environment file:
 
 ```bash
 # Create .env file
-nano /opt/tradetally/backend/.env
+nano /opt/crs/backend/.env
 ```
 
 Add the following (adjust values as needed):
@@ -173,7 +173,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USER=trader
 DB_PASSWORD=your_secure_password
-DB_NAME=tradetally
+DB_NAME=crs
 
 # Application Configuration
 NODE_ENV=production
@@ -189,8 +189,8 @@ ALPHA_VANTAGE_API_KEY=your_key
 GEMINI_API_KEY=your_key
 
 # Frontend URL
-FRONTEND_URL=https://your-domain.com
-CORS_ORIGINS=https://your-domain.com
+FRONTEND_URL=https://codemrs.site
+CORS_ORIGINS=https://codemrs.site
 
 # Registration Mode
 REGISTRATION_MODE=open
@@ -203,24 +203,24 @@ REGISTRATION_MODE=open
 Create PM2 ecosystem file:
 
 ```bash
-nano /opt/tradetally/ecosystem.config.js
+nano /opt/crs/ecosystem.config.js
 ```
 
 ```javascript
 module.exports = {
   apps: [{
-    name: 'tradetally-backend',
-    script: '/opt/tradetally/backend/src/server.js',
-    cwd: '/opt/tradetally/backend',
+    name: 'crs-backend',
+    script: '/opt/crs/backend/src/server.js',
+    cwd: '/opt/crs/backend',
     instances: 2,
     exec_mode: 'cluster',
     env: {
       NODE_ENV: 'production',
       PORT: 3000
     },
-    error_file: '/opt/tradetally/backend/src/logs/pm2-error.log',
-    out_file: '/opt/tradetally/backend/src/logs/pm2-out.log',
-    log_file: '/opt/tradetally/backend/src/logs/pm2-combined.log',
+    error_file: '/opt/crs/backend/src/logs/pm2-error.log',
+    out_file: '/opt/crs/backend/src/logs/pm2-out.log',
+    log_file: '/opt/crs/backend/src/logs/pm2-combined.log',
     time: true,
     watch: false,
     max_memory_restart: '1G',
@@ -233,7 +233,7 @@ Start the application:
 
 ```bash
 # Start with PM2
-cd /opt/tradetally
+cd /opt/crs
 pm2 start ecosystem.config.js
 
 # Save PM2 configuration
@@ -249,12 +249,12 @@ pm2 startup systemd
 Create systemd service file:
 
 ```bash
-sudo nano /etc/systemd/system/tradetally.service
+sudo nano /etc/systemd/system/crs.service
 ```
 
 ```ini
 [Unit]
-Description=TradeTally Trading Journal Application
+Description=CRS Trading Journal Application
 After=network.target postgresql.service
 Requires=postgresql.service
 
@@ -262,16 +262,16 @@ Requires=postgresql.service
 Type=simple
 User=www-data
 Group=www-data
-WorkingDirectory=/opt/tradetally/backend
+WorkingDirectory=/opt/crs/backend
 Environment="NODE_ENV=production"
 Environment="PORT=3000"
-EnvironmentFile=/opt/tradetally/backend/.env
+EnvironmentFile=/opt/crs/backend/.env
 ExecStartPre=/usr/bin/npm run migrate
 ExecStart=/usr/bin/node src/server.js
 Restart=always
 RestartSec=10
-StandardOutput=append:/opt/tradetally/backend/src/logs/systemd.log
-StandardError=append:/opt/tradetally/backend/src/logs/systemd-error.log
+StandardOutput=append:/opt/crs/backend/src/logs/systemd.log
+StandardError=append:/opt/crs/backend/src/logs/systemd-error.log
 
 [Install]
 WantedBy=multi-user.target
@@ -281,9 +281,9 @@ Enable and start the service:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable tradetally
-sudo systemctl start tradetally
-sudo systemctl status tradetally
+sudo systemctl enable crs
+sudo systemctl start crs
+sudo systemctl status crs
 ```
 
 ## Step 6: Configure Nginx
@@ -291,13 +291,13 @@ sudo systemctl status tradetally
 ### 6.1 Create Nginx Configuration
 
 ```bash
-sudo nano /etc/nginx/sites-available/tradetally
+sudo nano /etc/nginx/sites-available/crs
 ```
 
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com www.your-domain.com;
+    server_name codemrs.site www.codemrs.site;
 
     # Redirect to HTTPS
     return 301 https://$server_name$request_uri;
@@ -305,16 +305,16 @@ server {
 
 server {
     listen 443 ssl http2;
-    server_name your-domain.com www.your-domain.com;
+    server_name codemrs.site www.codemrs.site;
 
     # SSL Configuration (use certbot for Let's Encrypt)
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/codemrs.site/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/codemrs.site/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
     # Frontend files
-    root /opt/tradetally/frontend/dist;
+    root /opt/crs/frontend/dist;
     index index.html;
 
     # API proxy
@@ -375,7 +375,7 @@ server {
 
 ```bash
 # Enable site
-sudo ln -s /etc/nginx/sites-available/tradetally /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/crs /etc/nginx/sites-enabled/
 
 # Test configuration
 sudo nginx -t
@@ -391,7 +391,7 @@ sudo systemctl reload nginx
 sudo apt install certbot python3-certbot-nginx
 
 # Get SSL certificate
-sudo certbot --nginx -d your-domain.com -d www.your-domain.com
+sudo certbot --nginx -d codemrs.site -d www.codemrs.site
 
 # Auto-renewal is set up automatically
 ```
@@ -401,7 +401,7 @@ If you front the app with Cloudflare, also enable `Always Use HTTPS` and use SSL
 ## Step 7: Run Database Migrations
 
 ```bash
-cd /opt/tradetally/backend
+cd /opt/crs/backend
 npm run migrate
 ```
 
@@ -412,11 +412,11 @@ npm run migrate
 Create logrotate configuration:
 
 ```bash
-sudo nano /etc/logrotate.d/tradetally
+sudo nano /etc/logrotate.d/crs
 ```
 
 ```
-/opt/tradetally/backend/src/logs/*.log {
+/opt/crs/backend/src/logs/*.log {
     daily
     rotate 14
     compress
@@ -435,14 +435,14 @@ sudo nano /etc/logrotate.d/tradetally
 Create backup script:
 
 ```bash
-nano /opt/tradetally/scripts/backup.sh
+nano /opt/crs/scripts/backup.sh
 ```
 
 ```bash
 #!/bin/bash
-BACKUP_DIR="/backup/tradetally"
+BACKUP_DIR="/backup/crs"
 DATE=$(date +%Y%m%d_%H%M%S)
-DB_NAME="tradetally"
+DB_NAME="crs"
 DB_USER="trader"
 
 # Create backup directory
@@ -458,7 +458,7 @@ gzip $BACKUP_DIR/db_backup_$DATE.sql
 find $BACKUP_DIR -name "*.sql.gz" -mtime +30 -delete
 
 # Backup uploaded files
-tar -czf $BACKUP_DIR/files_backup_$DATE.tar.gz /opt/tradetally/backend/src/data/
+tar -czf $BACKUP_DIR/files_backup_$DATE.tar.gz /opt/crs/backend/src/data/
 
 echo "Backup completed: $DATE"
 ```
@@ -466,10 +466,10 @@ echo "Backup completed: $DATE"
 Make it executable and add to crontab:
 
 ```bash
-chmod +x /opt/tradetally/scripts/backup.sh
+chmod +x /opt/crs/scripts/backup.sh
 
 # Add to crontab (runs daily at 2 AM)
-(crontab -l 2>/dev/null; echo "0 2 * * * /opt/tradetally/scripts/backup.sh") | crontab -
+(crontab -l 2>/dev/null; echo "0 2 * * * /opt/crs/scripts/backup.sh") | crontab -
 ```
 
 ## Step 9: Verify Migration
@@ -481,7 +481,7 @@ chmod +x /opt/tradetally/scripts/backup.sh
 curl http://localhost:3000/api/health
 
 # Check PostgreSQL
-sudo -u postgres psql -c "\l" | grep tradetally
+sudo -u postgres psql -c "\l" | grep crs
 
 # Check PM2 status
 pm2 status
@@ -492,7 +492,7 @@ sudo systemctl status nginx
 
 ### 9.2 Test Application
 
-1. Access your application at https://your-domain.com
+1. Access your application at https://codemrs.site
 2. Log in with existing credentials
 3. Verify all trades and data are present
 4. Test creating/updating trades
@@ -507,10 +507,10 @@ Once you've verified everything is working:
 docker-compose -f docker-compose.dev.yaml down
 
 # Remove Docker volumes (ONLY after confirming data is migrated!)
-docker volume rm tradetally_postgres_data_dev
+docker volume rm crs_postgres_data_dev
 
 # Remove Docker images (optional)
-docker rmi tradetally-app:latest
+docker rmi crs-app:latest
 ```
 
 ## Rollback Plan
@@ -559,8 +559,8 @@ In PM2 config, adjust:
 
 1. **Permission Errors**
    ```bash
-   sudo chown -R www-data:www-data /opt/tradetally/backend/src/data
-   sudo chown -R www-data:www-data /opt/tradetally/backend/src/logs
+   sudo chown -R www-data:www-data /opt/crs/backend/src/data
+   sudo chown -R www-data:www-data /opt/crs/backend/src/logs
    ```
 
 2. **Database Connection Issues**
@@ -578,21 +578,21 @@ In PM2 config, adjust:
 
 4. **PM2 Issues**
    ```bash
-   pm2 logs tradetally-backend
-   pm2 restart tradetally-backend
+   pm2 logs crs-backend
+   pm2 restart crs-backend
    ```
 
 ## Monitoring Commands
 
 ```bash
 # View backend logs
-pm2 logs tradetally-backend
+pm2 logs crs-backend
 
 # Monitor resources
 pm2 monit
 
 # Database connections
-sudo -u postgres psql -c "SELECT count(*) FROM pg_stat_activity WHERE datname = 'tradetally';"
+sudo -u postgres psql -c "SELECT count(*) FROM pg_stat_activity WHERE datname = 'crs';"
 
 # Nginx access logs
 tail -f /var/log/nginx/access.log

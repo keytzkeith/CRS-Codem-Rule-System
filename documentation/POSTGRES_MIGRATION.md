@@ -1,11 +1,11 @@
 # PostgreSQL 15 to 16 Migration Guide
 
-This guide walks you through migrating your TradeTally database from PostgreSQL 15 to PostgreSQL 16.
+This guide walks you through migrating your CRS database from PostgreSQL 15 to PostgreSQL 16.
 
 ## 🔧 Prerequisites
 
 - Docker and Docker Compose installed
-- TradeTally project running with PostgreSQL 15
+- CRS project running with PostgreSQL 15
 - Sufficient disk space for database backups (typically 2x your current database size)
 - **IMPORTANT**: Stop any running trades imports or heavy database operations
 
@@ -22,8 +22,8 @@ This guide walks you through migrating your TradeTally database from PostgreSQL 
 ### Step 1: Run the Migration Script
 
 ```bash
-# Navigate to your TradeTally directory
-cd /path/to/tradetally
+# Navigate to your CRS directory
+cd /path/to/crs
 
 # Run the migration script
 ./scripts/migrate-postgres-16.sh
@@ -45,18 +45,18 @@ After migration, verify your data is intact:
 
 ```bash
 # Check that your trades are still there
-docker-compose -f docker-compose.dev.yaml exec postgres psql -U trader -d tradetally -c "SELECT COUNT(*) FROM trades;"
+docker-compose -f docker-compose.dev.yaml exec postgres psql -U trader -d crs -c "SELECT COUNT(*) FROM trades;"
 
 # Check that users are intact
-docker-compose -f docker-compose.dev.yaml exec postgres psql -U trader -d tradetally -c "SELECT COUNT(*) FROM users;"
+docker-compose -f docker-compose.dev.yaml exec postgres psql -U trader -d crs -c "SELECT COUNT(*) FROM users;"
 
 # Verify PostgreSQL version
-docker-compose -f docker-compose.dev.yaml exec postgres psql -U trader -d tradetally -c "SELECT version();"
+docker-compose -f docker-compose.dev.yaml exec postgres psql -U trader -d crs -c "SELECT version();"
 ```
 
 ### Step 3: Test Your Application
 
-1. Open your TradeTally application in the browser
+1. Open your CRS application in the browser
 2. Test key functionality:
    - ✅ Login works
    - ✅ Trades display correctly
@@ -78,7 +78,7 @@ This will restore your original PostgreSQL 15 setup using the backups created du
 
 The migration creates two types of backups in `./postgres-migration-backup/`:
 
-1. **SQL Backup**: `tradetally_backup_YYYYMMDD_HHMMSS.sql`
+1. **SQL Backup**: `crs_backup_YYYYMMDD_HHMMSS.sql`
    - Complete database dump that can be restored to any PostgreSQL version
    
 2. **Volume Backup**: `postgres_volume_backup_YYYYMMDD_HHMMSS.tar.gz`
@@ -100,7 +100,7 @@ docker-compose -f docker-compose.dev.yaml logs postgres
 ### Migration Fails During Restore
 ```bash
 # Manually restore from SQL backup
-docker-compose -f docker-compose.dev.yaml exec -T postgres psql -U trader -d postgres < ./postgres-migration-backup/tradetally_backup_[timestamp].sql
+docker-compose -f docker-compose.dev.yaml exec -T postgres psql -U trader -d postgres < ./postgres-migration-backup/crs_backup_[timestamp].sql
 ```
 
 ### Application Won't Start
@@ -148,5 +148,5 @@ If you encounter issues:
 ---
 
 **Migration Script Version**: 1.0  
-**Compatible with**: TradeTally Docker setup  
+**Compatible with**: CRS Docker setup  
 **PostgreSQL Versions**: 15.x → 16.x

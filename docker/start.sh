@@ -43,7 +43,7 @@ echo "[OK] Database connection established"
 export RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
 
 # Start backend (migrations will run automatically)
-echo "[START] Starting TradeTally backend..."
+echo "[START] Starting CRS backend..."
 cd /app/backend && node src/server.js &
 
 # Wait for backend to start

@@ -42,8 +42,8 @@ DB_CONTAINER=""
 APP_CONTAINER=""
 
 # Common container names to check
-POSSIBLE_DB_NAMES=("crs-db" "crs-db-dev" "tradetally-db" "tradetally_postgres_1" "tradetally_db_1" "postgres")
-POSSIBLE_APP_NAMES=("crs-app" "crs-app-dev" "tradetally-app" "tradetally_app_1" "tradetally-backend")
+POSSIBLE_DB_NAMES=("crs-db" "crs-db-dev" "crs-db" "crs_postgres_1" "crs_db_1" "postgres")
+POSSIBLE_APP_NAMES=("crs-app" "crs-app-dev" "crs-app" "crs_app_1" "crs-backend")
 
 for name in "${POSSIBLE_DB_NAMES[@]}"; do
     if check_container "$name"; then
@@ -72,7 +72,7 @@ fi
 echo ""
 echo -e "${YELLOW}[BACKUP] Creating database backup...${NC}"
 BACKUP_FILE="crs_backup_$(date +%Y%m%d_%H%M%S).sql"
-docker exec "$DB_CONTAINER" pg_dump -U trader -d tradetally > "$BACKUP_FILE"
+docker exec "$DB_CONTAINER" pg_dump -U trader -d crs > "$BACKUP_FILE"
 echo -e "${GREEN}[OK] Database backup created: $BACKUP_FILE${NC}"
 
 # Method 1: Use existing app container to run migrations
@@ -103,16 +103,16 @@ else
             echo -e "${BLUE}   Running migration: $filename${NC}"
             
             # Check if migration was already applied (basic check)
-            if docker exec "$DB_CONTAINER" psql -U trader -d tradetally -c "SELECT 1 FROM information_schema.tables WHERE table_name = 'migrations'" | grep -q "1 row"; then
+            if docker exec "$DB_CONTAINER" psql -U trader -d crs -c "SELECT 1 FROM information_schema.tables WHERE table_name = 'migrations'" | grep -q "1 row"; then
                 # Migrations table exists, check if this migration was applied
-                if docker exec "$DB_CONTAINER" psql -U trader -d tradetally -c "SELECT 1 FROM migrations WHERE filename = '$filename'" | grep -q "1 row"; then
+                if docker exec "$DB_CONTAINER" psql -U trader -d crs -c "SELECT 1 FROM migrations WHERE filename = '$filename'" | grep -q "1 row"; then
                     echo -e "${YELLOW}     Skipping $filename (already applied)${NC}"
                     continue
                 fi
             fi
             
             # Run the migration
-            docker exec -i "$DB_CONTAINER" psql -U trader -d tradetally < "$migration_file"
+            docker exec -i "$DB_CONTAINER" psql -U trader -d crs < "$migration_file"
             echo -e "${GREEN}     [OK] $filename applied${NC}"
         fi
     done
@@ -149,7 +149,7 @@ cat > "$PROJECT_ROOT/.env.mobile" << 'EOF'
 
 # Instance configuration
 INSTANCE_NAME=CRS
-INSTANCE_URL=https://your-domain.com
+INSTANCE_URL=https://codemrs.site
 
 # Mobile authentication
 ACCESS_TOKEN_EXPIRE=15m
@@ -159,7 +159,7 @@ REFRESH_TOKEN_EXPIRE=30d
 RUN_MIGRATIONS=true
 
 # CORS origins (comma-separated for multiple mobile apps)
-CORS_ORIGINS=http://localhost:5173,https://your-domain.com
+CORS_ORIGINS=http://localhost:5173,https://codemrs.site
 
 # Feature flags
 ENABLE_MOBILE_SYNC=true

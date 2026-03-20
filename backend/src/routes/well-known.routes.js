@@ -5,7 +5,7 @@ const oauth2Controller = require('../controllers/oauth2.controller');
 
 // Well-known endpoints for mobile app discovery.
 router.get('/crs-config.json', serverController.getWellKnownConfig);
-router.get('/tradetally-config.json', serverController.getWellKnownConfig);
+router.get('/crs-config.json', serverController.getWellKnownConfig);
 
 // OpenID Connect Discovery
 router.get('/openid-configuration', oauth2Controller.openidConfiguration);

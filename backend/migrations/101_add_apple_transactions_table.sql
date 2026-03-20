@@ -39,7 +39,7 @@ CREATE TRIGGER apple_transactions_updated_at
 COMMENT ON TABLE apple_transactions IS 'Tracks Apple In-App Purchase transactions for subscription verification';
 COMMENT ON COLUMN apple_transactions.transaction_id IS 'Unique transaction ID from Apple StoreKit';
 COMMENT ON COLUMN apple_transactions.original_transaction_id IS 'Original transaction ID for renewals';
-COMMENT ON COLUMN apple_transactions.product_id IS 'Apple product identifier (e.g., com.tradetally.ios.pro.monthly)';
+COMMENT ON COLUMN apple_transactions.product_id IS 'Apple product identifier (e.g., com.crs.ios.pro.monthly)';
 COMMENT ON COLUMN apple_transactions.expires_date IS 'Subscription expiration date (NULL for non-consumables)';
 COMMENT ON COLUMN apple_transactions.is_trial IS 'Whether this transaction was from a free trial period';
 COMMENT ON COLUMN apple_transactions.environment IS 'Apple environment: Production, Sandbox, or Xcode';

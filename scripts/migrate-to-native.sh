@@ -45,7 +45,7 @@ if ! command_exists docker; then
     exit 1
 fi
 
-if ! docker ps | grep -Eq 'crs|tradetally'; then
+if ! docker ps | grep -Eq 'crs|crs'; then
     print_warning "CRS containers are not running. Starting them..."
     docker-compose -f docker-compose.dev.yaml up -d
     sleep 10
@@ -62,9 +62,9 @@ echo -e "\n${YELLOW}Step 3: Exporting PostgreSQL database${NC}"
 echo "Exporting database..."
 docker exec crs-db-dev pg_dump -U trader -d crs > "$MIGRATION_DIR/crs_backup_$BACKUP_DATE.sql" 2>/dev/null || \
 docker exec crs-db pg_dump -U trader -d crs > "$MIGRATION_DIR/crs_backup_$BACKUP_DATE.sql" 2>/dev/null || \
-docker exec tradetally-db-dev pg_dump -U trader -d tradetally > "$MIGRATION_DIR/crs_backup_$BACKUP_DATE.sql" 2>/dev/null || \
-docker exec tradetally-postgres-1 pg_dump -U trader -d tradetally > "$MIGRATION_DIR/crs_backup_$BACKUP_DATE.sql" 2>/dev/null || \
-docker exec tradetally-db pg_dump -U trader -d tradetally > "$MIGRATION_DIR/crs_backup_$BACKUP_DATE.sql"
+docker exec crs-db-dev pg_dump -U trader -d crs > "$MIGRATION_DIR/crs_backup_$BACKUP_DATE.sql" 2>/dev/null || \
+docker exec crs-postgres-1 pg_dump -U trader -d crs > "$MIGRATION_DIR/crs_backup_$BACKUP_DATE.sql" 2>/dev/null || \
+docker exec crs-db pg_dump -U trader -d crs > "$MIGRATION_DIR/crs_backup_$BACKUP_DATE.sql"
 
 if [ -f "$MIGRATION_DIR/crs_backup_$BACKUP_DATE.sql" ]; then
     print_status "Database exported successfully"
@@ -79,7 +79,7 @@ echo -e "\n${YELLOW}Step 4: Exporting application data${NC}"
 
 # Try different container names
 CONTAINER_NAME=""
-for name in crs-app-dev crs-app tradetally-app-dev tradetally-app; do
+for name in crs-app-dev crs-app crs-app-dev crs-app; do
     if docker ps | grep -q $name; then
         CONTAINER_NAME=$name
         break
@@ -224,7 +224,7 @@ if [ -f "$MIGRATION_DIR/.env.backup" ]; then
     cp "$MIGRATION_DIR/.env.backup" "$APP_DIR/backend/.env"
     # Update database host for native setup
     sed -i 's/DB_HOST=postgres/DB_HOST=localhost/g' "$APP_DIR/backend/.env"
-    sed -i 's/DB_HOST=tradetally-db/DB_HOST=localhost/g' "$APP_DIR/backend/.env"
+    sed -i 's/DB_HOST=crs-db/DB_HOST=localhost/g' "$APP_DIR/backend/.env"
     print_status "Environment configured"
 else
     print_warning "No backup .env found. Please configure manually at $APP_DIR/backend/.env"
@@ -268,12 +268,12 @@ print_status "PM2 configured and started"
 # Step 13: Configure Nginx
 echo -e "\n${YELLOW}Step 13: Configuring Nginx${NC}"
 
-sudo tee /etc/nginx/sites-available/tradetally > /dev/null <<'EOF'
+sudo tee /etc/nginx/sites-available/crs > /dev/null <<'EOF'
 server {
     listen 80;
     server_name localhost;
 
-    root /opt/tradetally/frontend/dist;
+    root /opt/crs/frontend/dist;
     index index.html;
 
     # OWASP-aligned security headers for frontend responses
@@ -321,7 +321,7 @@ server {
 }
 EOF
 
-sudo ln -sf /etc/nginx/sites-available/tradetally /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/crs /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 print_status "Nginx configured"
@@ -369,4 +369,4 @@ echo "Once you've verified everything works, you can stop them with:"
 echo "  docker-compose -f docker-compose.dev.yaml down"
 echo ""
 echo "To remove Docker volumes (ONLY after confirming data is migrated!):"
-echo "  docker volume rm tradetally_postgres_data_dev"
+echo "  docker volume rm crs_postgres_data_dev"

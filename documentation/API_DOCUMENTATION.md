@@ -1,8 +1,8 @@
-# TradeTally API Documentation
+# CRS API Documentation
 
 ## Authentication
 
-TradeTally supports two authentication methods:
+CRS supports two authentication methods:
 
 ### 1. JWT Token Authentication (Web UI)
 ```
@@ -285,7 +285,7 @@ API requests are rate limited to:
 ### JavaScript/Node.js
 ```javascript
 const apiKey = 'tt_live_your_api_key';
-const baseUrl = 'https://your-domain.com/api/v2';
+const baseUrl = 'https://codemrs.site/api/v2';
 
 // Get trades
 const trades = await fetch(`${baseUrl}/trades`, {
@@ -316,7 +316,7 @@ const newTrade = await fetch(`${baseUrl}/trades`, {
 import requests
 
 api_key = 'tt_live_your_api_key'
-base_url = 'https://your-domain.com/api/v2'
+base_url = 'https://codemrs.site/api/v2'
 
 headers = {
     'Authorization': f'Bearer {api_key}',
@@ -344,14 +344,14 @@ new_trade = response.json()
 ```bash
 # Get trades
 curl -H "Authorization: Bearer tt_live_your_api_key" \
-     https://your-domain.com/api/v2/trades
+     https://codemrs.site/api/v2/trades
 
 # Create trade
 curl -X POST \
      -H "Authorization: Bearer tt_live_your_api_key" \
      -H "Content-Type: application/json" \
      -d '{"symbol":"AAPL","side":"long","entryTime":"2024-01-15T09:30:00.000Z","entryPrice":150.25,"quantity":100}' \
-     https://your-domain.com/api/v2/trades
+     https://codemrs.site/api/v2/trades
 ```
 
 ## Support

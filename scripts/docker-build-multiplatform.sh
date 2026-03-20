@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Build multi-platform Docker image for TradeTally
+# Build multi-platform Docker image for CRS
 # Supports both AMD64 (x64) and ARM64 architectures
 
-IMAGE_NAME="tradetally"
+IMAGE_NAME="crs"
 VERSION="${1:-latest}"
 
 echo "Building multi-platform Docker image: ${IMAGE_NAME}:${VERSION}"

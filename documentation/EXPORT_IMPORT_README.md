@@ -1,13 +1,13 @@
 # Data Export/Import Functionality
 
-This document explains how to use TradeTally's data export and import features.
+This document explains how to use CRS's data export and import features.
 
 ## Overview
 
-TradeTally provides comprehensive data export and import functionality that allows users to:
+CRS provides comprehensive data export and import functionality that allows users to:
 - Export all their data as a JSON file
-- Import data from previous TradeTally exports
-- Migrate between different TradeTally instances (e.g., from tradetally.io to self-hosted)
+- Import data from previous CRS exports
+- Migrate between different CRS instances (e.g., from crs.io to self-hosted)
 
 ## Features
 
@@ -31,7 +31,7 @@ TradeTally provides comprehensive data export and import functionality that allo
    - Go to Settings page
    - Scroll to "Data Export & Import" section
    - Click "Export All Data"
-   - File will be downloaded as `tradetally-export-YYYY-MM-DD.json`
+   - File will be downloaded as `crs-export-YYYY-MM-DD.json`
 
 2. **Via API**:
    ```bash
@@ -46,14 +46,14 @@ TradeTally provides comprehensive data export and import functionality that allo
    - Go to Settings page
    - Scroll to "Data Export & Import" section
    - Click "Select Import File"
-   - Choose your TradeTally export JSON file
+   - Choose your CRS export JSON file
    - Click "Import Data"
 
 2. **Via API**:
    ```bash
    curl -X POST \
         -H "Authorization: Bearer YOUR_TOKEN" \
-        -F "file=@tradetally-export-2025-07-14.json" \
+        -F "file=@crs-export-2025-07-14.json" \
         https://your-instance.com/api/settings/import
    ```
 
@@ -166,8 +166,8 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -F "file=@backup.json" $API_URL/s
 
 ### 2. Migration from Hosted to Self-Hosted
 ```bash
-# 1. Export from tradetally.io
-curl -H "Authorization: Bearer $HOSTED_TOKEN" -o migration.json https://tradetally.io/api/settings/export
+# 1. Export from crs.io
+curl -H "Authorization: Bearer $HOSTED_TOKEN" -o migration.json https://crs.io/api/settings/export
 
 # 2. Import to self-hosted instance
 curl -X POST -H "Authorization: Bearer $SELF_TOKEN" -F "file=@migration.json" https://your-server.com/api/settings/import
@@ -188,7 +188,7 @@ Common errors and solutions:
 
 - **"No file uploaded"**: Ensure the file is attached to the request
 - **"Invalid JSON file"**: Check that the file is valid JSON
-- **"Invalid TradeTally export file"**: Ensure the file has the correct structure
+- **"Invalid CRS export file"**: Ensure the file has the correct structure
 - **"Database error"**: Run the migration to ensure all tables exist
 
 ## Security Considerations

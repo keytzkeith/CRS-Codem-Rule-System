@@ -405,7 +405,7 @@ class SchwabService {
   }
 
   /**
-   * Parse Schwab transactions into TradeTally trade format
+   * Parse Schwab transactions into CRS trade format
    * Matches opening and closing transactions to create complete trades
    * @param {Array} transactions - Raw Schwab transactions
    * @returns {Array} - Parsed trades (matched with entry and exit)

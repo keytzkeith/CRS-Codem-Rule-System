@@ -2,7 +2,7 @@
 
 ## First User Auto-Admin
 
-The first user to register on a fresh TradeTally installation is automatically granted admin privileges. This ensures there's always an admin account available to manage the system.
+The first user to register on a fresh CRS installation is automatically granted admin privileges. This ensures there's always an admin account available to manage the system.
 
 ## Making Additional Admins
 

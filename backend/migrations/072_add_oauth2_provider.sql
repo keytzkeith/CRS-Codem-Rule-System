@@ -1,6 +1,6 @@
 -- Migration 072: Add OAuth2 Provider Support
 -- This creates tables for OAuth2 authorization server functionality
--- Allows TradeTally to act as an identity provider for external applications like Discourse
+-- Allows CRS to act as an identity provider for external applications like Discourse
 
 -- OAuth2 Clients (Applications that can authenticate users)
 CREATE TABLE IF NOT EXISTS oauth_clients (
@@ -117,7 +117,7 @@ CREATE TRIGGER oauth_user_consents_updated_at
   EXECUTE FUNCTION update_oauth_user_consents_updated_at();
 
 -- Comments for documentation
-COMMENT ON TABLE oauth_clients IS 'OAuth2 clients (applications) that can authenticate users via TradeTally';
+COMMENT ON TABLE oauth_clients IS 'OAuth2 clients (applications) that can authenticate users via CRS';
 COMMENT ON TABLE oauth_authorization_codes IS 'Short-lived authorization codes for OAuth2 code exchange flow';
 COMMENT ON TABLE oauth_access_tokens IS 'Bearer access tokens for OAuth2 API access';
 COMMENT ON TABLE oauth_refresh_tokens IS 'Long-lived tokens for obtaining new access tokens';

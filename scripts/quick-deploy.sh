@@ -76,7 +76,7 @@ sleep 10
 
 # Initialize database schema
 echo "[DB] Initializing database schema..."
-docker exec -i crs-db psql -U trader -d tradetally < schema.sql 2>/dev/null || docker exec -i tradetally-db psql -U trader -d tradetally < schema.sql 2>/dev/null || echo "Schema may already exist"
+docker exec -i crs-db psql -U trader -d crs < schema.sql 2>/dev/null || docker exec -i crs-db psql -U trader -d crs < schema.sql 2>/dev/null || echo "Schema may already exist"
 
 echo ""
 echo "[SUCCESS] CRS deployment complete!"

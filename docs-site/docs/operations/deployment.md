@@ -21,9 +21,9 @@ The backend in this repo is not a good match for Vercel serverless. It expects a
 
 Recommended domain split later:
 
-- app: `https://crs.yourdomain.com`
-- docs: `https://docs.yourdomain.com`
-- api: `https://api.yourdomain.com` or `https://crs.yourdomain.com/api`
+- app: `https://app.codemrs.site`
+- docs: `https://docs.codemrs.site`
+- api: `https://api.codemrs.site` or `https://app.codemrs.site/api`
 
 If you do not have the custom domain yet, launch on the default Vercel URLs first and swap the real domains in later.
 
@@ -125,8 +125,8 @@ If you host the backend on a VPS, your proxy should:
 
 At minimum:
 
-- `https://api.yourdomain.com` -> backend `localhost:3000`
-- or `https://crs.yourdomain.com/api` -> backend `localhost:3000`
+- `https://api.codemrs.site` -> backend `localhost:3000`
+- or `https://app.codemrs.site/api` -> backend `localhost:3000`
 
 ## Backend startup choices
 

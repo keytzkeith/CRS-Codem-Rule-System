@@ -1,11 +1,11 @@
 // vite.config.js
 import { fileURLToPath, URL } from "node:url";
-import { defineConfig, loadEnv } from "file:///home/docker-admin/tradetally/frontend/node_modules/vite/dist/node/index.js";
-import vue from "file:///home/docker-admin/tradetally/frontend/node_modules/@vitejs/plugin-vue/dist/index.mjs";
+import { defineConfig, loadEnv } from "file:///home/docker-admin/crs/frontend/node_modules/vite/dist/node/index.js";
+import vue from "file:///home/docker-admin/crs/frontend/node_modules/@vitejs/plugin-vue/dist/index.mjs";
 
 // package.json
 var package_default = {
-  name: "tradetally-frontend",
+  name: "crs-frontend",
   version: "2.1.7",
   private: true,
   type: "module",
@@ -40,7 +40,7 @@ var package_default = {
 };
 
 // vite.config.js
-var __vite_injected_original_import_meta_url = "file:///home/docker-admin/tradetally/frontend/vite.config.js";
+var __vite_injected_original_import_meta_url = "file:///home/docker-admin/crs/frontend/vite.config.js";
 var vite_config_default = defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   return {
@@ -73,7 +73,7 @@ var vite_config_default = defineConfig(({ command, mode }) => {
     server: {
       port: 5173,
       host: true,
-      allowedHosts: process.env.NODE_ENV === "development" ? ["dev.tradetally.io"] : "auto",
+      allowedHosts: process.env.NODE_ENV === "development" ? ["dev.crs.io"] : "auto",
       proxy: {
         "/api": {
           target: "http://localhost:3000",

@@ -26,6 +26,6 @@ For runtime or server-only values, also review:
 
 Notes:
 
-- The current `your-domain.com` and `docs.your-domain.com` values are placeholders.
+- The current `codemrs.site` and `docs.codemrs.site` values are placeholders.
 - If you deploy the app and docs on Vercel, update the URLs here after those projects are created.
 - The mobile bundle/package IDs can stay empty until you actually build mobile apps.

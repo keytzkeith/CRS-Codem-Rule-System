@@ -3,7 +3,7 @@
 INSERT INTO achievements (key, name, description, category, difficulty, points, criteria) VALUES
 
 -- Immediate achievements
-('welcome_aboard', 'Welcome Aboard!', 'Welcome to TradeTally! Your journey to better trading starts now.', 'milestone', 'bronze', 25, '{"type": "registration", "immediate": true}'),
+('welcome_aboard', 'Welcome Aboard!', 'Welcome to CRS! Your journey to better trading starts now.', 'milestone', 'bronze', 25, '{"type": "registration", "immediate": true}'),
 ('dashboard_explorer', 'Dashboard Explorer', 'Visit the gamification dashboard for the first time.', 'learning', 'bronze', 15, '{"type": "dashboard_visit", "immediate": true}'),
 ('achievement_seeker', 'Achievement Seeker', 'Check your achievements page for the first time.', 'learning', 'bronze', 10, '{"type": "achievement_page_visit", "immediate": true}'),
 

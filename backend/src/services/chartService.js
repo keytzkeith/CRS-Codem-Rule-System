@@ -4,7 +4,7 @@ const alphaVantage = require('../utils/alphaVantage');
 
 class ChartService {
   // Get chart data for a trade
-  // When billing is enabled (tradetally.io): Finnhub only, Pro users only
+  // When billing is enabled (crs.io): Finnhub only, Pro users only
   // When billing is disabled (self-hosted): Finnhub preferred, Alpha Vantage fallback, all users
   static async getTradeChartData(userId, symbol, entryDate, exitDate = null, hostHeader = null) {
     try {
@@ -16,7 +16,7 @@ class ChartService {
       console.log(`Getting chart data for user ${userId}, tier: ${userTier || 'free'}, symbol: ${symbol}, billingEnabled: ${billingEnabled}`);
       console.log('Chart data input:', { entryDate, exitDate });
 
-      // When billing is enabled (tradetally.io): Charts are Pro-only, Finnhub only
+      // When billing is enabled (crs.io): Charts are Pro-only, Finnhub only
       if (billingEnabled) {
         if (!isProUser) {
           const error = new Error('Trade charts are a Pro feature. Upgrade to Pro for high-precision candlestick charts.');

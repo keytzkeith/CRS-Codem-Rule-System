@@ -55,7 +55,7 @@ if [[ "$DATA_VERSION" == "15" ]]; then
     
     # Wait for PostgreSQL to start
     for i in {1..30}; do
-        if su-exec postgres pg_isready -U "${POSTGRES_USER:-trader}" -d "${POSTGRES_DB:-tradetally}" >/dev/null 2>&1; then
+        if su-exec postgres pg_isready -U "${POSTGRES_USER:-trader}" -d "${POSTGRES_DB:-crs}" >/dev/null 2>&1; then
             log_success "PostgreSQL 15 started for backup"
             break
         fi
@@ -97,7 +97,7 @@ if [[ "$DATA_VERSION" == "15" ]]; then
     
     # Wait for PostgreSQL 16 to start
     for i in {1..30}; do
-        if su-exec postgres pg_isready -U "${POSTGRES_USER:-trader}" -d "${POSTGRES_DB:-tradetally}" >/dev/null 2>&1; then
+        if su-exec postgres pg_isready -U "${POSTGRES_USER:-trader}" -d "${POSTGRES_DB:-crs}" >/dev/null 2>&1; then
             log_success "PostgreSQL 16 started"
             break
         fi
