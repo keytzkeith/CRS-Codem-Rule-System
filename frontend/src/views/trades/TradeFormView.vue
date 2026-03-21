@@ -264,6 +264,7 @@ import SectionHeader from '@/components/crs/SectionHeader.vue'
 import TagPicker from '@/components/crs/TagPicker.vue'
 import ImageUpload from '@/components/trades/ImageUpload.vue'
 import { useCrsStore } from '@/stores/crs'
+import api from '@/services/api'
 import {
   calculateActualRiskAmount,
   calculateNetPnl,
@@ -523,6 +524,24 @@ function currency(value) {
   }).format(Math.abs(value))
 
   return value < 0 ? `-${amount}` : amount
+}
+
+function resolveImageUrl(path) {
+  if (!path) return ''
+  
+  // Handle TradingView snapshots
+  const snapshotMatch = path.match(/tradingview\.com\/x\/([a-zA-Z0-9]+)/i)
+  if (snapshotMatch) {
+    const apiBaseUrl = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
+    return `${apiBaseUrl}/trades/tradingview/snapshot/${snapshotMatch[1]}`
+  }
+
+  if (path.startsWith('http')) return path
+  
+  // Clean up relative path and prefix with API base URL
+  const baseUrl = api.defaults.baseURL.replace('/api', '')
+  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  return `${baseUrl}${cleanPath}`
 }
 
 function applyEstimatedResultAmount() {
