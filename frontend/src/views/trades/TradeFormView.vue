@@ -210,17 +210,27 @@
         </ChartCard>
 
         <ChartCard eyebrow="Evidence" title="Trade images" description="Upload charts or execution screenshots to document this setup.">
-          <div class="grid gap-6 md:grid-cols-2">
-            <label class="crs-filter-field md:col-span-2">
-              <span class="flex items-center gap-2">Image link (Optional) <InfoTip text="Paste a TradingView snapshot link, Lightshot URL, or any direct image link. This will be shown alongside your uploaded images." /></span>
-              <input
-                v-model="form.screenshot"
-                type="text"
-                placeholder="https://www.tradingview.com/x/..."
-                class="crs-input"
-              />
-            </label>
-            <div class="md:col-span-2">
+          <div class="grid gap-6">
+            <div class="space-y-4">
+              <label class="crs-filter-field">
+                <span class="flex items-center gap-2">Image link (Optional) <InfoTip text="Paste a TradingView snapshot link, Lightshot URL, or any direct image link. This will be shown alongside your uploaded images." /></span>
+                <input
+                  v-model="form.screenshot"
+                  type="text"
+                  placeholder="https://www.tradingview.com/x/..."
+                  class="crs-input"
+                />
+              </label>
+              
+              <!-- Immediate preview for the link -->
+              <div v-if="form.screenshot" class="space-y-2">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Link Preview</p>
+                <ImagePreviewCard :src="resolveImageUrl(form.screenshot)" :alt="`${form.pair || 'Trade'} screenshot preview`" />
+              </div>
+            </div>
+
+            <div class="border-t border-white/5 pt-6">
+              <p class="mb-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">File Uploads</p>
               <ImageUpload ref="imageUploadRef" :trade-id="existingTrade?.id" />
             </div>
           </div>
