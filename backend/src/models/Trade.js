@@ -213,7 +213,7 @@ class Trade {
     // Use provided P&L if available (e.g., from Schwab), otherwise calculate it
     // Use finalPointValue which may have been auto-set for futures
     const totalFees = (Number(fees) || 0) + (Number(swap) || 0);
-    const pnl = providedPnL !== undefined ? providedPnL : this.calculatePnL(entryPrice, cleanExitPrice, quantity, side, commission, totalFees, instrumentType, contractSize, finalPointValue);
+    const pnl = providedPnL !== undefined ? providedPnL : this.calculatePnL(entryPrice, cleanExitPrice, quantity, side, commission, totalFees, instrumentType, contractSize, finalPointValue, contractMultiplier);
     const pnlPercent = providedPnLPercent !== undefined ? providedPnLPercent : this.calculatePnLPercent(entryPrice, cleanExitPrice, side, pnl, quantity, instrumentType, finalPointValue);
 
     // Calculate R-Multiple later after applying default stop loss
@@ -966,8 +966,9 @@ class Trade {
       const instrumentType = trade.instrument_type || 'stock';
       const contractSize = trade.contract_size;
       const pointValue = trade.point_value;
+      const contractMultiplier = trade.contract_multiplier;
 
-      pnl = this.calculatePnL(entry_price, exitVwap, totalExitQty, side, commission, fees, instrumentType, contractSize, pointValue);
+      pnl = this.calculatePnL(entry_price, exitVwap, totalExitQty, side, commission, fees, instrumentType, contractSize, pointValue, contractMultiplier);
       pnl_percent = this.calculatePnLPercent(entry_price, exitVwap, side, pnl, totalExitQty, instrumentType, pointValue);
     }
 
@@ -1664,6 +1665,7 @@ class Trade {
       // Use !== undefined to properly handle 0 values for commission and fees
       const pointValue = updates.pointValue !== undefined ? updates.pointValue : currentTrade.point_value;
       const updatedSwap = updates.swap !== undefined ? updates.swap : currentTrade.swap;
+      const contractMultiplier = updates.contractMultiplier !== undefined ? updates.contractMultiplier : currentTrade.contract_multiplier;
       updatedTrade.pnl = this.calculatePnL(
         updatedTrade.entry_price,
         updatedTrade.exit_price,
@@ -1673,7 +1675,8 @@ class Trade {
         Number(updates.fees !== undefined ? updates.fees : currentTrade.fees) + Number(updatedSwap || 0),
         updates.instrumentType || currentTrade.instrument_type || 'stock',
         updates.contractSize !== undefined ? updates.contractSize : (currentTrade.contract_size || (currentTrade.instrument_type === 'option' ? 100 : 1)),
-        pointValue
+        pointValue,
+        contractMultiplier
       );
 
       if (updatedTrade.exit_time) {
@@ -1881,6 +1884,7 @@ class Trade {
       const instrumentType = updates.instrumentType || currentTrade.instrument_type || 'stock';
       const quantity = updates.quantity !== undefined ? updates.quantity : currentTrade.quantity;
       const pointValue = updates.pointValue !== undefined ? updates.pointValue : currentTrade.point_value;
+      const contractMultiplier = updates.contractMultiplier !== undefined ? updates.contractMultiplier : currentTrade.contract_multiplier;
       const contractSize = updates.contractSize !== undefined ? updates.contractSize : (currentTrade.contract_size || (instrumentType === 'option' ? 100 : 1));
       // Use !== undefined to properly handle 0 values for commission and fees
       const commission = updates.commission !== undefined ? updates.commission : currentTrade.commission;
@@ -1896,7 +1900,8 @@ class Trade {
         Number(fees) + Number(swap),
         instrumentType,
         contractSize,
-        pointValue
+        pointValue,
+        contractMultiplier
       );
       const pnlPercent = this.calculatePnLPercent(
         updates.entryPrice !== undefined ? updates.entryPrice : currentTrade.entry_price,
@@ -2160,13 +2165,16 @@ class Trade {
     return result.rows;
   }
 
-  static calculatePnL(entryPrice, exitPrice, quantity, side, commission = 0, fees = 0, instrumentType = 'stock', contractSize = 1, pointValue = null) {
+  static calculatePnL(entryPrice, exitPrice, quantity, side, commission = 0, fees = 0, instrumentType = 'stock', contractSize = 1, pointValue = null, contractMultiplier = null) {
     // Note: exitPrice === 0 is valid for expired worthless options, so use explicit null checks
     if (exitPrice == null || entryPrice == null || quantity <= 0) return null;
 
     // Determine the multiplier based on instrument type
     let multiplier;
-    if (instrumentType === 'future') {
+    if (contractMultiplier != null && contractMultiplier !== 1) {
+      // If a specific contract multiplier is provided (e.g. for Forex or custom sizes), use it
+      multiplier = contractMultiplier;
+    } else if (instrumentType === 'future') {
       // For futures, use point value (e.g., $5 per point for ES, $2 for MNQ)
       multiplier = pointValue || 1;
     } else if (instrumentType === 'option') {

@@ -109,6 +109,10 @@
               <input v-model.number="form.contractMultiplier" type="number" step="0.01" class="crs-input" placeholder="100" required />
             </label>
             <label class="crs-filter-field">
+              <span class="flex items-center gap-2">Pip / point size <InfoTip text="The smallest price increment for this instrument. 0.0001 for most FX, 0.01 for JPY pairs and Gold, 0.1 for indices." /></span>
+              <input v-model.number="form.pipSize" type="number" step="0.000001" class="crs-input" placeholder="0.0001" required />
+            </label>
+            <label class="crs-filter-field">
               <span class="flex items-center gap-2">Result in R <InfoTip text="Calculated automatically from entry, stop loss, direction, and close price. This uses 3 decimal places to avoid masking small differences." /></span>
               <input :value="formatRValue(form.resultR)" type="text" class="crs-input" readonly />
             </label>

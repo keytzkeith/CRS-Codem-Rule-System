@@ -7,6 +7,7 @@
         description="Search the full trade ledger by pair, session, setup, outcome, and date so review stays quick and honest."
       >
         <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+          <router-link :to="accountRequiredRoute('/trades/new')" class="crs-button-primary w-full sm:w-auto text-center">Add trade</router-link>
           <router-link :to="accountRequiredRoute('/trades/import')" class="crs-button crs-button-ghost w-full sm:w-auto">Import CSV</router-link>
           <button type="button" class="crs-button crs-button-ghost w-full sm:w-auto" :disabled="exporting" @click="exportTrades">
             {{ exporting ? 'Exporting...' : 'Export CSV' }}

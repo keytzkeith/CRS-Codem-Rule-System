@@ -101,7 +101,8 @@ const dashboardRoutes = [
   {
     path: '/trades/new',
     name: 'trade-create',
-    redirect: '/trades/import'
+    component: () => import('@/views/trades/TradeFormView.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/trades/import',

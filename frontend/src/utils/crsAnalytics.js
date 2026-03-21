@@ -144,8 +144,10 @@ export function calculatePipValuePerLot(trade) {
     return round(pipSize * contractMultiplier, 6)
   }
 
-  if (/^[A-Z]{6}$/.test(pair)) {
-    const quote = pair.slice(3)
+  // Handle Forex pairs (6 letters) even with suffixes like .m or pro
+  if (/^[A-Z]{6}/.test(pair)) {
+    const basePair = pair.slice(0, 6)
+    const quote = basePair.slice(3)
 
     if (quote === 'USD') {
       return round(pipSize * contractMultiplier, 6)
@@ -209,11 +211,11 @@ export function inferContractMultiplier(symbol = '') {
     return 100
   }
 
-  if (value === 'XAGUSD') {
+  if (value.startsWith('XAGUSD')) {
     return 5000
   }
 
-  if (/^[A-Z]{6}$/.test(value)) {
+  if (/^[A-Z]{6}/.test(value)) {
     return 100000
   }
 
@@ -239,7 +241,7 @@ export function inferPipSize(symbol = '') {
     return 0.1
   }
 
-  if (/^[A-Z]{6}$/.test(value)) {
+  if (/^[A-Z]{6}/.test(value)) {
     return 0.0001
   }
 
