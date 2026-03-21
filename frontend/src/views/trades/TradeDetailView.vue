@@ -164,6 +164,14 @@ const checklistItems = computed(() => crsStore.settings.checklistItems || [])
 
 function resolveImageUrl(path) {
   if (!path) return ''
+  
+  // Handle TradingView snapshots
+  const snapshotMatch = path.match(/tradingview\.com\/x\/([a-zA-Z0-9]+)/i)
+  if (snapshotMatch) {
+    const apiBaseUrl = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
+    return `${apiBaseUrl}/trades/tradingview/snapshot/${snapshotMatch[1]}`
+  }
+
   if (path.startsWith('http')) return path
   
   // Clean up relative path and prefix with API base URL
