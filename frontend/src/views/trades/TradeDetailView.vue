@@ -63,11 +63,13 @@
           <ImagePreviewCard
             v-for="chart in trade.charts"
             :key="chart.id"
-            :src="resolveImageUrl(chart.chart_url)"
-            :alt="chart.chart_title || 'Trade screenshot'"
+            :src="resolveImageUrl(chart.chartUrl)"
+            :alt="chart.chartTitle || 'Trade screenshot'"
           />
+          <ImagePreviewCard v-if="trade.screenshot" :src="resolveImageUrl(trade.screenshot)" :alt="`${trade.pair} screenshot`" />
         </div>
-        <ImagePreviewCard v-else :src="resolveImageUrl(trade.screenshot)" :alt="`${trade.pair} screenshot`" />
+        <ImagePreviewCard v-else-if="trade.screenshot" :src="resolveImageUrl(trade.screenshot)" :alt="`${trade.pair} screenshot`" />
+        <p v-else class="text-sm text-slate-500 italic">No screenshots or chart links provided for this trade.</p>
       </ChartCard>
     </div>
 
@@ -167,7 +169,16 @@ function resolveImageUrl(path) {
   // Clean up relative path and prefix with API base URL
   const baseUrl = api.defaults.baseURL.replace('/api', '')
   const cleanPath = path.startsWith('/') ? path : `/${path}`
-  return `${baseUrl}${cleanPath}`
+  let url = `${baseUrl}${cleanPath}`
+  
+  // Add authentication token as query parameter for image access
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+  if (token) {
+    const separator = url.includes('?') ? '&' : '?'
+    url = `${url}${separator}token=${encodeURIComponent(token)}`
+  }
+  
+  return url
 }
 
 function formatPrice(value) {

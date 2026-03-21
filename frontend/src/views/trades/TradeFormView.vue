@@ -210,7 +210,20 @@
         </ChartCard>
 
         <ChartCard eyebrow="Evidence" title="Trade images" description="Upload charts or execution screenshots to document this setup.">
-          <ImageUpload ref="imageUploadRef" :trade-id="existingTrade?.id" />
+          <div class="grid gap-6 md:grid-cols-2">
+            <label class="crs-filter-field md:col-span-2">
+              <span class="flex items-center gap-2">Image link (Optional) <InfoTip text="Paste a TradingView snapshot link, Lightshot URL, or any direct image link. This will be shown alongside your uploaded images." /></span>
+              <input
+                v-model="form.screenshot"
+                type="text"
+                placeholder="https://www.tradingview.com/x/..."
+                class="crs-input"
+              />
+            </label>
+            <div class="md:col-span-2">
+              <ImageUpload ref="imageUploadRef" :trade-id="existingTrade?.id" />
+            </div>
+          </div>
         </ChartCard>
 
         <ChartCard eyebrow="Summary" title="Auto-read" description="Live summary so the record feels precise before saving.">

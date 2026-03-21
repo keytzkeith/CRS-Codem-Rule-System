@@ -936,7 +936,20 @@ function mapTradeFromBackend(trade, accounts = [], timezone = DEFAULT_SESSION_TI
     pips: Number(derivedPips),
     tags: mergeUniqueStrings(trade.tags || []),
     screenshot: metadata.screenshot || trade.chartUrl || trade.chart_url || null,
-    charts: trade.charts || [],
+    charts: [
+      ...(trade.charts || []).map(c => ({
+        id: c.id,
+        chartUrl: c.chartUrl || c.chart_url,
+        chartTitle: c.chartTitle || c.chart_title,
+        uploadedAt: c.uploadedAt || c.uploaded_at
+      })),
+      ...(trade.attachments || []).map(a => ({
+        id: a.id,
+        chartUrl: a.fileUrl || a.file_url,
+        chartTitle: a.fileName || a.file_name,
+        uploadedAt: a.uploadedAt || a.uploaded_at || a.created_at
+      }))
+    ],
     journal: {
       whyTaken: journal.whyTaken || '',
       htfBias: journal.htfBias || '',
