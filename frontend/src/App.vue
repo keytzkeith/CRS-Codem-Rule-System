@@ -62,6 +62,7 @@
 
     <Notification />
     <ModalAlert />
+    <Analytics />
   </div>
 </template>
 
@@ -69,6 +70,7 @@
 import { computed } from 'vue'
 import { CodeBracketIcon, EnvelopeIcon, GlobeAltIcon } from '@heroicons/vue/24/outline'
 import { useRoute } from 'vue-router'
+import { Analytics } from '@vercel/analytics/vue'
 import NavBar from '@/components/layout/NavBar.vue'
 import Notification from '@/components/common/Notification.vue'
 import ModalAlert from '@/components/common/ModalAlert.vue'
